@@ -244,6 +244,7 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     // maui 
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::show3DViewer );
+    m_mainToolBar->Add( PCB_ACTIONS::flipBoard );
     // maui end
 
     m_mainToolBar->AddScaledSeparator( this );
