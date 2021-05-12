@@ -27,6 +27,8 @@ eeschema/sch_text_help_md.h
 pcbnew/pcb_plot_params_keywords.cpp
 pcbnew/pcb_plot_params_lexer.h
 pcbnew/dialogs/panel_setup_rules_help_md.h
+pcb_calculator/attenuators/pi_formula.h
+pcb_calculator/attenuators/tee_formula.h
 Makefile
 CMakeCache.txt
 auto_renamed_to_cpp

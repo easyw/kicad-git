@@ -178,15 +178,15 @@ bool BOARD_ADAPTER::Is3dLayerEnabled( PCB_LAYER_ID aLayer ) const
 
     case Dwgs_User:
     case Cmts_User:
-        if( GetFlag( FL_USE_REALISTIC_MODE ) )
-            return false;
+        // maui if( GetFlag( FL_USE_REALISTIC_MODE ) )
+        // maui     return false;
 
         return GetFlag( FL_COMMENTS );
 
     case Eco1_User:
     case Eco2_User:
-        if( GetFlag( FL_USE_REALISTIC_MODE ) )
-            return false;
+        // maui if( GetFlag( FL_USE_REALISTIC_MODE ) )
+        // maui     return false;
 
         return GetFlag( FL_ECO );
 
@@ -197,8 +197,10 @@ bool BOARD_ADAPTER::Is3dLayerEnabled( PCB_LAYER_ID aLayer ) const
         return true;
 
     case Margin:
-        if( GetFlag( FL_USE_REALISTIC_MODE ) )
-            return false;
+    case F_CrtYd: // maui 3dviewer
+    case B_CrtYd: // maui 3dviewer
+        // maui if( GetFlag( FL_USE_REALISTIC_MODE ) )
+        // maui     return false;
 
         return true;
 
