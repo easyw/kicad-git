@@ -1,0 +1,3 @@
+1) transparency off in 3d diffuse mode (as in non realistic)
+2) cut off dwgs removed if eco on (as in non realistic)
+3) offset for eco 2 layer
