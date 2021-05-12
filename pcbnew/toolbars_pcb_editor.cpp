@@ -241,6 +241,10 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( ACTIONS::pageSettings );
     m_mainToolBar->Add( ACTIONS::print );
     m_mainToolBar->Add( ACTIONS::plot );
+    // maui 
+    m_mainToolBar->AddScaledSeparator( this );
+    m_mainToolBar->Add( ACTIONS::show3DViewer );
+    // maui end
 
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::undo );
@@ -265,11 +269,6 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( PCB_ACTIONS::lock );
     m_mainToolBar->Add( PCB_ACTIONS::unlock );
 
-    // maui 
-    m_mainToolBar->AddScaledSeparator( this );
-    m_mainToolBar->Add( ACTIONS::show3DViewer );
-    // maui end
-    
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::showFootprintEditor );
     m_mainToolBar->Add( ACTIONS::showFootprintBrowser );
