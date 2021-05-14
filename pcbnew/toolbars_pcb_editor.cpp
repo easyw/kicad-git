@@ -241,10 +241,10 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( ACTIONS::pageSettings );
     m_mainToolBar->Add( ACTIONS::print );
     m_mainToolBar->Add( ACTIONS::plot );
-    // maui 
+    // maui show3DViewer flipBoard
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::show3DViewer );
-    m_mainToolBar->Add( PCB_ACTIONS::flipBoard );
+    m_mainToolBar->Add( PCB_ACTIONS::flipBoard, ACTION_TOOLBAR::TOGGLE );
     // maui end
 
     m_mainToolBar->AddScaledSeparator( this );
