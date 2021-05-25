@@ -432,8 +432,8 @@ void MODEL_3D::Draw( bool aTransparent, float aOpacity, bool aUseSelectedMateria
     // BeginDrawMulti();
     for( auto& mat : m_materials )
     {
-        if( ( mat.IsTransparent() != aTransparent ) && ( aOpacity >= 1.0f ) )
-            continue;
+        if( ( mat.IsTransparent() != aTransparent ) && ( aOpacity >= 1.0f ) && m_materialMode != MATERIAL_MODE::DIFFUSE_ONLY ) // maui remove Transparency
+             continue;
 
         switch( m_materialMode )
         {

@@ -29,6 +29,9 @@ pcbnew/pcb_plot_params_lexer.h
 pcbnew/dialogs/panel_setup_rules_help_md.h
 pcb_calculator/attenuators/pi_formula.h
 pcb_calculator/attenuators/tee_formula.h
+pcb_calculator/attenuators/splitter_formula.h
+pcb_calculator/eserie_help.h
+pcb_calculator/tracks_width_versus_current_formula.h
 Makefile
 CMakeCache.txt
 auto_renamed_to_cpp
