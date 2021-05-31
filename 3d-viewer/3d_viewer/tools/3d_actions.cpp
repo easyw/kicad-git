@@ -183,15 +183,15 @@ TOOL_ACTION EDA_3D_ACTIONS::show1mmGrid( "3DViewer.Control.show1mmGrid",
 
 TOOL_ACTION EDA_3D_ACTIONS::materialNormal( "3DViewer.Control.materialNormal",
         AS_ACTIVE,
-        0, "",
+        'A', "",
         _( "Use All Properties" ), _( "Use all material properties from each 3D model file" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) MATERIAL_MODE::NORMAL );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) MATERIAL_MODE::NORMAL ); // All Materials rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::materialDiffuse( "3DViewer.Control.materialDiffuse",
         AS_ACTIVE,
-        0, "",
+        'D', "",
         _( "Use Diffuse Only" ), _( "Use only the diffuse color property from model 3D model file" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) MATERIAL_MODE::DIFFUSE_ONLY );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) MATERIAL_MODE::DIFFUSE_ONLY ); // Diffuse only Materials rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::materialCAD( "3DViewer.Control.materialCAD",
         AS_ACTIVE,
@@ -264,14 +264,16 @@ TOOL_ACTION EDA_3D_ACTIONS::postProcessing( "3DViewer.Control.postProcessing",
         BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_RENDER_RAYTRACING_POST_PROCESSING );
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleRealisticMode( "3DViewer.Control.toggleRealisticMode",
-        AS_GLOBAL, 0, "",
+        AS_ACTIVE,
+        'Q', "",
         _( "Toggle realistic mode" ), _( "Toggle realistic mode" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_USE_REALISTIC_MODE );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_USE_REALISTIC_MODE ); // toggle Quality Realistic rendering maui
+        // add keys to user.hotkeys file
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleBoardBody( "3DViewer.Control.toggleBoardBody",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'B', "",
         _( "Toggle board body display" ), _( "Toggle board body display" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SHOW_BOARD_BODY );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SHOW_BOARD_BODY ); // toggle Body rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::showAxis( "3DViewer.Control.showAxis",
         AS_GLOBAL, 0, "",
@@ -279,9 +281,9 @@ TOOL_ACTION EDA_3D_ACTIONS::showAxis( "3DViewer.Control.showAxis",
         BITMAPS::axis3d_front, AF_NONE, (void*) FL_AXIS );
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleZones( "3DViewer.Control.toggleZones",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'F', "",
         _( "Toggle zone display" ), _( "Toggle zone display" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_ZONE );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_ZONE );; // toggle Fill zones rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleAdhesive( "3DViewer.Control.toggleAdhesive",
         AS_GLOBAL, 0, "",
@@ -289,27 +291,27 @@ TOOL_ACTION EDA_3D_ACTIONS::toggleAdhesive( "3DViewer.Control.toggleAdhesive",
         BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_ADHESIVE );
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleSilk( "3DViewer.Control.toggleSilk",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'K', "",
         _( "Toggle silkscreen display" ), _( "Toggle display of silkscreen layers" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SILKSCREEN );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SILKSCREEN ); // toggle silK rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleSolderMask( "3DViewer.Control.toggleSolderMask",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'M', "",
         _( "Toggle solder mask display" ), _( "Toggle display of solder mask layers" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SOLDERMASK );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SOLDERMASK ); // toggle Mask rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleSolderPaste( "3DViewer.Control.toggleSolderPaste",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'P', "",
         _( "Toggle solder paste display" ), _( "Toggle display of solder paste layers" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SOLDERPASTE );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_SOLDERPASTE ); // toggle Paste rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleComments( "3DViewer.Control.toggleComments",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'C', "",
         _( "Toggle comments display" ), _( "Toggle display of comments and drawings layers" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_COMMENTS );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_COMMENTS ); // toggle Comments rendering maui
 
 TOOL_ACTION EDA_3D_ACTIONS::toggleECO( "3DViewer.Control.toggleECO",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, 'E', "",
         _( "Toggle ECO display" ), _( "Toggle display of ECO layers" ),
-        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_ECO );
+        BITMAPS::INVALID_BITMAP, AF_NONE, (void*) FL_ECO ); // toggle Eco rendering maui
 

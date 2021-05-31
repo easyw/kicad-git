@@ -177,11 +177,17 @@ int EDA_3D_CONTROLLER::SetMaterial( const TOOL_EVENT& aEvent )
 
     m_boardAdapter->SetMaterialMode( mode );
 
+    //wxLogMessage("bbb"); maui
     if( EDA_3D_VIEWER* viewer = dynamic_cast<EDA_3D_VIEWER*>( m_toolMgr->GetToolHolder() ) )
+    {
         viewer->NewDisplay( true );
+        //wxLogMessage("ddd"); maui
+    }
     else
+    {
+        //wxLogMessage("eee"); maui
         m_canvas->Request_refresh();
-
+    }
     return 0;
 }
 
@@ -205,6 +211,7 @@ int EDA_3D_CONTROLLER::ToggleVisibility( const TOOL_EVENT& aEvent )
 
     m_boardAdapter->SetFlag( flag, !m_boardAdapter->GetFlag( flag ) );
 
+    // wxLogMessage("ccc");
     switch( flag )
     {
     case FL_RENDER_OPENGL_SHOW_MODEL_BBOX:
