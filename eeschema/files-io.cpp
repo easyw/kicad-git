@@ -58,6 +58,7 @@
 #include <wildcards_and_files_ext.h>
 #include <drawing_sheet/ds_data_model.h>
 #include <wx/ffile.h>
+#include <tools/ee_actions.h>
 #include <tools/ee_inspection_tool.h>
 #include <paths.h>
 
@@ -188,8 +189,7 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
             UpdateFileHistory( schematicFileName.GetFullPath() );
         }
 
-        screen->ClrSave();
-        screen->ClrModify();
+        screen->SetContentModified( false );
         UpdateTitle();
 
         msg.Printf( _( "File \"%s\" saved." ),  screen->GetFileName() );
@@ -380,7 +380,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     if( is_new )
     {
         // mark new, unsaved file as modified.
-        GetScreen()->SetModify();
+        GetScreen()->SetContentModified();
         GetScreen()->SetFileName( fullFileName );
     }
     else
@@ -1029,6 +1029,10 @@ bool SCH_EDIT_FRAME::doAutoSave()
     wxFileName  tmp;
     SCH_SCREENS screens( Schematic().Root() );
 
+    // Don't run autosave if content has not been modified
+    if( !IsContentModified() )
+        return true;
+
     bool autoSaveOk = true;
 
     if( fn.GetPath().IsEmpty() )
@@ -1047,7 +1051,7 @@ bool SCH_EDIT_FRAME::doAutoSave()
     for( size_t i = 0; i < screens.GetCount(); i++ )
     {
         // Only create auto save files for the schematics that have been modified.
-        if( !screens.GetScreen( i )->IsSave() )
+        if( !screens.GetScreen( i )->IsContentModified() )
             continue;
 
         tmpFileName = fn = screens.GetScreen( i )->GetFileName();
@@ -1058,7 +1062,7 @@ bool SCH_EDIT_FRAME::doAutoSave()
         screens.GetScreen( i )->SetFileName( fn.GetFullPath() );
 
         if( SaveEEFile( screens.GetSheet( i ), false ) )
-            screens.GetScreen( i )->SetModify();
+            screens.GetScreen( i )->SetContentModified();
         else
             autoSaveOk = false;
 
@@ -1114,7 +1118,10 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
             Schematic().SetRoot( pi->Load( aFileName, &Schematic() ) );
 
             if( reporter->m_Reporter->HasMessage() )
+            {
+                reporter->m_Reporter->Flush();  // Build HTML messages
                 reporter->ShowModal();
+            }
 
             pi->SetReporter( &WXLOG_REPORTER::GetInstance() );
             delete reporter;
@@ -1142,12 +1149,15 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
             Schematic().Root().SetFileName( newfilename.GetFullPath() );
             GetScreen()->SetFileName( newfilename.GetFullPath() );
-            GetScreen()->SetModify();
+            GetScreen()->SetContentModified();
 
             // Only fix junctions for CADSTAR importer for now as it may cause issues with
             // other importers
             if( fileType == SCH_IO_MGR::SCH_CADSTAR_ARCHIVE )
+            {
                 FixupJunctions();
+                RecalculateConnections( GLOBAL_CLEANUP );
+            }
 
             // Only perform the dangling end test on root sheet.
             GetScreen()->TestDanglingEnds();
@@ -1191,7 +1201,7 @@ bool SCH_EDIT_FRAME::AskToSaveChanges()
     // Save any currently open and modified project files.
     for( SCH_SCREEN* screen = screenList.GetFirst(); screen; screen = screenList.GetNext() )
     {
-        if( screen->IsModify() )
+        if( screen->IsContentModified() )
         {
             if( !HandleUnsavedChanges( this, _( "The current schematic has been modified.  "
                                                 "Save changes?" ),
