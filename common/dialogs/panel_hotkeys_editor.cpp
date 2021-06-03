@@ -30,6 +30,7 @@
 #include <tool/tool_manager.h>
 #include <widgets/button_row_panel.h>
 #include <widgets/ui_common.h>
+#include <wx/filedlg.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/srchctrl.h>
@@ -243,9 +244,14 @@ void PANEL_HOTKEYS_EDITOR::dumpHotkeys()
             stream << wxT( "| " ) << hk.m_Actions[0]->GetLabel() << endl;
 
             if( hk.m_EditKeycode > 0 )
-                stream << wxT( "  | `" ) << KeyNameFromKeyCode( hk.m_EditKeycode ) << '`' << endl;
+            {
+                stream << wxT( "  | kbd:[" ) << KeyNameFromKeyCode( hk.m_EditKeycode ) << ']'
+                       << endl;
+            }
             else
+            {
                 stream << wxT( "  |" ) << endl;
+            }
 
             stream << wxT( "  | " ) << hk.m_Actions[0]->GetDescription( false ) << endl;
         }

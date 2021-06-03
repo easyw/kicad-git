@@ -31,6 +31,7 @@
 #include "tools/placement_tool.h"
 #include "tools/pcb_point_editor.h"
 #include "tools/pcb_selection_tool.h"
+#include <python/scripting/pcb_scripting_tool.h>
 #include <3d_viewer/eda_3d_viewer.h>
 #include <bitmaps.h>
 #include <board.h>
@@ -76,6 +77,7 @@
 #include <widgets/panel_selection_filter.h>
 #include <widgets/progress_reporter.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
 
 
 BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
@@ -943,6 +945,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->RegisterTool( new PCB_VIEWER_TOOLS );
     m_toolManager->RegisterTool( new GROUP_TOOL );
     m_toolManager->RegisterTool( new CONVERT_TOOL );
+    m_toolManager->RegisterTool( new SCRIPTING_TOOL );
 
     m_toolManager->GetTool<PCB_SELECTION_TOOL>()->SetIsFootprintEditor( true );
     m_toolManager->GetTool<EDIT_TOOL>()->SetIsFootprintEditor( true );
@@ -953,6 +956,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->GetTool<PCB_PICKER_TOOL>()->SetIsFootprintEditor( true );
     m_toolManager->GetTool<POSITION_RELATIVE_TOOL>()->SetIsFootprintEditor( true );
     m_toolManager->GetTool<GROUP_TOOL>()->SetIsFootprintEditor( true );
+    m_toolManager->GetTool<SCRIPTING_TOOL>()->SetIsFootprintEditor( true );
 
     m_toolManager->GetTool<PCB_VIEWER_TOOLS>()->SetFootprintFrame( true );
     m_toolManager->InitTools();
