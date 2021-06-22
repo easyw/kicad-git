@@ -62,6 +62,7 @@
 #include <wx/dirdlg.h>
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
+#include <wx/socket.h>
 
 #include <wx/snglinst.h>
 #include <wx/fdrepdlg.h>
@@ -154,6 +155,15 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
                                          wxSize( m_frameSize.x, m_msgFrameHeight ) );
 
     m_messagePanel->SetBackgroundColour( COLOR4D( LIGHTGRAY ).ToColour() );
+
+#if wxCHECK_VERSION( 3, 1, 3 )
+    Bind( wxEVT_DPI_CHANGED,
+          [&]( wxDPIChangedEvent& )
+          {
+              wxMoveEvent dummy;
+              OnMove( dummy );
+          } );
+#endif
 }
 
 
@@ -347,7 +357,7 @@ void EDA_DRAW_FRAME::OnSelectGrid( wxCommandEvent& event )
     }
     else
     {
-        m_toolManager->RunAction( ACTIONS::gridPreset, true, idx );
+        m_toolManager->RunAction( ACTIONS::gridPreset, true, static_cast<intptr_t>( idx ) );
     }
 
     UpdateStatusBar();
@@ -452,7 +462,7 @@ void EDA_DRAW_FRAME::OnSelectZoom( wxCommandEvent& event )
     if( id < 0 || !( id < (int)m_zoomSelectBox->GetCount() ) )
         return;
 
-    m_toolManager->RunAction( "common.Control.zoomPreset", true, id );
+    m_toolManager->RunAction( ACTIONS::zoomPreset, true, static_cast<intptr_t>( id ) );
     UpdateStatusBar();
     m_canvas->Refresh();
 }
@@ -530,6 +540,8 @@ void EDA_DRAW_FRAME::DisplayUnitsMsg()
 
 void EDA_DRAW_FRAME::OnSize( wxSizeEvent& SizeEv )
 {
+    EDA_BASE_FRAME::OnSize( SizeEv );
+
     m_frameSize = GetClientSize( );
 
     SizeEv.Skip();

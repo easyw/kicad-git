@@ -23,14 +23,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-/**
- * @file pcb_pad.cpp
- */
+#include <pcad/pcb_pad.h>
+#include <pcad/pcb_pad_shape.h>
 
-#include <wx/wx.h>
+#include <board.h>
+#include <footprint.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <trigo.h>
+#include <xnode.h>
 
-#include <pcb_pad.h>
+#include <wx/gdicmn.h>
+#include <wx/string.h>
 
 namespace PCAD2KICAD {
 
@@ -342,7 +346,7 @@ void PCB_PAD::AddToBoard()
 
         if( IsCopperLayer( m_KiCadLayer ) )
         {
-            VIA* via = new VIA( m_board );
+            PCB_VIA* via = new PCB_VIA( m_board );
             m_board->Add( via );
 
             via->SetPosition( wxPoint( m_positionX, m_positionY ) );

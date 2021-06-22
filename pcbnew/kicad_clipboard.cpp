@@ -27,10 +27,12 @@
 
 #include <build_version.h>
 #include <board.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_group.h>
 #include <pcb_shape.h>
 #include <pcb_text.h>
 #include <fp_text.h>
+#include <zone.h>
 #include <locale_io.h>
 #include <netinfo.h>
 #include <plugins/kicad/pcb_parser.h>
@@ -93,7 +95,7 @@ void CLIPBOARD_IO::SaveSelection( const PCB_SELECTION& aSelected, bool isFootpri
     {
         FOOTPRINT partialFootprint( m_board );
 
-        // Usefull to copy the selection to the board editor (if any), and provides
+        // Useful to copy the selection to the board editor (if any), and provides
         // a dummy lib id.
         // Perhaps not a good Id, but better than a empty id
         KIID dummy;

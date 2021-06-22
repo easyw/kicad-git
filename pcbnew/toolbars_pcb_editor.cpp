@@ -28,6 +28,7 @@
 
 #include <bitmaps.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <dialog_helpers.h>
 #include <kiface_i.h>
 #include <macros.h>
@@ -47,6 +48,7 @@
 #include <tools/pcb_selection_tool.h>
 #include <wx/wupdlock.h>
 #include <wx/dcmemory.h>
+#include <wx/choice.h>
 
 #include "../scripting/python_scripting.h"
 
@@ -423,7 +425,7 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
 
     if( !tuneGroup )
     {
-        tuneGroup = new ACTION_GROUP( "group.pcbTune", 
+        tuneGroup = new ACTION_GROUP( "group.pcbTune",
                                       { &PCB_ACTIONS::routerTuneSingleTrace,
                                         &PCB_ACTIONS::routerTuneDiffPair,
                                         &PCB_ACTIONS::routerTuneDiffPairSkew } );
@@ -476,7 +478,7 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeSingleTrack, makeRouteMenu() );
     m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeDiffPair, makeRouteMenu() );
 
-    auto makeTuneMenu = 
+    auto makeTuneMenu =
         [&]()
         {
             std::unique_ptr<ACTION_MENU> tuneMenu = std::make_unique<ACTION_MENU>( false, selTool );

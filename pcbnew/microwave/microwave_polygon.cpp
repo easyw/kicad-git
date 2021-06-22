@@ -40,8 +40,15 @@
 #include <footprint.h>
 #include <fp_shape.h>
 #include <microwave/microwave_tool.h>
+#include <pad.h>
 #include <pcbnew.h>
 #include <math/util.h>      // for KiROUND
+
+#include <wx/button.h>
+#include <wx/dialog.h>
+#include <wx/filedlg.h>
+#include <wx/radiobox.h>
+#include <wx/sizer.h>
 
 static std::vector< wxRealPoint > PolyEdges;
 static double  ShapeScaleX, ShapeScaleY;

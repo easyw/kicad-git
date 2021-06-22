@@ -754,7 +754,7 @@ TOOL_ACTION PCB_ACTIONS::showEeschema( "pcbnew.EditorControl.showEeschema",
 
 TOOL_ACTION PCB_ACTIONS::localRatsnestTool( "pcbnew.Control.localRatsnestTool",
         AS_GLOBAL, 0, "",
-        _( "Highlight Ratsnest" ), _( "Show ratsnest of selected item(s)" ),
+        _( "Local Ratsnest" ), _( "Toggle ratsnest display of selected item(s)" ),
         BITMAPS::tool_ratsnest, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::hideDynamicRatsnest( "pcbnew.Control.hideDynamicRatsnest",
@@ -1044,7 +1044,7 @@ TOOL_ACTION PCB_ACTIONS::layerAlphaInc( "pcbnew.Control.layerAlphaInc",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '}', LEGACY_HK_NAME( "Increment Layer Transparency (Modern Toolset only)" ),
-        _( "Increase Layer Opacity" ), _( "Make the current layer more transparent" ),
+        _( "Increase Layer Opacity" ), _( "Make the current layer less transparent" ),
         BITMAPS::contrast_mode );
 
 TOOL_ACTION PCB_ACTIONS::layerAlphaDec( "pcbnew.Control.layerAlphaDec",
@@ -1348,6 +1348,12 @@ TOOL_ACTION PCB_ACTIONS::routerTuneDiffPairSkew( "pcbnew.LengthTuner.TuneDiffPai
 
 TOOL_ACTION PCB_ACTIONS::routerInlineDrag( "pcbnew.InteractiveRouter.InlineDrag",
         AS_CONTEXT );
+
+TOOL_ACTION PCB_ACTIONS::routerUndoLastSegment( "pcbnew.InteractiveRouter.UndoLastSegment",
+        AS_CONTEXT,
+        WXK_BACK, "",
+        _( "Undo Last Segment" ),  _( "Walks the current track back one segment." ),
+        BITMAPS::checked_ok );
 
 TOOL_ACTION PCB_ACTIONS::inlineBreakTrack( "pcbnew.InteractiveRouter.InlineBreakTrack",
         AS_GLOBAL, 0, "",

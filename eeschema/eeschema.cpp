@@ -52,7 +52,7 @@
 // The main sheet of the project
 SCH_SHEET*  g_RootSheet = NULL;
 
-// a transform matrix, to display components in lib editor
+// a transform matrix, to display symbols in lib editor
 TRANSFORM DefaultTransform = TRANSFORM( 1, 0, 0, -1 );
 
 
@@ -401,7 +401,7 @@ void IFACE::SaveFileAs( const wxString& aProjectBasePath, const wxString& aProje
             if( !aErrors.empty() )
                 aErrors += "\n";
 
-            msg.Printf( _( "Cannot copy file \"%s\"." ), destFile.GetFullPath() );
+            msg.Printf( _( "Cannot copy file '%s'." ), destFile.GetFullPath() );
             aErrors += msg;
         }
     }
@@ -433,7 +433,7 @@ void IFACE::SaveFileAs( const wxString& aProjectBasePath, const wxString& aProje
             if( !aErrors.empty() )
                 aErrors += "\n";
 
-            msg.Printf( _( "Cannot copy file \"%s\"." ), destFile.GetFullPath() );
+            msg.Printf( _( "Cannot copy file '%s'." ), destFile.GetFullPath() );
             aErrors += msg;
         }
     }

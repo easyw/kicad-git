@@ -26,6 +26,7 @@
 #include <pcbnew_utils/board_construction_utils.h>
 #include <pcbnew_utils/board_file_utils.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <pcb_marker.h>
 #include <drc/drc_engine.h>
@@ -235,7 +236,7 @@ static bool InvalidMatchesExpected( BOARD& aBoard, const PCB_MARKER& aMarker,
     auto reporter = std::static_pointer_cast<DRC_ITEM>( aMarker.GetRCItem() );
     const FOOTPRINT* item_a = dynamic_cast<FOOTPRINT*>( aBoard.GetItem( reporter->GetMainItemID() ) );
 
-    // This one is more than just a mis-match!
+    // This one is more than just a mismatch!
     if( reporter->GetAuxItemID() != niluuid )
     {
         BOOST_WARN_MESSAGE( false, "Expected no auxiliary item for invalid courtyard DRC." );

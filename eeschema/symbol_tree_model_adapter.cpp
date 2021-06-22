@@ -19,6 +19,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <wx/log.h>
 #include <wx/tokenzr.h>
 #include <wx/window.h>
 #include <widgets/progress_reporter.h>
@@ -70,10 +71,10 @@ void SYMBOL_TREE_MODEL_ADAPTER::AddLibraries( const std::vector<wxString>& aNick
     // Disable KIID generation: not needed for library parts; sometimes very slow
     KIID::CreateNilUuids( true );
 
-    std::unordered_map<wxString, std::vector<LIB_PART*>> loadedSymbols;
+    std::unordered_map<wxString, std::vector<LIB_SYMBOL*>> loadedSymbols;
 
     SYMBOL_ASYNC_LOADER loader( aNicknames, m_libs,
-                                GetFilter() == LIB_TREE_MODEL_ADAPTER::CMP_FILTER_POWER,
+                                GetFilter() == LIB_TREE_MODEL_ADAPTER::SYM_FILTER_POWER,
                                 &loadedSymbols, prg.get() );
 
     LOCALE_IO toggle;
@@ -112,7 +113,7 @@ void SYMBOL_TREE_MODEL_ADAPTER::AddLibraries( const std::vector<wxString>& aNick
 
     if( loadedSymbols.size() > 0 )
     {
-        for( const std::pair<const wxString, std::vector<LIB_PART*>>& pair : loadedSymbols )
+        for( const std::pair<const wxString, std::vector<LIB_SYMBOL*>>& pair : loadedSymbols )
         {
             std::vector<LIB_TREE_ITEM*> treeItems( pair.second.begin(), pair.second.end() );
             DoAddLibrary( pair.first, m_libs->GetDescription( pair.first ), treeItems, false );
@@ -139,8 +140,8 @@ void SYMBOL_TREE_MODEL_ADAPTER::AddLibraries( const std::vector<wxString>& aNick
 
 void SYMBOL_TREE_MODEL_ADAPTER::AddLibrary( wxString const& aLibNickname )
 {
-    bool                        onlyPowerSymbols = ( GetFilter() == CMP_FILTER_POWER );
-    std::vector<LIB_PART*>      symbols;
+    bool                        onlyPowerSymbols = ( GetFilter() == SYM_FILTER_POWER );
+    std::vector<LIB_SYMBOL*>    symbols;
     std::vector<LIB_TREE_ITEM*> comp_list;
 
     try

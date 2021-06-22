@@ -25,15 +25,18 @@
 #include <macros.h>
 #include <pcb_edit_frame.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <board_item.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <cstdio>
 #include <vector>
 #include <ki_exception.h>
 #include <locale_io.h>
 #include <reporter.h>
+#include <wx/log.h>
 
 #include <exporters/board_exporter_base.h>
 
@@ -51,7 +54,7 @@ public:
     friend class HYPERLYNX_EXPORTER;
 
     HYPERLYNX_PAD_STACK( BOARD* aBoard, const PAD* aPad );
-    HYPERLYNX_PAD_STACK( BOARD* aBoard, const VIA* aVia );
+    HYPERLYNX_PAD_STACK( BOARD* aBoard, const PCB_VIA* aVia );
     ~HYPERLYNX_PAD_STACK(){};
 
     bool isThrough() const
@@ -243,7 +246,7 @@ HYPERLYNX_PAD_STACK::HYPERLYNX_PAD_STACK( BOARD* aBoard, const PAD* aPad )
 }
 
 
-HYPERLYNX_PAD_STACK::HYPERLYNX_PAD_STACK( BOARD* aBoard, const VIA* aVia )
+HYPERLYNX_PAD_STACK::HYPERLYNX_PAD_STACK( BOARD* aBoard, const PCB_VIA* aVia )
 {
     m_board  = aBoard;
     m_sx     = aVia->GetWidth();
@@ -329,7 +332,7 @@ bool HYPERLYNX_EXPORTER::writeStackupInfo()
      * (SIGNAL T=thickness [P=plating_thickness] [C=constant] L=layer_name [M=material_name]) [comment]
      * (DIELECTRIC T=thickness [C=constant] [L=layer_name] [M=material_name]) [comment]
      * }
-     * name lenght is <= 20 chars
+     * name length is <= 20 chars
      */
 
     LSEQ layers = m_board->GetDesignSettings().GetEnabledLayers().CuStack();
@@ -413,9 +416,9 @@ bool HYPERLYNX_EXPORTER::writePadStacks()
         }
     }
 
-    for( TRACK* trk : m_board->Tracks() )
+    for( PCB_TRACK* track : m_board->Tracks() )
     {
-        if( VIA* via = dyn_cast<VIA*>( trk ) )
+        if( PCB_VIA* via = dyn_cast<PCB_VIA*>( track ) )
         {
             HYPERLYNX_PAD_STACK* ps = addPadStack( HYPERLYNX_PAD_STACK( m_board, via ) );
             m_padMap[via] = ps;
@@ -456,7 +459,7 @@ bool HYPERLYNX_EXPORTER::writeNetObjects( const std::vector<BOARD_ITEM*>& aObjec
                         pstackIter->second->GetId() );
             }
         }
-        else if( VIA* via = dyn_cast<VIA*>( item ) )
+        else if( PCB_VIA* via = dyn_cast<PCB_VIA*>( item ) )
         {
             auto pstackIter = m_padMap.find( via );
 
@@ -466,7 +469,7 @@ bool HYPERLYNX_EXPORTER::writeNetObjects( const std::vector<BOARD_ITEM*>& aObjec
                         iu2hyp( via->GetPosition().y ), pstackIter->second->GetId() );
             }
         }
-        else if( TRACK* track = dyn_cast<TRACK*>( item ) )
+        else if( PCB_TRACK* track = dyn_cast<PCB_TRACK*>( item ) )
         {
             const wxString layerName = m_board->GetLayerName( track->GetLayer() );
 
@@ -557,7 +560,7 @@ const std::vector<BOARD_ITEM*> HYPERLYNX_EXPORTER::collectNetObjects( int netcod
         }
     }
 
-    for( TRACK* item : m_board->Tracks() )
+    for( PCB_TRACK* item : m_board->Tracks() )
     {
         if( check( item ) )
             rv.push_back( item );

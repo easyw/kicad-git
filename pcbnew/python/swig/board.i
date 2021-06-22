@@ -48,20 +48,22 @@ HANDLE_EXCEPTIONS(BOARD::TracksInNetBetweenPoints)
 %include board_connected_item.i
 %include board_design_settings.i
 %include connectivity.i
+%include pcb_item_containers.i
 %include pad.i
 %include track.i
 %include zone.i
 %include zone_settings.i
 %include pcb_text.i
-%include dimension.i
+%include pcb_dimension.i
 %include pcb_shape.i
-%include marker_pcb.i
+%include pcb_marker.i
 %include pcb_target.i
 %include fp_shape.i
 %include fp_text.i
 %include netinfo.i
 %include netclass.i
 %include pcb_plot_params.i
+%include pcb_group.i
 
 // std::vector templates
 %template(VIA_DIMENSION_Vector) std::vector<VIA_DIMENSION>;

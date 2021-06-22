@@ -23,21 +23,22 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-/**
- * @file pcb.cpp
- */
+#include <pcad/pcb.h>
 
-#include <wx/wx.h>
+#include <pcad/pcb_keepout.h>
+#include <pcad/pcb_footprint.h>
+#include <pcad/pcb_net.h>
+#include <pcad/pcb_pad.h>
+#include <pcad/pcb_text.h>
+#include <pcad/pcb_via.h>
+#include <pcad/s_expr_loader.h>
 
+#include <board.h>
 #include <common.h>
+#include <xnode.h>
 
-#include <pcb.h>
-#include <pcb_keepout.h>
-#include <pcb_footprint.h>
-#include <pcb_pad.h>
-#include <pcb_text.h>
-#include <pcb_via.h>
-#include <s_expr_loader.h>
+#include <wx/gdicmn.h>
+#include <wx/string.h>
 
 namespace PCAD2KICAD {
 
@@ -213,7 +214,7 @@ void PCB::SetTextProperty( XNODE*   aNode, TTEXTVALUE* aTextValue,
         }
     }
 
-    // old version and compatibile fr both from this point
+    // old version and compatible for both from this point
     tNode = FindNode( t1Node, wxT( "attr" ) );
 
     while( tNode )
@@ -680,7 +681,7 @@ void PCB::ParseBoard( wxStatusBar* aStatusBar, wxXmlDocument* aXmlDoc, const wxS
     wxString        compRef, pinRef, layerName, layerType;
     int             i, j, netCode;
 
-    // Defaut measurement units
+    // Default measurement units
     aNode = FindNode( (XNODE *)aXmlDoc->GetRoot(), wxT( "asciiHeader" ) );
 
     if( aNode )

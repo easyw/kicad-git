@@ -26,13 +26,17 @@
 #include <reporter.h>
 #include <widgets/progress_reporter.h>
 #include <kicad_string.h>
+#include <board_design_settings.h>
 #include <drc/drc_engine.h>
+#include <drc/drc_rtree.h>
 #include <drc/drc_rule_parser.h>
 #include <drc/drc_rule.h>
 #include <drc/drc_rule_condition.h>
 #include <drc/drc_test_provider.h>
-#include <track.h>
 #include <footprint.h>
+#include <pad.h>
+#include <pcb_track.h>
+#include <zone.h>
 #include <geometry/shape.h>
 #include <geometry/shape_segment.h>
 #include <geometry/shape_null.h>
@@ -661,7 +665,7 @@ void DRC_ENGINE::InitEngine( const wxFileName& aRulePath )
         }
         catch( PARSE_ERROR& )
         {
-            wxFAIL_MSG( "Compiling implict rules failed." );
+            wxFAIL_MSG( "Compiling implicit rules failed." );
         }
 
         throw original_parse_error;
@@ -891,9 +895,9 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRules( DRC_CONSTRAINT_T aConstraintId, const BOAR
                     }
                     else if( a->Type() == PCB_VIA_T )
                     {
-                        if( static_cast<const VIA*>( a )->GetViaType() == VIATYPE::BLIND_BURIED )
+                        if( static_cast<const PCB_VIA*>( a )->GetViaType() == VIATYPE::BLIND_BURIED )
                             mask = DRC_DISALLOW_VIAS | DRC_DISALLOW_BB_VIAS;
-                        else if( static_cast<const VIA*>( a )->GetViaType() == VIATYPE::MICROVIA )
+                        else if( static_cast<const PCB_VIA*>( a )->GetViaType() == VIATYPE::MICROVIA )
                             mask = DRC_DISALLOW_VIAS | DRC_DISALLOW_MICRO_VIAS;
                         else
                             mask = DRC_DISALLOW_VIAS;

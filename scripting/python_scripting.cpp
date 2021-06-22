@@ -58,24 +58,6 @@ SCRIPTING::SCRIPTING()
 {
     scriptingSetup();
 
-#ifdef _MSC_VER
-    // Under vcpkg/msvc, we need to explicitly set the python home
-    // or else it'll start consuming system python registry keys and the like instead
-    // We are going to follow the "unix" layout for the msvc/vcpkg distributions so exes in /root/bin
-    // And the python lib in /root/lib/python3(/Lib,/DLLs)
-    wxFileName pyHome;
-
-    pyHome.Assign( Pgm().GetExecutablePath() );
-
-    pyHome.Normalize();
-
-    // MUST be called before Py_Initialize so it will to create valid default lib paths
-    if( !wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
-    {
-        Py_SetPythonHome( pyHome.GetFullPath().c_str() );
-    }
-#endif
-
     pybind11::initialize_interpreter();
 
     // Save the current Python thread state and release the
@@ -98,9 +80,45 @@ bool SCRIPTING::IsWxAvailable()
 #endif
 }
 
+bool SCRIPTING::IsModuleLoaded( std::string& aModule )
+{
+    PyLOCK    lock;
+    using namespace pybind11::literals;
+    auto locals = pybind11::dict( "modulename"_a = aModule );
+
+    pybind11::exec( R"(
+import sys
+loaded = False
+if modulename in sys.modules:
+    loaded = True
+
+    )", pybind11::globals(), locals );
+
+    return locals["loaded"].cast<bool>();
+}
+
 bool SCRIPTING::scriptingSetup()
 {
 #if defined( __WINDOWS__ )
+
+    #ifdef _MSC_VER
+    // Under vcpkg/msvc, we need to explicitly set the python home
+    // or else it'll start consuming system python registry keys and the like instead
+    // We are going to follow the "unix" layout for the msvc/vcpkg distributions so exes in /root/bin
+    // And the python lib in /root/lib/python3(/Lib,/DLLs)
+    wxFileName pyHome;
+
+    pyHome.Assign( Pgm().GetExecutablePath() );
+
+    pyHome.Normalize();
+
+    // MUST be called before Py_Initialize so it will to create valid default lib paths
+    if( !wxGetEnv( wxT( "KICAD_USE_EXTERNAL_PYTHONHOME" ), nullptr ) )
+    {
+        Py_SetPythonHome( pyHome.GetFullPath().c_str() );
+    }
+    #else
+    // Intended for msys2 but we could probably use the msvc equivalent code too
     // If our python.exe (in kicad/bin) exists, force our kicad python environment
     wxString kipython = FindKicadFile( "python.exe" );
 
@@ -124,6 +142,7 @@ bool SCRIPTING::scriptingSetup()
         kipython << wxT( ";" ) << ppath;
         wxSetEnv( wxT( "PATH" ), kipython );
     }
+    #endif
 
 #elif defined( __WXMAC__ )
 
@@ -283,7 +302,7 @@ void UpdatePythonEnvVar( const wxString& aVar, const wxString& aValue )
 {
     char cmd[1024];
 
-    // Ensure the interpreter is initalized before we try to interact with it
+    // Ensure the interpreter is initialized before we try to interact with it
     if( !Py_IsInitialized() )
         return;
 

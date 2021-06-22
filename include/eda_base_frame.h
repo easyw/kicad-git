@@ -34,13 +34,7 @@
 
 #include <vector>
 
-#include <wx/socket.h>
-#include <wx/log.h>
-#include <wx/wxhtml.h>
-#include <wx/laywin.h>
 #include <wx/aui/aui.h>
-#include <wx/docview.h>
-#include <wx/event.h>
 #include <layers_id_colors_and_visibility.h>
 #include <frame_type.h>
 #include <hotkeys_basic.h>
@@ -54,9 +48,16 @@
 #define KICAD_DEFAULT_DRAWFRAME_STYLE wxDEFAULT_FRAME_STYLE | wxWANTS_CHARS
 
 
+#define VIEWER3D_FRAMENAME wxT( "Viewer3DFrameName" )
+#define QUALIFIED_VIEWER3D_FRAMENAME( parent ) \
+                    ( wxString( VIEWER3D_FRAMENAME ) + wxT( ":" ) + parent->GetName() )
+
 #define KICAD_MANAGER_FRAME_NAME   wxT( "KicadFrame" )
 
 
+class wxChoice;
+class wxEvent;
+class wxFileName;
 class EDA_ITEM;
 class EDA_RECT;
 class EDA_DRAW_PANEL_GAL;
@@ -102,6 +103,15 @@ wxDECLARE_EVENT( UNITS_CHANGED, wxCommandEvent );
 class EDA_BASE_FRAME : public wxFrame, public TOOLS_HOLDER, public KIWAY_HOLDER
 {
 public:
+    /**
+     * Specifies whether we are interacting with the undo or redo stacks
+     */
+    enum UNDO_REDO_LIST
+    {
+        UNDO_LIST,
+        REDO_LIST
+    };
+
     EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType, const wxString& aTitle,
                     const wxPoint& aPos, const wxSize& aSize, long aStyle,
                     const wxString& aFrameName, KIWAY* aKiway );
@@ -185,6 +195,8 @@ public:
         aEvent.Skip();
     }
 
+    virtual void OnSize( wxSizeEvent& aEvent );
+
     void OnMaximize( wxMaximizeEvent& aEvent );
 
     void SetAutoSaveInterval( int aInterval );
@@ -208,7 +220,7 @@ public:
     /**
      * Displays the preferences and settings of all opened editors paged dialog
      */
-    void OnPreferences();
+    void OnPreferences( wxCommandEvent& event );
 
     void PrintMsg( const wxString& text );
 
@@ -528,7 +540,6 @@ public:
      * @param aItemCount number of old commands to delete. -1 to remove all old commands
      *                   this will empty the list of commands.
      */
-    enum UNDO_REDO_LIST { UNDO_LIST, REDO_LIST };
     virtual void ClearUndoORRedoList( UNDO_REDO_LIST aList, int aItemCount = -1 )
     { }
 
@@ -637,6 +648,8 @@ protected:
      */
     void initExitKey();
 
+    void ensureWindowIsOnScreen();
+
     DECLARE_EVENT_TABLE()
 
 private:
@@ -673,6 +686,7 @@ protected:
     wxPoint         m_framePos;
     wxSize          m_frameSize;
     bool            m_maximizeByDefault;
+    int             m_displayIndex;
 
     // These contain the frame size and position for when it is not maximized
     wxPoint         m_normalFramePos;

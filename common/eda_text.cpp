@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2017 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,7 +42,7 @@
 #include <gal/stroke_font.h>  // for STROKE_FONT
 #include <gr_text.h>          // for GRText
 #include <kicad_string.h>     // for UnescapeString
-#include <math/util.h>          // for KiROUND
+#include <math/util.h>        // for KiROUND
 #include <math/vector2d.h>    // for VECTOR2D
 #include <richio.h>
 #include <render_settings.h>
@@ -94,13 +94,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
-    m_shown_text_has_text_var_refs = false;
-
-    if( !text.IsEmpty() )
-    {
-        m_shown_text = UnescapeString( text );
-        m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
-    }
+    cacheShownText();
 }
 
 
@@ -108,8 +102,7 @@ EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
         m_text( aText.m_text ),
         m_e( aText.m_e )
 {
-    m_shown_text = UnescapeString( m_text );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    cacheShownText();
 }
 
 
@@ -121,8 +114,7 @@ EDA_TEXT::~EDA_TEXT()
 void EDA_TEXT::SetText( const wxString& aText )
 {
     m_text = aText;
-    m_shown_text = UnescapeString( aText );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    cacheShownText();
 }
 
 
@@ -178,10 +170,24 @@ int EDA_TEXT::GetEffectiveTextPenWidth( int aDefaultWidth ) const
 bool EDA_TEXT::Replace( const wxFindReplaceData& aSearchData )
 {
     bool retval = EDA_ITEM::Replace( aSearchData, m_text );
-    m_shown_text = UnescapeString( m_text );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    cacheShownText();
 
     return retval;
+}
+
+
+void EDA_TEXT::cacheShownText()
+{
+    if( m_text.IsEmpty() || m_text == wxT( "~" ) )     // ~ is legacy empty-string token
+    {
+        m_shown_text = wxEmptyString;
+        m_shown_text_has_text_var_refs = false;
+    }
+    else
+    {
+        m_shown_text = UnescapeString( m_text );
+        m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    }
 }
 
 
@@ -248,7 +254,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     // because only this line can change the bounding box
     for( unsigned ii = 1; ii < text.size(); ii++ )
     {
-        if( text[ii-1] == '~' && text[ii] != '~' )
+        if( text[ii-1] == '~' && text[ii] == '{' )
         {
             hasOverBar = true;
             break;
@@ -363,6 +369,10 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
         }
     }
 
+    // Many fonts draw diacriticals, descenders, etc. outside the X-height of the font.  This
+    // will cacth most (but probably not all) of them.
+    rect.Inflate( 0, thickness * 1.5 );
+
     rect.Normalize();       // Make h and v sizes always >= 0
 
     return rect;
@@ -459,7 +469,7 @@ void EDA_TEXT::GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCoun
 }
 
 void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
-                                   COLOR4D aColor, OUTLINE_MODE aFillMode,
+                                   const COLOR4D& aColor, OUTLINE_MODE aFillMode,
                                    const wxString& aText, const wxPoint &aPos )
 {
     wxDC* DC = aSettings->GetPrintDC();
@@ -529,7 +539,8 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
                        FormatInternalUnits( GetTextWidth() ).c_str() );
 
     if( GetTextThickness() )
-        aFormatter->Print( 0, " (thickness %s)", FormatInternalUnits( GetTextThickness() ).c_str() );
+        aFormatter->Print( 0, " (thickness %s)",
+                           FormatInternalUnits( GetTextThickness() ).c_str() );
 
     if( IsBold() )
         aFormatter->Print( 0, " bold" );
@@ -546,13 +557,15 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
         aFormatter->Print( 0, " (justify");
 
         if( GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER )
-            aFormatter->Print( 0, (GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT) ? " left" : " right" );
+            aFormatter->Print( 0,
+                               ( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT ) ? " left" : " right" );
 
         if( GetVertJustify() != GR_TEXT_VJUSTIFY_CENTER )
             aFormatter->Print( 0, (GetVertJustify() == GR_TEXT_VJUSTIFY_TOP) ? " top" : " bottom" );
 
         if( IsMirrored() )
             aFormatter->Print( 0, " mirror" );
+
         aFormatter->Print( 0, ")" ); // (justify
     }
 
@@ -654,7 +667,9 @@ static struct EDA_TEXT_DESC
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, wxString>( _HKI( "Text" ),
                     &EDA_TEXT::SetText, &EDA_TEXT::GetText ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Thickness" ),
-                    &EDA_TEXT::SetTextThickness, &EDA_TEXT::GetTextThickness, PROPERTY_DISPLAY::DISTANCE ) );
+                                                          &EDA_TEXT::SetTextThickness,
+                                                          &EDA_TEXT::GetTextThickness,
+                                                          PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Italic" ),
                     &EDA_TEXT::SetItalic, &EDA_TEXT::IsItalic ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Bold" ),
@@ -664,13 +679,21 @@ static struct EDA_TEXT_DESC
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Visible" ),
                     &EDA_TEXT::SetVisible, &EDA_TEXT::IsVisible ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Width" ),
-                    &EDA_TEXT::SetTextWidth, &EDA_TEXT::GetTextWidth, PROPERTY_DISPLAY::DISTANCE ) );
+                                                          &EDA_TEXT::SetTextWidth,
+                                                          &EDA_TEXT::GetTextWidth,
+                                                          PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Height" ),
-                    &EDA_TEXT::SetTextHeight, &EDA_TEXT::GetTextHeight, PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, EDA_TEXT_HJUSTIFY_T>( _HKI( "Horizontal Justification" ),
-                    &EDA_TEXT::SetHorizJustify, &EDA_TEXT::GetHorizJustify ) );
-        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, EDA_TEXT_VJUSTIFY_T>( _HKI( "Vertical Justification" ),
-                    &EDA_TEXT::SetVertJustify, &EDA_TEXT::GetVertJustify ) );
+                                                          &EDA_TEXT::SetTextHeight,
+                                                          &EDA_TEXT::GetTextHeight,
+                                                          PROPERTY_DISPLAY::DISTANCE ) );
+        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT,
+                             EDA_TEXT_HJUSTIFY_T>( _HKI( "Horizontal Justification" ),
+                                                   &EDA_TEXT::SetHorizJustify,
+                                                   &EDA_TEXT::GetHorizJustify ) );
+        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT,
+                             EDA_TEXT_VJUSTIFY_T>( _HKI( "Vertical Justification" ),
+                                                   &EDA_TEXT::SetVertJustify,
+                                                   &EDA_TEXT::GetVertJustify ) );
     }
 } _EDA_TEXT_DESC;
 

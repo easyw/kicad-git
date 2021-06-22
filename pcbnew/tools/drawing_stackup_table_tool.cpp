@@ -35,7 +35,10 @@
 #include <bitmaps.h>
 #include <painter.h>
 #include <board.h>
+#include <board_design_settings.h>
+#include <footprint.h>
 #include <fp_shape.h>
+#include <pcb_group.h>
 #include <pcb_text.h>
 #include <kicad_string.h>
 #include <wx/utils.h>
@@ -65,7 +68,7 @@ static std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<PCB_TEXT*
 
     std::vector<BOARD_ITEM*> table;
 
-    // xmargin and ymargin are margins between the text and the the table lines.
+    // xmargin and ymargin are margins between the text and the table lines.
     //
     //  +--------------------------------+
     //  |            ^                   |

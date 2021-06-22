@@ -226,6 +226,7 @@ set( PCBNEW_MICROWAVE_SRCS
     )
 
 set( PCBNEW_DRC_SRCS
+    drc/drc_results_provider.cpp
     drc/drc_test_provider.cpp
     drc/drc_test_provider_annulus.cpp
     drc/drc_test_provider_disallow.cpp
@@ -443,6 +444,7 @@ add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pcbnew_wrap.cxx
     DEPENDS plotcontroller.h
     DEPENDS exporters/gendrill_Excellon_writer.h
     DEPENDS exporters/export_vrml.h
+    DEPENDS python/swig/pcb_item_containers.i
     DEPENDS python/swig/pcbnew.i
     DEPENDS python/swig/board.i
     DEPENDS python/swig/board_connected_item.i
@@ -450,16 +452,18 @@ add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pcbnew_wrap.cxx
     DEPENDS python/swig/board_item.i
     DEPENDS python/swig/board_item_container.i
     DEPENDS python/swig/connectivity.i
-    DEPENDS python/swig/dimension.i
+    DEPENDS python/swig/pcb_dimension.i
     DEPENDS python/swig/pcb_shape.i
     DEPENDS python/swig/fp_shape.i
-    DEPENDS python/swig/marker_pcb.i
+    DEPENDS python/swig/pcb_marker.i
     DEPENDS python/swig/pcb_target.i
     DEPENDS python/swig/pcb_plot_params.i
     DEPENDS python/swig/footprint.i
     DEPENDS python/swig/netinfo.i
     DEPENDS python/swig/pad.i
+    DEPENDS python/swig/pcb_group.i
     DEPENDS python/swig/pcb_text.i
+    DEPENDS python/swig/pcb_group.i
     DEPENDS python/swig/plugins.i
     DEPENDS python/swig/fp_text.i
     DEPENDS python/swig/track.i

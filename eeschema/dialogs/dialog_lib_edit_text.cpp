@@ -27,7 +27,6 @@
 #include <settings/settings_manager.h>
 #include <dialog_lib_edit_text.h>
 #include <symbol_editor/symbol_editor_settings.h>
-#include <pgm_base.h>
 #include <tools/symbol_editor_drawing_tools.h>
 
 
@@ -99,7 +98,7 @@ bool DIALOG_LIB_EDIT_TEXT::TransferDataToWindow()
     }
     else
     {
-        auto* cfg = Pgm().GetSettingsManager().GetAppSettings<SYMBOL_EDITOR_SETTINGS>();
+        SYMBOL_EDITOR_SETTINGS* cfg = m_parent->GetSettings();
         auto* tools = m_parent->GetToolManager()->GetTool<SYMBOL_EDITOR_DRAWING_TOOLS>();
 
         m_textSize.SetValue( Mils2iu( cfg->m_Defaults.text_size ) );

@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <wx/wx.h>
-
+#include <wx/msgdlg.h>
 #include <bitmaps.h>
 #include <geometry/shape_poly_set.h>
 #include <kiface_i.h>
@@ -144,7 +143,7 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     SetIcons( icon_bundle );
 
-    // Autosize the the row label column to be sure label are not truncated
+    // Autosize the row label column to be sure label are not truncated
     m_gridClassesValuesDisplay->SetRowLabelSize( wxGRID_AUTOSIZE );
     m_gridElectricalSpacingValues->SetRowLabelSize( wxGRID_AUTOSIZE );
 
@@ -171,7 +170,7 @@ PCB_CALCULATOR_FRAME::~PCB_CALCULATOR_FRAME()
     delete m_ccMultipliersBitmap;
     delete m_ccTolerancesBitmap;
 
-    // This needed for OSX: avoids furter OnDraw processing after this destructor and before
+    // This needed for OSX: avoids further OnDraw processing after this destructor and before
     // the native window is destroyed
     this->Freeze();
 }

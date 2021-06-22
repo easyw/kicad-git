@@ -21,13 +21,14 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#ifndef DIALOG_CHOOSE_COMPONENT_H
-#define DIALOG_CHOOSE_COMPONENT_H
+#ifndef DIALOG_CHOOSE_SYMBOL_H
+#define DIALOG_CHOOSE_SYMBOL_H
 
 #include "dialog_shim.h"
 #include <symbol_tree_model_adapter.h>
 #include <footprint_info.h>
 
+class wxCheckBox;
 class wxStaticBitmap;
 class wxTextCtrl;
 class wxStdDialogButtonSizer;
@@ -38,13 +39,13 @@ class wxPanel;
 class wxChoice;
 class wxButton;
 class wxTimer;
+class wxSplitterWindow;
 
 class LIB_TREE;
 class SYMBOL_PREVIEW_WIDGET;
 class FOOTPRINT_PREVIEW_WIDGET;
 class FOOTPRINT_SELECT_WIDGET;
 class LIB_ALIAS;
-class LIB_PART;
 class SCH_BASE_FRAME;
 class SCH_DRAW_PANEL;
 
@@ -53,8 +54,8 @@ class SCH_DRAW_PANEL;
  * Dialog class to select a symbol from the libraries. This is the master View class in a
  * Model-View-Adapter (mediated MVC) architecture. The other pieces are in:
  *
- * - Adapter: CMP_TREE_MODEL_ADAPTER in common/cmp_tree_model_adapter.h
- * - Model: CMP_TREE_NODE and descendants in common/cmp_tree_model.h
+ * - Adapter: SYM_TREE_MODEL_ADAPTER in common/cmp_tree_model_adapter.h
+ * - Model: SYM_TREE_NODE and descendants in common/cmp_tree_model.h
  *
  * Because everything is tied together in the adapter class, see that file
  * for thorough documentation. A simple example usage follows:
@@ -92,7 +93,7 @@ public:
      *
      * @param aParent   a SCH_BASE_FRAME parent window.
      * @param aTitle    Dialog title.
-     * @param aAdapter  SYMBOL_TREE_MODEL_ADAPTER::PTR. See CMP_TREE_MODEL_ADAPTER
+     * @param aAdapter  SYMBOL_TREE_MODEL_ADAPTER::PTR. See SYM_TREE_MODEL_ADAPTER
      *                  for documentation.
      * @param aDeMorganConvert  preferred deMorgan conversion.
      *                          (TODO: should happen in dialog)
@@ -112,7 +113,7 @@ public:
     /**
      * To be called after this dialog returns from ShowModal().
      *
-     * For multi-unit symbols, if the user selects the component itself rather than picking
+     * For multi-unit symbols, if the user selects the symbol itself rather than picking
      * an individual unit, 0 will be returned in aUnit.
      * Beware that this is an invalid unit number - this should be replaced with whatever
      * default is desired (usually 1).
@@ -130,7 +131,7 @@ public:
      *
      * @return The value of the dialog preference checkbox.
      */
-    bool GetUseAllUnits() const { return m_useUnits->GetValue(); }
+    bool GetUseAllUnits() const;
 
     /**
      * To be called after this dialog returns from ShowModal()
@@ -140,7 +141,7 @@ public:
      *
      * @return The value of the keep symbol preference checkbox.
      */
-    bool GetKeepSymbol() const { return m_keepSymbol->GetValue(); }
+    bool GetKeepSymbol() const;
 
     /**
      * Get a list of fields edited by the user.
@@ -225,4 +226,4 @@ protected:
     std::vector<std::pair<int, wxString>>  m_field_edits;
 };
 
-#endif /* DIALOG_CHOOSE_COMPONENT_H */
+#endif /* DIALOG_CHOOSE_SYMBOL_H */

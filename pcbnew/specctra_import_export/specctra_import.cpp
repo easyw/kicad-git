@@ -38,8 +38,9 @@
 #include <locale_io.h>
 #include <macros.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <connectivity/connectivity_data.h>
 #include <view/view.h>
 #include "specctra.h"
@@ -156,7 +157,7 @@ static wxPoint mapPt( const POINT& aPoint, UNIT_RES* aResolution )
 }
 
 
-TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
+PCB_TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
 {
     int layerNdx = findLayerName( aPath->layer_id );
 
@@ -167,7 +168,7 @@ TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
                 wxString::Format( _( "Session file uses invalid layer id \"%s\"" ), layerName ) );
     }
 
-    TRACK* track = new TRACK( m_sessionBoard );
+    PCB_TRACK* track = new PCB_TRACK( m_sessionBoard );
 
     track->SetStart( mapPt( aPath->points[aPointIndex+0], m_routeResolution ) );
     track->SetEnd( mapPt( aPath->points[aPointIndex+1], m_routeResolution ) );
@@ -179,15 +180,14 @@ TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
 }
 
 
-::VIA* SPECCTRA_DB::makeVIA( PADSTACK* aPadstack, const POINT& aPoint,
-            int aNetCode, int aViaDrillDefault )
+PCB_VIA* SPECCTRA_DB::makeVIA( PADSTACK* aPadstack, const POINT& aPoint, int aNetCode,
+                               int aViaDrillDefault )
 {
-    ::VIA*  via = 0;
-    SHAPE*  shape;
-
-    int     shapeCount = aPadstack->Length();
-    int     drill_diam_iu = -1;
-    int     copperLayerCount = m_sessionBoard->GetCopperLayerCount();
+    PCB_VIA* via = 0;
+    SHAPE*   shape;
+    int      shapeCount = aPadstack->Length();
+    int      drill_diam_iu = -1;
+    int      copperLayerCount = m_sessionBoard->GetCopperLayerCount();
 
 
     // The drill diameter is encoded in the padstack name if Pcbnew did the DSN export.
@@ -228,7 +228,7 @@ TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
         CIRCLE* circle = (CIRCLE*) shape->shape;
         int viaDiam = scale( circle->diameter, m_routeResolution );
 
-        via = new ::VIA( m_sessionBoard );
+        via = new PCB_VIA( m_sessionBoard );
         via->SetPosition( mapPt( aPoint, m_routeResolution ) );
         via->SetDrill( drill_diam_iu );
         via->SetViaType( VIATYPE::THROUGH );
@@ -246,7 +246,7 @@ TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
         CIRCLE* circle = (CIRCLE*) shape->shape;
         int viaDiam = scale( circle->diameter, m_routeResolution );
 
-        via = new ::VIA( m_sessionBoard );
+        via = new PCB_VIA( m_sessionBoard );
         via->SetPosition( mapPt( aPoint, m_routeResolution ) );
         via->SetDrill( drill_diam_iu );
         via->SetViaType( VIATYPE::THROUGH );
@@ -288,7 +288,7 @@ TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
                 viaDiam = scale( circle->diameter, m_routeResolution );
         }
 
-        via = new ::VIA( m_sessionBoard );
+        via = new PCB_VIA( m_sessionBoard );
         via->SetPosition( mapPt( aPoint, m_routeResolution ) );
         via->SetDrill( drill_diam_iu );
 
@@ -449,9 +449,10 @@ void SPECCTRA_DB::FromSESSION( BOARD* aBoard )
             else
             {
                 PATH*   path = (PATH*) wire->shape;
+
                 for( unsigned pt=0;  pt<path->points.size()-1;  ++pt )
                 {
-                    TRACK* track = makeTRACK( path, pt, netoutCode );
+                    PCB_TRACK* track = makeTRACK( path, pt, netoutCode );
                     aBoard->Add( track );
                 }
             }
@@ -505,7 +506,8 @@ void SPECCTRA_DB::FromSESSION( BOARD* aBoard )
 
             for( unsigned v=0;  v<wire_via->vertexes.size();  ++v )
             {
-                ::VIA* via = makeVIA( padstack, wire_via->vertexes[v], netCode, via_drill_default );
+                PCB_VIA* via = makeVIA( padstack, wire_via->vertexes[v], netCode,
+                                        via_drill_default );
                 aBoard->Add( via );
             }
         }

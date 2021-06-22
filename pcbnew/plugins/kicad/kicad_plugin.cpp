@@ -25,17 +25,20 @@
 #include <advanced_config.h>
 #include <base_units.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <confirm.h>
 #include <convert_basic_shapes_to_polygon.h> // for enum RECT_CHAMFER_POSITIONS definition
 #include <core/arraydim.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <footprint.h>
 #include <fp_shape.h>
 #include <kicad_string.h>
 #include <kiface_i.h>
 #include <locale_io.h>
 #include <macros.h>
+#include <pad.h>
+#include <pcb_group.h>
 #include <pcb_shape.h>
 #include <pcb_target.h>
 #include <pcb_text.h>
@@ -43,7 +46,7 @@
 #include <plugins/kicad/kicad_plugin.h>
 #include <plugins/kicad/pcb_parser.h>
 #include <trace_helpers.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/dir.h>
 #include <wx/log.h>
@@ -403,7 +406,7 @@ void PCB_IO::Format( const BOARD_ITEM* aItem, int aNestLevel ) const
     case PCB_DIM_CENTER_T:
     case PCB_DIM_ORTHOGONAL_T:
     case PCB_DIM_LEADER_T:
-        format( static_cast<const DIMENSION_BASE*>( aItem ), aNestLevel );
+        format( static_cast<const PCB_DIMENSION_BASE*>( aItem ), aNestLevel );
         break;
 
     case PCB_SHAPE_T:
@@ -441,7 +444,7 @@ void PCB_IO::Format( const BOARD_ITEM* aItem, int aNestLevel ) const
     case PCB_TRACE_T:
     case PCB_ARC_T:
     case PCB_VIA_T:
-        format( static_cast<const TRACK*>( aItem ), aNestLevel );
+        format( static_cast<const PCB_TRACK*>( aItem ), aNestLevel );
         break;
 
     case PCB_FP_ZONE_T:
@@ -647,8 +650,8 @@ void PCB_IO::format( const BOARD* aBoard, int aNestLevel ) const
                                                                   aBoard->Footprints().end() );
     std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_drawings( aBoard->Drawings().begin(),
                                                                 aBoard->Drawings().end() );
-    std::set<TRACK*, TRACK::cmp_tracks> sorted_tracks( aBoard->Tracks().begin(),
-                                                       aBoard->Tracks().end() );
+    std::set<PCB_TRACK*, PCB_TRACK::cmp_tracks> sorted_tracks( aBoard->Tracks().begin(),
+                                                               aBoard->Tracks().end() );
     std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_zones( aBoard->Zones().begin(),
                                                              aBoard->Zones().end() );
     std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_groups( aBoard->Groups().begin(),
@@ -672,7 +675,7 @@ void PCB_IO::format( const BOARD* aBoard, int aNestLevel ) const
     // Do not save PCB_MARKERs, they can be regenerated easily.
 
     // Save the tracks and vias.
-    for( TRACK* track : sorted_tracks )
+    for( PCB_TRACK* track : sorted_tracks )
         Format( track, aNestLevel );
 
     if( sorted_tracks.size() )
@@ -688,12 +691,12 @@ void PCB_IO::format( const BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( const DIMENSION_BASE* aDimension, int aNestLevel ) const
+void PCB_IO::format( const PCB_DIMENSION_BASE* aDimension, int aNestLevel ) const
 {
-    const ALIGNED_DIMENSION*    aligned = dynamic_cast<const ALIGNED_DIMENSION*>( aDimension );
-    const ORTHOGONAL_DIMENSION* ortho   = dynamic_cast<const ORTHOGONAL_DIMENSION*>( aDimension );
-    const CENTER_DIMENSION*     center  = dynamic_cast<const CENTER_DIMENSION*>( aDimension );
-    const LEADER*               leader  = dynamic_cast<const LEADER*>( aDimension );
+    const PCB_DIM_ALIGNED*    aligned = dynamic_cast<const PCB_DIM_ALIGNED*>( aDimension );
+    const PCB_DIM_ORTHOGONAL* ortho   = dynamic_cast<const PCB_DIM_ORTHOGONAL*>( aDimension );
+    const PCB_DIM_CENTER*     center  = dynamic_cast<const PCB_DIM_CENTER*>( aDimension );
+    const PCB_DIM_LEADER*     leader  = dynamic_cast<const PCB_DIM_LEADER*>( aDimension );
 
     m_out->Print( aNestLevel, "(dimension" );
 
@@ -1756,14 +1759,14 @@ void PCB_IO::format( const FP_TEXT* aText, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( const TRACK* aTrack, int aNestLevel ) const
+void PCB_IO::format( const PCB_TRACK* aTrack, int aNestLevel ) const
 {
     if( aTrack->Type() == PCB_VIA_T )
     {
         PCB_LAYER_ID  layer1, layer2;
 
-        const VIA*  via = static_cast<const VIA*>( aTrack );
-        BOARD*      board = (BOARD*) via->GetParent();
+        const PCB_VIA* via = static_cast<const PCB_VIA*>( aTrack );
+        BOARD*         board = (BOARD*) via->GetParent();
 
         wxCHECK_RET( board != nullptr, wxT( "Via " ) +
                      via->GetSelectMenuText( EDA_UNITS::MILLIMETRES ) + wxT( " has no parent." ) );
@@ -1823,8 +1826,8 @@ void PCB_IO::format( const TRACK* aTrack, int aNestLevel ) const
     }
     else if( aTrack->Type() == PCB_ARC_T )
     {
-        const ARC* arc = static_cast<const ARC*>( aTrack );
-        std::string locked = arc->IsLocked() ? " locked" : "";
+        const PCB_ARC* arc = static_cast<const PCB_ARC*>( aTrack );
+        std::string    locked = arc->IsLocked() ? " locked" : "";
 
         m_out->Print( aNestLevel, "(arc%s (start %s) (mid %s) (end %s) (width %s)",
                       locked.c_str(),
@@ -2404,21 +2407,8 @@ void PCB_IO::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFoot
     wxFileName fn( aLibraryPath, aFootprint->GetFPID().GetLibItemName(),
                    KiCadFootprintFileExtension );
 
-#ifndef __WINDOWS__
     // Write through symlinks, don't replace them
-    if( fn.Exists( wxFILE_EXISTS_SYMLINK ) )
-    {
-        char buffer[ PATH_MAX + 1 ];
-        ssize_t pathLen = readlink( TO_UTF8( fn.GetFullPath() ), buffer, PATH_MAX );
-
-        if( pathLen > 0 )
-        {
-            buffer[ pathLen ] = '\0';
-            fn.Assign( fn.GetPath() + wxT( "/" ) + wxString::FromUTF8( buffer ) );
-            fn.Normalize();
-        }
-    }
-#endif
+    WX_FILENAME::ResolvePossibleSymlinks( fn );
 
     if( !fn.IsOk() )
     {

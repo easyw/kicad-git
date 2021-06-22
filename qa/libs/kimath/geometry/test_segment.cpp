@@ -340,7 +340,7 @@ static const std::vector<SEG_VECTOR_DISTANCE_CASE> seg_vec_dist_cases = {
         "At end (not collinear)",
         { { 0, 0 }, { 1000, 0 } },
         { 1000 + 200, 200 },
-        282, // sqrt(200^2 + 200^2), rounded down
+        283, // sqrt(200^2 + 200^2) = 282.8, rounded to nearest
     },
 };
 // clang-format on
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE( SegSegCollision )
 
 
 /**
- * Struct to hold general cases for collinearity, paralellism and perpendicularity
+ * Struct to hold general cases for collinearity, parallelism and perpendicularity
  */
 struct SEG_SEG_BOOLEAN_CASE
 {
@@ -491,7 +491,7 @@ BOOST_AUTO_TEST_CASE( SegSegCollinear )
 
 // clang-format off
 /**
- * Test cases for paralellism
+ * Test cases for parallelism
  */
 static const std::vector<SEG_SEG_BOOLEAN_CASE> seg_vec_parallel_cases = {
     {

@@ -28,6 +28,7 @@
 #include <3d_viewer/eda_3d_viewer.h>
 #include <fp_lib_table.h>
 #include <bitmaps.h>
+#include <confirm.h>
 #include <trace_helpers.h>
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
@@ -40,6 +41,7 @@
 #include <convert_to_biu.h>
 #include <invoke_pcb_dialog.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 #include <connectivity/connectivity_data.h>
@@ -90,6 +92,7 @@
 #include <netlist_reader/board_netlist_updater.h>
 #include <netlist_reader/netlist_reader.h>
 #include <netlist_reader/pcb_netlist.h>
+#include <wx/socket.h>
 #include <wx/wupdlock.h>
 #include <dialog_drc.h>     // for DIALOG_DRC_WINDOW_NAME definition
 #include <ratsnest/ratsnest_view_item.h>
@@ -100,6 +103,8 @@
 
 #include <action_plugin.h>
 #include "../scripting/python_scripting.h"
+
+#include <wx/filedlg.h>
 
 
 using namespace std::placeholders;
@@ -816,7 +821,7 @@ bool PCB_EDIT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
     if( IsContentModified() )
     {
         wxFileName fileName = GetBoard()->GetFileName();
-        wxString msg = _( "Save changes to \"%s\" before closing?" );
+        wxString msg = _( "Save changes to '%s' before closing?" );
 
         if( !HandleUnsavedChanges( this, wxString::Format( msg, fileName.GetFullName() ),
                                    [&]() -> bool
@@ -835,7 +840,7 @@ bool PCB_EDIT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
     if( open_dlg )
         open_dlg->Close( true );
 
-    return true;
+    return PCB_BASE_EDIT_FRAME::canCloseWindow( aEvent );
 }
 
 
@@ -867,7 +872,7 @@ void PCB_EDIT_FRAME::doCloseWindow()
     // Remove the auto save file on a normal close of Pcbnew.
     if( fn.FileExists() && !wxRemoveFile( fn.GetFullPath() ) )
     {
-        wxString msg = wxString::Format( _( "The auto save file \"%s\" could not be removed!" ),
+        wxString msg = wxString::Format( _( "The auto save file '%s' could not be removed!" ),
                                          fn.GetFullPath() );
         wxMessageBox( msg, Pgm().App().GetAppName(), wxOK | wxICON_ERROR, this );
     }
@@ -877,7 +882,7 @@ void PCB_EDIT_FRAME::doCloseWindow()
 
     // Do not show the layer manager during closing to avoid flicker
     // on some platforms (Windows) that generate useless redraw of items in
-    // the Layer Manger
+    // the Layer Manager
     if( m_show_layer_manager_tools )
         m_auimgr.GetPane( "LayersManager" ).Show( false );
 
@@ -931,11 +936,11 @@ void PCB_EDIT_FRAME::ShowBoardSetupDialog( const wxString& aInitialPage )
             GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
                     [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
                     {
-                        TRACK* track = dynamic_cast<TRACK*>( aItem );
-                        PAD*   pad = dynamic_cast<PAD*>( aItem );
+                        PCB_TRACK* track = dynamic_cast<PCB_TRACK*>( aItem );
+                        PAD*       pad = dynamic_cast<PAD*>( aItem );
 
-                        // TRACK is the base class of VIA and ARC so we don't need to
-                        // check them independently
+                        // PCB_TRACK is the base class of PCB_VIA and PCB_ARC so we don't need
+                        // to check them independently
 
                         return ( track && opts.m_ShowTrackClearanceMode )
                                 || ( pad && opts.m_DisplayPadClearance );
@@ -1026,7 +1031,7 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
     GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
             [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
             {
-                if( VIA* via = dynamic_cast<VIA*>( aItem ) )
+                if( PCB_VIA* via = dynamic_cast<PCB_VIA*>( aItem ) )
                 {
                     // Vias on a restricted layer set must be redrawn when the active layer
                     // is changed
@@ -1054,7 +1059,7 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
                         return true;
                     }
                 }
-                else if( TRACK* track = dynamic_cast<TRACK*>( aItem ) )
+                else if( PCB_TRACK* track = dynamic_cast<PCB_TRACK*>( aItem ) )
                 {
                     // Clearances could be layer-dependent so redraw them when the active layer
                     // is changed
@@ -1238,11 +1243,22 @@ void PCB_EDIT_FRAME::UpdateTitle()
     else
         unsaved = true;
 
-    SetTitle( wxString::Format( wxT( "%s%s %s%s\u2014 " ) + _( "PCB Editor" ),
-                                IsContentModified() ? "*" : "",
-                                fn.GetName(),
-                                readOnly ? _( "[Read Only]" ) + wxS( " " ) : "",
-                                unsaved ? _( "[Unsaved]" ) + wxS( " " ) : "" ) );
+    wxString title;
+
+    if( IsContentModified() )
+        title = wxT( "*" );
+
+    title += fn.GetName();
+
+    if( readOnly )
+        title += wxS( " " ) + _( "[Read Only]" );
+
+    if( unsaved )
+        title += wxS( " " ) + _( "[Unsaved]" );
+
+    title += wxT( " \u2014 " ) + _( "PCB Editor" );
+
+    SetTitle( title );
 }
 
 
@@ -1438,7 +1454,7 @@ void PCB_EDIT_FRAME::RunEeschema()
         }
         else
         {
-            msg.Printf( _( "Schematic file \"%s\" not found." ), schematic.GetFullPath() );
+            msg.Printf( _( "Schematic file '%s' not found." ), schematic.GetFullPath() );
             wxMessageBox( msg, _( "KiCad Error" ), wxOK | wxICON_ERROR, this );
             return;
         }

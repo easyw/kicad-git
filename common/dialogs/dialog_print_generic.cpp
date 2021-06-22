@@ -24,6 +24,9 @@
 #include <printout.h>
 #include <pgm_base.h>
 
+#include <wx/print.h>
+#include <wx/printdlg.h>
+
 // Define min and max reasonable values for print scale
 static constexpr double MIN_SCALE = 0.01;
 static constexpr double MAX_SCALE = 100.0;

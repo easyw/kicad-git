@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@
 
 #include <base_units.h>
 #include <bitmaps.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <connection_graph.h>
 #include <dialogs/dialog_schematic_find.h>
@@ -80,6 +80,7 @@
 #include <wx/cmdline.h>
 #include <wx/app.h>
 #include <wx/filedlg.h>
+#include <wx/socket.h>
 
 #include <gal/graphics_abstraction_layer.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
@@ -116,7 +117,7 @@ SEARCH_STACK* PROJECT::SchSearchS()
 
         try
         {
-            PART_LIBS::LibNamesAndPaths( this, false, &libDir );
+            SYMBOL_LIBS::LibNamesAndPaths( this, false, &libDir );
         }
         catch( const IO_ERROR& )
         {
@@ -144,18 +145,18 @@ SEARCH_STACK* PROJECT::SchSearchS()
 }
 
 
-PART_LIBS* PROJECT::SchLibs()
+SYMBOL_LIBS* PROJECT::SchLibs()
 {
-    PART_LIBS* libs = (PART_LIBS*) GetElem( PROJECT::ELEM_SCH_PART_LIBS );
+    SYMBOL_LIBS* libs = (SYMBOL_LIBS*) GetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS );
 
-    wxASSERT( !libs || libs->Type() == PART_LIBS_T );
+    wxASSERT( !libs || libs->Type() == SYMBOL_LIBS_T );
 
     if( !libs )
     {
-        libs = new PART_LIBS();
+        libs = new SYMBOL_LIBS();
 
-        // Make PROJECT the new PART_LIBS owner.
-        SetElem( PROJECT::ELEM_SCH_PART_LIBS, libs );
+        // Make PROJECT the new SYMBOL_LIBS owner.
+        SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, libs );
 
         try
         {
@@ -503,7 +504,7 @@ void SCH_EDIT_FRAME::SetSheetNumberAndCount()
     int              sheet_number      = 1;
     const KIID_PATH& current_sheetpath = GetCurrentSheet().Path();
 
-    // @todo Remove all psuedo page number system is left over from prior to real page number
+    // @todo Remove all pseudo page number system is left over from prior to real page number
     //       implementation.
     for( const SCH_SHEET_PATH& sheet : Schematic().GetSheets() )
     {
@@ -957,7 +958,7 @@ void SCH_EDIT_FRAME::NewProject()
         if( create_me.FileExists() )
         {
             wxString msg;
-            msg.Printf( _( "Schematic file \"%s\" already exists." ), create_me.GetFullName() );
+            msg.Printf( _( "Schematic file '%s' already exists." ), create_me.GetFullName() );
             DisplayError( this, msg );
             return ;
         }
@@ -1157,9 +1158,9 @@ void SCH_EDIT_FRAME::AddItemToScreenAndUndoList( SCH_SCREEN* aScreen, SCH_ITEM* 
 {
     wxCHECK_RET( aItem != NULL, wxT( "Cannot add null item to list." ) );
 
-    SCH_SHEET*     parentSheet = nullptr;
-    SCH_COMPONENT* parentSymbol = nullptr;
-    SCH_ITEM*      undoItem = aItem;
+    SCH_SHEET*  parentSheet = nullptr;
+    SCH_SYMBOL* parentSymbol = nullptr;
+    SCH_ITEM*   undoItem = aItem;
 
     if( aItem->Type() == SCH_SHEET_PIN_T )
     {
@@ -1173,9 +1174,9 @@ void SCH_EDIT_FRAME::AddItemToScreenAndUndoList( SCH_SCREEN* aScreen, SCH_ITEM* 
 
     else if( aItem->Type() == SCH_FIELD_T )
     {
-        parentSymbol = (SCH_COMPONENT*) aItem->GetParent();
+        parentSymbol = (SCH_SYMBOL*) aItem->GetParent();
 
-        wxCHECK_RET( parentSymbol && parentSymbol->Type() == SCH_COMPONENT_T,
+        wxCHECK_RET( parentSymbol && parentSymbol->Type() == SCH_SYMBOL_T,
                      wxT( "Cannot place field in invalid schematic symbol." ) );
 
         undoItem = parentSymbol;
@@ -1248,11 +1249,7 @@ void SCH_EDIT_FRAME::UpdateTitle()
 {
     wxString title;
 
-    if( GetScreen()->GetFileName().IsEmpty() )
-    {
-        title = _( "[no file]" ) + wxT( " \u2014 " ) + _( "Schematic Editor" );
-    }
-    else
+    if( !GetScreen()->GetFileName().IsEmpty() )
     {
         wxFileName fn( Prj().AbsolutePath( GetScreen()->GetFileName() ) );
         bool       readOnly = false;
@@ -1263,13 +1260,24 @@ void SCH_EDIT_FRAME::UpdateTitle()
         else
             unsaved = true;
 
-        title.Printf( wxT( "%s%s [%s] %s%s\u2014 " ) + _( "Schematic Editor" ),
-                      IsContentModified() ? "*" : "",
-                      fn.GetName(),
-                      GetCurrentSheet().PathHumanReadable( false ),
-                      readOnly ? _( "[Read Only]" ) + wxS( " " ) : "",
-                      unsaved ? _( "[Unsaved]" ) + wxS( " " ) : "" );
+        if( IsContentModified() )
+            title = wxT( "*" );
+
+        title += fn.GetName();
+        title += wxString::Format( wxT( " [%s]" ), GetCurrentSheet().PathHumanReadable( false ) );
+
+        if( readOnly )
+            title += wxS( " " ) + _( "[Read Only]" );
+
+        if( unsaved )
+            title += wxS( " " ) +  _( "[Unsaved]" );
     }
+    else
+    {
+        title = _( "[no schematic loaded]" );
+    }
+
+    title += wxT( " \u2014 " ) + _( "Schematic Editor" );
 
     SetTitle( title );
 }
@@ -1482,10 +1490,10 @@ const BOX2I SCH_EDIT_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) const
         {
             if( item != dsAsItem ) // Ignore the drawing-sheet itself
             {
-                if( item->Type() == SCH_COMPONENT_T )
+                if( item->Type() == SCH_SYMBOL_T )
                 {
                     // For symbols we need to get the bounding box without invisible text
-                    SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+                    SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
                     bBoxItems.Merge( symbol->GetBoundingBox( false ) );
                 }
                 else
@@ -1605,7 +1613,7 @@ void SCH_EDIT_FRAME::onSize( wxSizeEvent& aEvent )
 }
 
 
-void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
+void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_SYMBOL& aSymbol )
 {
     wxString msg;
     bool appendToUndo = false;
@@ -1616,7 +1624,7 @@ void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
 
     wxCHECK( selectionTool, /* void */ );
 
-    EE_SELECTION& selection = selectionTool->RequestSelection( EE_COLLECTOR::ComponentsOnly );
+    EE_SELECTION& selection = selectionTool->RequestSelection( EE_COLLECTOR::SymbolsOnly );
 
     if( selection.Empty() )
         return;
@@ -1629,12 +1637,12 @@ void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
     // only works for a single symbol selection.
     for( EDA_ITEM* item : selection )
     {
-        SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( item );
+        SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( item );
 
         wxCHECK( symbol, /* void */ );
 
-        // This needs to be done before the LIB_PART is changed to prevent stale library symbols in
-        // the schematic file.
+        // This needs to be done before the LIB_SYMBOL is changed to prevent stale library
+        // symbols in the schematic file.
         currentScreen->Remove( symbol );
 
         if( !symbol->IsNew() )

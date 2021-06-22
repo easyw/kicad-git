@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 Andrew Lutsenko, anlutsenko at gmail dot com
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -32,6 +32,9 @@
 #include <widgets/grid_icon_text_helpers.h>
 #include <widgets/paged_dialog.h>
 #include <widgets/wx_grid.h>
+
+#include <wx/treebook.h>
+
 
 #define GRID_CELL_MARGIN 4
 
@@ -232,7 +235,7 @@ bool PANEL_PCBNEW_ACTION_PLUGINS::TransferDataToWindow()
 
 void PANEL_PCBNEW_ACTION_PLUGINS::OnOpenDirectoryButtonClick( wxCommandEvent& event )
 {
-    m_frame->GetToolManager()->RunAction( PCB_ACTIONS::pluginsShowFolder );
+    m_frame->GetToolManager()->RunAction( PCB_ACTIONS::pluginsShowFolder, true );
 }
 
 void PANEL_PCBNEW_ACTION_PLUGINS::OnShowErrorsButtonClick( wxCommandEvent& event )

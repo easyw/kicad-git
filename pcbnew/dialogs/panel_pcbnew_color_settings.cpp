@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Jon Evans <jon@craftyjon.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,14 +26,13 @@
 #include <panel_pcbnew_color_settings.h>
 #include <pcbnew_settings.h>
 #include <pcb_edit_frame.h>
-#include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <footprint_preview_panel.h>
 #include <widgets/appearance_controls.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 #include <pcb_painter.h>
-#include <track.h>
 #include <plugins/kicad/kicad_plugin.h>
+#include <wx/treebook.h>
 
 
 std::string g_previewBoard =
@@ -380,9 +379,9 @@ PANEL_PCBNEW_COLOR_SETTINGS::PANEL_PCBNEW_COLOR_SETTINGS( PCB_EDIT_FRAME* aFrame
 {
     m_colorNamespace = "board";
 
-    SETTINGS_MANAGER& mgr          = Pgm().GetSettingsManager();
-    PCBNEW_SETTINGS*  app_settings = mgr.GetAppSettings<PCBNEW_SETTINGS>();
-    COLOR_SETTINGS*   current      = mgr.GetColorSettings( app_settings->m_ColorTheme );
+    SETTINGS_MANAGER* mgr          = m_frame->GetSettingsManager();
+    PCBNEW_SETTINGS*  app_settings = mgr->GetAppSettings<PCBNEW_SETTINGS>();
+    COLOR_SETTINGS*   current      = mgr->GetColorSettings( app_settings->m_ColorTheme );
 
     // Saved theme doesn't exist?  Reset to default
     if( current->GetFilename() != app_settings->m_ColorTheme )
@@ -434,8 +433,8 @@ PANEL_PCBNEW_COLOR_SETTINGS::~PANEL_PCBNEW_COLOR_SETTINGS()
 
 bool PANEL_PCBNEW_COLOR_SETTINGS::TransferDataFromWindow()
 {
-    SETTINGS_MANAGER& settingsMgr = Pgm().GetSettingsManager();
-    PCBNEW_SETTINGS* app_settings = settingsMgr.GetAppSettings<PCBNEW_SETTINGS>();
+    SETTINGS_MANAGER* settingsMgr = m_frame->GetSettingsManager();
+    PCBNEW_SETTINGS* app_settings = settingsMgr->GetAppSettings<PCBNEW_SETTINGS>();
     app_settings->m_ColorTheme = m_currentSettings->GetFilename();
 
     return true;

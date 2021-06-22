@@ -72,11 +72,13 @@
 #include <zones.h>
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <pcb_text.h>
 #include <zone.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <pcb_shape.h>
 #include <pcb_target.h>
 #include <fp_shape.h>
@@ -1067,13 +1069,13 @@ void LEGACY_PLUGIN::loadSETUP()
             BIU x = biuParse( line + SZ( "PadSize" ), &data );
             BIU y = biuParse( data );
 
-            bds.m_Pad_Master.SetSize( wxSize( x, y ) );
+            bds.m_Pad_Master->SetSize( wxSize( x, y ) );
         }
 
         else if( TESTLINE( "PadDrill" ) )
         {
             BIU tmp = biuParse( line + SZ( "PadDrill" ) );
-            bds.m_Pad_Master.SetDrillSize( wxSize( tmp, tmp ) );
+            bds.m_Pad_Master->SetDrillSize( wxSize( tmp, tmp ) );
         }
 
         else if( TESTLINE( "Pad2MaskClearance" ) )
@@ -1539,8 +1541,10 @@ void LEGACY_PLUGIN::loadPAD( FOOTPRINT* aFootprint )
             ReadDelimitedText( buf, data, sizeof(buf) );
 
             if( m_board )
+            {
                 wxASSERT( m_board->FindNet( getNetCode( netcode ) )->GetNetname()
-                          == FROM_UTF8( StrPurge( buf ) ) );
+                          == ConvertToNewOverbarNotation( FROM_UTF8( StrPurge( buf ) ) ) );
+            }
         }
 
         else if( TESTLINE( "Po" ) )         // (Po)sition
@@ -1781,7 +1785,7 @@ void LEGACY_PLUGIN::loadMODULE_TEXT( FP_TEXT* aText )
     BIU     thickn  = biuParse( data, &data );
 
     // read the quoted text before the first call to strtok() which introduces
-    // NULs into the string and chops it into mutliple C strings, something
+    // NULs into the string and chops it into multiple C strings, something
     // ReadDelimitedText() cannot traverse.
 
     // convert the "quoted, escaped, UTF8, text" to a wxString, find it by skipping
@@ -1789,6 +1793,7 @@ void LEGACY_PLUGIN::loadMODULE_TEXT( FP_TEXT* aText )
     txt_end = data + ReadDelimitedText( &m_field, data );
     m_field.Replace( "%V", "${VALUE}" );
     m_field.Replace( "%R", "${REFERENCE}" );
+    m_field = ConvertToNewOverbarNotation( m_field );
     aText->SetText( m_field );
 
     // after switching to strtok, there's no easy coming back because of the
@@ -1971,8 +1976,8 @@ void LEGACY_PLUGIN::loadPCB_LINE()
                     const_cast<KIID&>( dseg->m_Uuid ) = KIID( data );
                     break;
                 case 4:
-                    STATUS_FLAGS state;
-                    state = static_cast<STATUS_FLAGS>( hexParse( data ) );
+                    EDA_ITEM_FLAGS state;
+                    state = static_cast<EDA_ITEM_FLAGS>( hexParse( data ) );
                     dseg->SetState( state, true );
                     break;
 
@@ -2037,7 +2042,10 @@ void LEGACY_PLUGIN::loadNETINFO_ITEM()
             ReadDelimitedText( buf, data, sizeof(buf) );
 
             if( net == NULL )
-                net = new NETINFO_ITEM( m_board, FROM_UTF8( buf ), netCode );
+            {
+                net = new NETINFO_ITEM( m_board, ConvertToNewOverbarNotation( FROM_UTF8( buf ) ),
+                                        netCode );
+            }
             else
             {
                 THROW_IO_ERROR( "Two net definitions in  '$EQUIPOT' block" );
@@ -2112,7 +2120,7 @@ void LEGACY_PLUGIN::loadPCB_TEXT()
         if( TESTLINE( "Te" ) )          // Text line (or first line for multi line texts)
         {
             ReadDelimitedText( text, line + SZ( "Te" ), sizeof(text) );
-            pcbtxt->SetText( FROM_UTF8( text ) );
+            pcbtxt->SetText( ConvertToNewOverbarNotation( FROM_UTF8( text ) ) );
         }
 
         else if( TESTLINE( "nl" ) )     // next line of the current text
@@ -2247,7 +2255,7 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
         char*   uuid           = strtok_r( (char*) data, delims, (char**) &data );
         int     flags_int      = intParse( data, (const char**) &data );
 
-        STATUS_FLAGS flags = static_cast<STATUS_FLAGS>( flags_int );
+        EDA_ITEM_FLAGS flags = static_cast<EDA_ITEM_FLAGS>( flags_int );
 
         if( aStructType == PCB_TRACE_T )
         {
@@ -2263,13 +2271,13 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
             continue;
         }
 
-        TRACK* newTrack;
+        PCB_TRACK* newTrack;
 
         switch( makeType )
         {
         default:
-        case PCB_TRACE_T: newTrack = new TRACK( m_board ); break;
-        case PCB_VIA_T:   newTrack = new VIA( m_board );   break;
+        case PCB_TRACE_T: newTrack = new PCB_TRACK( m_board ); break;
+        case PCB_VIA_T:   newTrack = new PCB_VIA( m_board );   break;
         }
 
         const_cast<KIID&>( newTrack->m_Uuid ) = KIID( uuid );
@@ -2280,7 +2288,7 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
 
         if( makeType == PCB_VIA_T )     // Ensure layers are OK when possible:
         {
-            VIA *via = static_cast<VIA*>( newTrack );
+            PCB_VIA *via = static_cast<PCB_VIA*>( newTrack );
             via->SetViaType( viatype );
 
             if( drill < 0 )
@@ -2350,7 +2358,7 @@ void LEGACY_PLUGIN::loadNETCLASS()
         {
             // e.g. "AddNet "V3.3D"\n"
             ReadDelimitedText( buf, line + SZ( "AddNet" ), sizeof(buf) );
-            netname = FROM_UTF8( buf );
+            netname = ConvertToNewOverbarNotation( FROM_UTF8( buf ) );
             nc->Add( netname );
         }
 
@@ -2718,7 +2726,7 @@ void LEGACY_PLUGIN::loadZONE_CONTAINER()
 
 void LEGACY_PLUGIN::loadDIMENSION()
 {
-    std::unique_ptr<ALIGNED_DIMENSION> dim = std::make_unique<ALIGNED_DIMENSION>( m_board );
+    std::unique_ptr<PCB_DIM_ALIGNED> dim = std::make_unique<PCB_DIM_ALIGNED>( m_board );
 
     char*   line;
 

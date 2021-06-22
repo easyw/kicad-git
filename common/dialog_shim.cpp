@@ -23,7 +23,6 @@
  */
 
 #include <dialog_shim.h>
-#include <eda_rect.h>
 #include <kiway_player.h>
 #include <pgm_base.h>
 #include <tool/tool_manager.h>
@@ -35,6 +34,7 @@
 #include <wx/event.h>
 #include <wx/grid.h>
 #include <wx/bmpbuttn.h>
+#include <wx/textctrl.h>
 
 #include <algorithm>
 
@@ -181,7 +181,7 @@ int DIALOG_SHIM::vertPixelsFromDU( int y ) const
 #include <hashtables.h>
 #include <typeinfo>
 
-static RECT_MAP class_map;
+static std::unordered_map<std::string, wxRect> class_map;
 
 
 void DIALOG_SHIM::SetPosition( const wxPoint& aNewPosition )
@@ -201,13 +201,13 @@ void DIALOG_SHIM::SetPosition( const wxPoint& aNewPosition )
         hash_key = typeid(*this).name();
     }
 
-    RECT_MAP::iterator it = class_map.find( hash_key );
+    std::unordered_map<std::string, wxRect>::iterator it = class_map.find( hash_key );
 
     if( it == class_map.end() )
         return;
 
-    EDA_RECT rect = it->second;
-    rect.SetOrigin( aNewPosition );
+    wxRect rect = it->second;
+    rect.SetPosition( aNewPosition );
 
     class_map[ hash_key ] = rect;
 }
@@ -238,7 +238,7 @@ bool DIALOG_SHIM::Show( bool show )
         ret = wxDialog::Show( show );
 
         // classname is key, returns a zeroed out default EDA_RECT if none existed before.
-        EDA_RECT savedDialogRect = class_map[ hash_key ];
+        wxRect savedDialogRect = class_map[ hash_key ];
 
         if( savedDialogRect.GetSize().x != 0 && savedDialogRect.GetSize().y != 0 )
         {
@@ -265,7 +265,7 @@ bool DIALOG_SHIM::Show( bool show )
     else
     {
         // Save the dialog's position & size before hiding, using classname as key
-        class_map[ hash_key ] = EDA_RECT( wxDialog::GetPosition(), wxDialog::GetSize() );
+        class_map[ hash_key ] = wxRect( wxDialog::GetPosition(), wxDialog::GetSize() );
 
 #ifdef __WXMAC__
         if ( m_eventLoop )
@@ -293,13 +293,13 @@ void DIALOG_SHIM::resetSize()
         hash_key = typeid(*this).name();
     }
 
-    RECT_MAP::iterator it = class_map.find( hash_key );
+    std::unordered_map<std::string, wxRect>::iterator it = class_map.find( hash_key );
 
     if( it == class_map.end() )
         return;
 
-    EDA_RECT rect = it->second;
-    rect.SetSize( 0, 0 );
+    wxRect rect = it->second;
+    rect.SetSize( wxSize( 0, 0 ) );
     class_map[ hash_key ] = rect;
 }
 
@@ -320,9 +320,11 @@ static void selectAllInTextCtrls( wxWindowList& children )
     {
         if( wxTextCtrl* childTextCtrl = dynamic_cast<wxTextCtrl*>( child ) )
         {
+#if defined( __WXMAC__ ) || defined( __WXMSW__ )
             // Respect an existing selection
             if( childTextCtrl->GetStringSelection().IsEmpty() )
                 childTextCtrl->SelectAll();
+#endif
         }
 #ifdef __WXMAC__
         // Temp hack for square (looking) buttons on OSX.  Will likely be made redundant

@@ -330,7 +330,7 @@ public:
     void Move( const wxPoint& aMoveVector ) override;
     void MirrorHorizontally( int aCenter ) override;
     void MirrorVertically( int aCenter ) override;
-    void Rotate( wxPoint aCenter ) override;
+    void Rotate( const wxPoint& aCenter ) override;
 
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override;
 
@@ -357,7 +357,7 @@ public:
         return ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_WIRE )
                 || ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_BUS )
                 || ( aItem->Type() == SCH_NO_CONNECT_T )
-                || ( aItem->Type() == SCH_COMPONENT_T );
+                || ( aItem->Type() == SCH_SYMBOL_T );
     }
 
     std::vector<wxPoint> GetConnectionPoints() const override;

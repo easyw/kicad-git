@@ -41,6 +41,7 @@
 #include <sch_painter.h>
 #include <default_values.h>
 #include <wx/debug.h>
+#include <wx/log.h>
 #include <dialogs/html_messagebox.h>
 #include <project/project_file.h>
 #include <project/net_settings.h>
@@ -283,7 +284,7 @@ void SCH_TEXT::MirrorVertically( int aCenter )
 }
 
 
-void SCH_TEXT::Rotate( wxPoint aCenter )
+void SCH_TEXT::Rotate( const wxPoint& aCenter )
 {
     wxPoint pt = GetTextPos();
     RotatePoint( &pt, aCenter, 900 );
@@ -318,7 +319,7 @@ void SCH_TEXT::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
     m_spin_style = aSpinStyle;
 
     // Assume "Right" and Left" mean which side of the anchor the text will be on
-    // Thus we want to left justify text up agaisnt the anchor if we are on the right
+    // Thus we want to left justify text up against the anchor if we are on the right
     switch( aSpinStyle )
     {
     default:
@@ -465,7 +466,6 @@ bool SCH_TEXT::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
             }
 
             break;
-
 
         case BUS_START_END:
             m_connectionType = CONNECTION_TYPE::BUS;
@@ -618,7 +618,11 @@ wxString SCH_TEXT::GetShownText( int aDepth ) const
     bool     processTextVars = false;
     wxString text = EDA_TEXT::GetShownText( &processTextVars );
 
-    if( processTextVars )
+    if( text == "~" )   // Legacy placeholder for empty string
+    {
+        text = "";
+    }
+    else if( processTextVars )
     {
         wxCHECK_MSG( Schematic(), wxEmptyString, "No parent SCHEMATIC set for SCH_TEXT!" );
 
@@ -1047,7 +1051,7 @@ void SCH_GLOBALLABEL::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
 }
 
 
-void SCH_GLOBALLABEL::Rotate( wxPoint aCenter )
+void SCH_GLOBALLABEL::Rotate( const wxPoint& aCenter )
 {
     wxPoint pt = GetTextPos();
     RotatePoint( &pt, aCenter, 900 );

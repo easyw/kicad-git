@@ -29,7 +29,7 @@
 #include <sch_edit_frame.h>
 #include <sch_reference_list.h>
 #include <kicad_string.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <symbol_lib_table.h>
 
 #include <netlist.h>
@@ -50,7 +50,7 @@ bool NETLIST_EXPORTER_ORCADPCB2::WriteNetlist( const wxString& aOutFileName,
     if( ( f = wxFopen( aOutFileName, wxT( "wt" ) ) ) == NULL )
     {
         wxString msg;
-        msg.Printf( _( "Failed to create file \"%s\"" ), aOutFileName );
+        msg.Printf( _( "Failed to create file '%s'." ), aOutFileName );
         DisplayError( NULL, msg );
         return false;
     }
@@ -69,18 +69,20 @@ bool NETLIST_EXPORTER_ORCADPCB2::WriteNetlist( const wxString& aOutFileName,
     {
         SCH_SHEET_PATH sheet = sheetList[i];
 
-        // Process component attributes
-        for( auto item : sheet.LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        // Process symbol attributes
+        for( auto item : sheet.LastScreen()->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_COMPONENT* symbol = findNextSymbol( item, &sheet );
+            SCH_SYMBOL* symbol = findNextSymbol( item, &sheet );
 
             if( !symbol )
                 continue;
 
             CreatePinList( symbol, &sheet, true );
 
-            if( symbol->GetPartRef() && symbol->GetPartRef()->GetFPFilters().GetCount() != 0  )
-                cmpList.push_back( SCH_REFERENCE( symbol, symbol->GetPartRef().get(), sheet ) );
+            if( symbol->GetLibSymbolRef()
+              && symbol->GetLibSymbolRef()->GetFPFilters().GetCount() != 0  )
+                cmpList.push_back( SCH_REFERENCE( symbol, symbol->GetLibSymbolRef().get(),
+                                                  sheet ) );
 
             footprint = symbol->GetFootprint( &sheet, true );
             footprint.Replace( wxT( " " ), wxT( "_" ) );

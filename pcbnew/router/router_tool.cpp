@@ -26,10 +26,12 @@
 #include <functional>
 using namespace std::placeholders;
 #include <board.h>
+#include <board_design_settings.h>
 #include <board_item.h>
 #include <footprint.h>
 #include <fp_shape.h>
 #include <pad.h>
+#include <zone.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_id.h>
 #include <dialogs/dialog_pns_settings.h>
@@ -80,12 +82,6 @@ enum VIA_ACTION_FLAGS
 
 #undef _
 #define _(s) s
-
-static const TOOL_ACTION ACT_UndoLastSegment( "pcbnew.InteractiveRouter.UndoLastSegment",
-        AS_CONTEXT,
-        WXK_BACK, "",
-        _( "Undo last segment" ),  _( "Stops laying the current track." ),
-        BITMAPS::checked_ok );
 
 static const TOOL_ACTION ACT_EndTrack( "pcbnew.InteractiveRouter.EndTrack",
         AS_CONTEXT,
@@ -445,23 +441,23 @@ bool ROUTER_TOOL::Init()
 
     menu.AddSeparator();
 
-    menu.AddItem( PCB_ACTIONS::routeSingleTrack,     notRoutingCond );
-    menu.AddItem( PCB_ACTIONS::routeDiffPair,        notRoutingCond );
-    menu.AddItem( ACT_EndTrack,                      SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_UndoLastSegment,               SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( PCB_ACTIONS::breakTrack,           notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::routeSingleTrack,      notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::routeDiffPair,         notRoutingCond );
+    menu.AddItem( ACT_EndTrack,                       SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::routerUndoLastSegment, SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::breakTrack,            notRoutingCond );
 
-    menu.AddItem( PCB_ACTIONS::drag45Degree,         notRoutingCond );
-    menu.AddItem( PCB_ACTIONS::dragFreeAngle,        notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::drag45Degree,          notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::dragFreeAngle,         notRoutingCond );
 
 //        Add( ACT_AutoEndRoute );  // fixme: not implemented yet. Sorry.
-    menu.AddItem( ACT_PlaceThroughVia,               SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_PlaceBlindVia,                 SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_PlaceMicroVia,                 SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_SelLayerAndPlaceThroughVia,    SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_SelLayerAndPlaceBlindVia,      SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_SwitchPosture,                 SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_SwitchRounding,                SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_PlaceThroughVia,                SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_PlaceBlindVia,                  SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_PlaceMicroVia,                  SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_SelLayerAndPlaceThroughVia,     SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_SelLayerAndPlaceBlindVia,       SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_SwitchPosture,                  SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_SwitchRounding,                 SELECTION_CONDITIONS::ShowAlways );
 
     menu.AddSeparator();
 
@@ -471,10 +467,10 @@ bool ROUTER_TOOL::Init()
             return m_router->Mode() == PNS::PNS_MODE_ROUTE_DIFF_PAIR;
         };
 
-    menu.AddMenu( m_trackViaMenu.get(),              SELECTION_CONDITIONS::ShowAlways );
-    menu.AddMenu( m_diffPairMenu.get(),              diffPairCond );
+    menu.AddMenu( m_trackViaMenu.get(),               SELECTION_CONDITIONS::ShowAlways );
+    menu.AddMenu( m_diffPairMenu.get(),               diffPairCond );
 
-    menu.AddItem( PCB_ACTIONS::routerSettingsDialog, SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::routerSettingsDialog,  SELECTION_CONDITIONS::ShowAlways );
 
     menu.AddSeparator();
 
@@ -530,12 +526,8 @@ void ROUTER_TOOL::saveRouterDebugLog()
 
     for( auto evt : events)
     {
-        wxString id = "null";
-        if( evt.item && evt.item->Parent() )
-            id = evt.item->Parent()->m_Uuid.AsString();
-
         fprintf( f, "event %d %d %d %s\n", evt.p.x, evt.p.y, evt.type,
-                   (const char*) id.c_str() );
+                 (const char*) evt.uuid.c_str() );
     }
 
     fclose( f );
@@ -950,7 +942,7 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
     if( bds.UseNetClassVia() || viaType == VIATYPE::MICROVIA )
     {
-        class VIA dummyVia( board() );
+        PCB_VIA dummyVia( board() );
         dummyVia.SetViaType( viaType );
         dummyVia.SetLayerPair( currentLayer, targetLayer );
 
@@ -1061,6 +1053,9 @@ bool ROUTER_TOOL::finishInteractive()
 {
     m_router->StopRouting();
 
+    m_startItem = nullptr;
+    m_endItem   = nullptr;
+
     frame()->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     controls()->SetAutoPan( false );
     controls()->ForceCursorPosition( false );
@@ -1108,7 +1103,7 @@ void ROUTER_TOOL::performRouting()
             updateEndItem( *evt );
             m_router->Move( m_endSnapPoint, m_endItem );
         }
-        else if( evt->IsAction( &ACT_UndoLastSegment ) )
+        else if( evt->IsAction( &PCB_ACTIONS::routerUndoLastSegment ) )
         {
             m_router->UndoLastSegment();
             updateEndItem( *evt );
@@ -1494,16 +1489,16 @@ void ROUTER_TOOL::NeighboringSegmentFilter( const VECTOR2I& aPt, GENERAL_COLLECT
     if( arcs > 0 || vias > 1 || traces > 2 || vias + traces < 1 )
         return;
 
-    // Fetch first TRACK (via or trace) as our reference
-    TRACK* reference = nullptr;
+    // Fetch first PCB_TRACK (via or trace) as our reference
+    PCB_TRACK* reference = nullptr;
 
     for( int i = 0; !reference && i < aCollector.GetCount(); i++ )
-        reference = dynamic_cast<TRACK*>( aCollector[i] );
+        reference = dynamic_cast<PCB_TRACK*>( aCollector[i] );
 
     int refNet = reference->GetNetCode();
 
     wxPoint refPoint( aPt.x, aPt.y );
-    STATUS_FLAGS flags = reference->IsPointOnEnds( refPoint, -1 );
+    EDA_ITEM_FLAGS flags = reference->IsPointOnEnds( refPoint, -1 );
 
     if( flags & STARTPOINT )
         refPoint = reference->GetStart();
@@ -1514,7 +1509,7 @@ void ROUTER_TOOL::NeighboringSegmentFilter( const VECTOR2I& aPt, GENERAL_COLLECT
     // the same net.
     for( int i = 0; i < aCollector.GetCount(); i++ )
     {
-        TRACK* neighbor = dynamic_cast<TRACK*>( aCollector[i] );
+        PCB_TRACK* neighbor = dynamic_cast<PCB_TRACK*>( aCollector[i] );
 
         if( neighbor && neighbor != reference )
         {
@@ -1872,7 +1867,7 @@ int ROUTER_TOOL::onTrackViaSizeChanged( const TOOL_EVENT& aEvent )
     PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
 
     if( !m_router->GetCurrentNets().empty() )
-        m_iface->ImportSizes( sizes, nullptr, m_router->GetCurrentNets()[0] );
+        m_iface->ImportSizes( sizes, m_startItem, m_router->GetCurrentNets()[0] );
 
     m_router->UpdateSizes( sizes );
 

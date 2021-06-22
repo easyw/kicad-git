@@ -32,7 +32,6 @@
 #include <general.h>
 
 class SCH_EDIT_FRAME;
-class SCH_COMPONENT;
 class LIB_FIELD;
 
 
@@ -150,7 +149,7 @@ public:
         Offset( aMoveVector );
     }
 
-    void Rotate( wxPoint aCenter ) override;
+    void Rotate( const wxPoint& aCenter ) override;
 
     /**
      * @copydoc SCH_ITEM::MirrorVertically()

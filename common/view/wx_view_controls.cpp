@@ -37,8 +37,9 @@
 #include <math/util.h>      // for KiROUND
 #include <widgets/ui_common.h>
 #include <class_draw_panel_gal.h>
+#include <kiplatform/ui.h>
+#include <wx/log.h>
 
-#include <wx/wx.h>      // for GetForegroundWindow() on wxMSW
 
 #if defined __WXMSW__
     #define USE_MOUSE_CAPTURE
@@ -455,7 +456,7 @@ void WX_VIEW_CONTROLS::onEnter( wxMouseEvent& aEvent )
     if( m_parentPanel->GetParent() != nullptr )
     {
         // this assumes the parent panel's parent is the eda window
-        if( GetForegroundWindow() == m_parentPanel->GetParent()->GetHWND() )
+        if( KIPLATFORM::UI::IsWindowActive( m_parentPanel->GetParent() ) )
         {
             m_parentPanel->SetFocus();
         }
@@ -765,7 +766,7 @@ bool WX_VIEW_CONTROLS::handleAutoPanning( const wxMouseEvent& aEvent )
     {
         // last cursor move event came from keyboard cursor control. If auto-panning is enabled and
         // the next position is inside the autopan zone, check if it really came from a mouse event, otherwise
-        // disable autopan temporarily. Also temporaly disable autopan if the cursor is in the autopan zone
+        // disable autopan temporarily. Also temporarily disable autopan if the cursor is in the autopan zone
         // because the application warped the cursor.
 
         m_cursorWarped = false;

@@ -26,9 +26,11 @@
 #include <macros.h>             // arrayDim definition
 #include <pcb_edit_frame.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <dialogs/dialog_color_picker.h>
 #include <widgets/paged_dialog.h>
 #include <widgets/layer_box_selector.h>
+#include <wx/log.h>
 #include <wx/rawbmp.h>
 #include <math/util.h>      // for KiROUND
 
@@ -43,6 +45,7 @@
 #include <wx/richmsgdlg.h>
 #include <wx/choicdlg.h>
 #include <wx/dcclient.h>
+#include <wx/treebook.h>
 
 #include <locale_io.h>
 

@@ -27,11 +27,14 @@
 #include <base_units.h>
 #include <bitmaps.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <core/mirror.h>
 #include <footprint.h>
 #include <settings/settings_manager.h>
 #include <trigo.h>
 #include <kicad_string.h>
+#include <painter.h>
+#include <geometry/shape_compound.h>
 
 FP_TEXT::FP_TEXT( FOOTPRINT* aParentFootprint, TEXT_TYPE text_type ) :
     BOARD_ITEM( aParentFootprint, PCB_FP_TEXT_T ),
@@ -369,14 +372,27 @@ double FP_TEXT::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
     if( !aView->IsLayerVisible( GetLayer() ) )
         return HIDE;
 
-    // Handle Render tab switches
-    if( ( m_Type == TEXT_is_VALUE || GetText() == wxT( "${VALUE}" ) )
-            && !aView->IsLayerVisible( LAYER_MOD_VALUES ) )
-        return HIDE;
+    RENDER_SETTINGS* renderSettings = aView->GetPainter()->GetSettings();
+    COLOR4D          backgroundColor = renderSettings->GetLayerColor( LAYER_PCB_BACKGROUND );
 
-    if( ( m_Type == TEXT_is_REFERENCE || GetText() == wxT( "${REFERENCE}" ) )
-            && !aView->IsLayerVisible( LAYER_MOD_REFERENCES ) )
-        return HIDE;
+    // Handle Render tab switches
+    if( m_Type == TEXT_is_VALUE || GetText() == wxT( "${VALUE}" ) )
+    {
+        if( !aView->IsLayerVisible( LAYER_MOD_VALUES )
+                || renderSettings->GetLayerColor( LAYER_MOD_VALUES ) == backgroundColor )
+        {
+            return HIDE;
+        }
+    }
+
+    if( m_Type == TEXT_is_REFERENCE || GetText() == wxT( "${REFERENCE}" ) )
+    {
+        if( !aView->IsLayerVisible( LAYER_MOD_REFERENCES )
+                || renderSettings->GetLayerColor( LAYER_MOD_REFERENCES ) == backgroundColor )
+        {
+            return HIDE;
+        }
+    }
 
     if( !IsParentFlipped() && !aView->IsLayerVisible( LAYER_MOD_FR ) )
         return HIDE;

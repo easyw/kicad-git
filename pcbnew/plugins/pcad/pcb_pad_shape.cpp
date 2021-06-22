@@ -23,15 +23,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-/**
- * @file pcb_pad_shape.cpp
- */
-
-#include <wx/wx.h>
+#include <pcad/pcb_pad_shape.h>
 
 #include <common.h>
+#include <xnode.h>
 
-#include <pcb_pad_shape.h>
+#include <wx/string.h>
 
 namespace PCAD2KICAD {
 
@@ -97,7 +94,7 @@ void PCB_PAD_SHAPE::Parse( XNODE*          aNode,
     }
     else if( m_Shape == wxT( "Polygon" ) )
     {
-        // aproximation to simplier pad shape .....
+        // approximation to simpler pad shape .....
         lNode = FindNode( aNode, wxT( "shapeOutline" ) );
 
         if( lNode )

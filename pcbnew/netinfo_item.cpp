@@ -32,7 +32,10 @@
 #include <widgets/msgpanel.h>
 #include <base_units.h>
 #include <board.h>
-#include <track.h>
+#include <board_design_settings.h>
+#include <footprint.h>
+#include <pcb_track.h>
+#include <pad.h>
 
 
 /*********************************************************/
@@ -81,8 +84,8 @@ void NETINFO_ITEM::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANE
 
     if( board )
     {
-        int    count      = 0;
-        TRACK* startTrack = nullptr;
+        int        count      = 0;
+        PCB_TRACK* startTrack = nullptr;
 
         for( FOOTPRINT* footprint : board->Footprints() )
         {
@@ -97,7 +100,7 @@ void NETINFO_ITEM::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANE
 
         count = 0;
 
-        for( TRACK* track : board->Tracks() )
+        for( PCB_TRACK* track : board->Tracks() )
         {
             if( track->GetNetCode() == GetNetCode() )
             {

@@ -41,6 +41,7 @@
 #include <settings/color_settings.h>
 #include <trace_helpers.h>
 #include <pgm_base.h>
+#include <wx/log.h>
 
 
 const wxString SCH_SHEET::GetDefaultFieldName( int aFieldNdx )
@@ -610,9 +611,9 @@ int SCH_SHEET::SymbolCount() const
 
     if( m_screen )
     {
-        for( SCH_ITEM* aItem : m_screen->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* aItem : m_screen->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_COMPONENT* symbol = (SCH_COMPONENT*) aItem;
+            SCH_SYMBOL* symbol = (SCH_SYMBOL*) aItem;
 
             if( symbol->GetField( VALUE_FIELD )->GetText().GetChar( 0 ) != '#' )
                 n++;
@@ -730,7 +731,7 @@ void SCH_SHEET::Move( const wxPoint& aMoveVector )
 }
 
 
-void SCH_SHEET::Rotate( wxPoint aCenter )
+void SCH_SHEET::Rotate( const wxPoint& aCenter )
 {
     wxPoint prev = m_pos;
 

@@ -88,8 +88,8 @@ DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aI
 
     m_drawingSheet = new DS_DATA_MODEL;
     wxString serialization;
-    DS_DATA_MODEL::GetTheInstance().SaveInString( serialization );
-    m_drawingSheet->SetPageLayout(TO_UTF8( serialization ) );
+    DS_DATA_MODEL::GetTheInstance().SaveInString( &serialization );
+    m_drawingSheet->SetPageLayout( TO_UTF8( serialization ) );
 
     m_PickDate->SetValue( wxDateTime::Now() );
 
@@ -463,7 +463,7 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
         if( !fullFileName.IsEmpty() && !wxFileExists( fullFileName ) )
         {
             wxString msg;
-            msg.Printf( _( "Drawing sheet file \"%s\" not found." ), fullFileName );
+            msg.Printf( _( "Drawing sheet file '%s' not found." ), fullFileName );
             wxMessageBox( msg );
             return false;
         }

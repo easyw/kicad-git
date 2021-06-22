@@ -28,6 +28,7 @@
 #include <kiface_i.h>
 #include <macros.h>
 #include <schematic_settings.h>
+#include <settings/json_settings_internals.h>
 #include <settings/parameters.h>
 #include <sim/spice_settings.h>
 
@@ -51,7 +52,8 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
         m_IntersheetRefsPrefix( DEFAULT_IREF_PREFIX ),
         m_IntersheetRefsSuffix( DEFAULT_IREF_SUFFIX ),
         m_SpiceAdjustPassiveValues( false ),
-        m_NgspiceSimulatorSettings( nullptr )
+        m_NgspiceSimulatorSettings( nullptr ),
+        m_AnnotateStartNum( 0 )
 {
     EESCHEMA_SETTINGS* appSettings = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
 
@@ -126,9 +128,9 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
             Mils2iu( defaultJunctionSize ), Mils2iu( 5 ), Mils2iu( 1000 ), 1 / IU_PER_MILS ) );
 
     // User choice for junction dot size ( e.g. none = 0, smallest = 1, small = 2, etc )
-    m_params.emplace_back(new PARAM<int>("drawing.junction_size_choice",
-           &m_JunctionSizeChoice,
-           defaultJunctionSizeChoice) );
+    m_params.emplace_back( new PARAM<int>( "drawing.junction_size_choice",
+            &m_JunctionSizeChoice,
+            defaultJunctionSizeChoice ) );
 
     m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "drawing.field_names",
             [&]() -> nlohmann::json
@@ -188,7 +190,7 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
                 }
             }, {} ) );
 
-    // TOOD(JE) get rid of this static
+    // TODO(JE) get rid of this static
     m_params.emplace_back( new PARAM<wxString>( "page_layout_descr_file",
             &BASE_SCREEN::m_DrawingSheetFileName, "" ) );
 
@@ -204,12 +206,15 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
     m_params.emplace_back( new PARAM<wxString>( "spice_external_command",
             &m_SpiceCommandString, "spice \"%I\"" ) );
 
-    // TODO(JE) should we keep these LIB_PART:: things around?
+    // TODO(JE) should we keep these LIB_SYMBOL:: things around?
     m_params.emplace_back( new PARAM<int>( "subpart_id_separator",
-            LIB_PART::SubpartIdSeparatorPtr(), 0, 0, 126 ) );
+            LIB_SYMBOL::SubpartIdSeparatorPtr(), 0, 0, 126 ) );
 
     m_params.emplace_back( new PARAM<int>( "subpart_first_id",
-            LIB_PART::SubpartFirstIdPtr(), 'A', '1', 'z' ) );
+            LIB_SYMBOL::SubpartFirstIdPtr(), 'A', '1', 'z' ) );
+
+    m_params.emplace_back( new PARAM<int>( "annotate_start_num",
+            &m_AnnotateStartNum, 0 ) );
 
     m_NgspiceSimulatorSettings =
             std::make_shared<NGSPICE_SIMULATOR_SETTINGS>( this, "ngspice" );

@@ -21,6 +21,7 @@
 #ifndef _SETTINGS_MANAGER_H
 #define _SETTINGS_MANAGER_H
 
+#include <algorithm>
 #include <typeinfo>
 #include <core/wx_stl_compat.h> // for wxString hash
 #include <settings/color_settings.h>
@@ -151,7 +152,7 @@ public:
      * Safely saves a COLOR_SETTINGS to disk, preserving any changes outside the given namespace.
      *
      * A color settings namespace is one of the top-level JSON objects like "board", etc.
-     * This will preform a read-modify-write
+     * This will perform a read-modify-write
      *
      * @param aSettings is a pointer to a valid COLOR_SETTINGS object managed by SETTINGS_MANAGER
      * @param aNamespace is the namespace of settings to save
@@ -209,7 +210,7 @@ public:
     void SetMigrateLibraryTables( bool aMigrate = true ) { m_migrateLibraryTables = aMigrate; }
 
     /**
-     * Retreives the name of the most recent previous KiCad version that can be found in the
+     * Retrieves the name of the most recent previous KiCad version that can be found in the
      * user settings directory.  For legacy versions (5.x, and 5.99 builds before this code was
      * written), this will return "5.x"
      *

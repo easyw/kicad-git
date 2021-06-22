@@ -31,7 +31,6 @@
 #include <eeschema_settings.h>
 #include <kiface_i.h>
 #include <locale_io.h>
-#include <pgm_base.h>
 #include <plotters_specific.h>
 #include <reporter.h>
 #include <trace_helpers.h>
@@ -46,6 +45,7 @@
 #include <wx/dirdlg.h>
 #include <wx/msgdlg.h>
 #include <wx/stdpaths.h>
+#include <wx/log.h>
 
 
 // static members (static to remember last state):
@@ -127,7 +127,7 @@ void DIALOG_PLOT_SCHEMATIC::initDlg()
 
     if( cfg )
     {
-        for( COLOR_SETTINGS* settings : Pgm().GetSettingsManager().GetColorSettingsList() )
+        for( COLOR_SETTINGS* settings : m_parent->GetSettingsManager()->GetColorSettingsList() )
         {
             int idx = m_colorTheme->Append( settings->GetName(), static_cast<void*>( settings ) );
 
@@ -228,7 +228,7 @@ void DIALOG_PLOT_SCHEMATIC::OnOutputDirectoryBrowseClicked( wxCommandEvent& even
     // Test if making the path relative is possible before asking the user if they want to do it
     if( relPathTest.MakeRelativeTo( defaultPath ) )
     {
-        msg.Printf( _( "Do you want to use a path relative to\n\"%s\"" ), defaultPath );
+        msg.Printf( _( "Do you want to use a path relative to\n'%s'?" ), defaultPath );
 
         wxMessageDialog dialog( this, msg, _( "Plot Output Directory" ),
                                 wxYES_NO | wxICON_QUESTION | wxYES_DEFAULT );
@@ -246,16 +246,11 @@ PLOT_FORMAT DIALOG_PLOT_SCHEMATIC::GetPlotFileFormat()
     switch( m_plotFormatOpt->GetSelection() )
     {
     default:
-    case 0:
-        return PLOT_FORMAT::POST;
-    case 1:
-        return PLOT_FORMAT::PDF;
-    case 2:
-        return PLOT_FORMAT::SVG;
-    case 3:
-        return PLOT_FORMAT::DXF;
-    case 4:
-        return PLOT_FORMAT::HPGL;
+    case 0: return PLOT_FORMAT::POST;
+    case 1: return PLOT_FORMAT::PDF;
+    case 2: return PLOT_FORMAT::SVG;
+    case 3: return PLOT_FORMAT::DXF;
+    case 4: return PLOT_FORMAT::HPGL;
     }
 }
 
@@ -374,7 +369,7 @@ COLOR_SETTINGS* DIALOG_PLOT_SCHEMATIC::getColorSettings()
     int selection = m_colorTheme->GetSelection();
 
     if( selection < 0 )
-        return Pgm().GetSettingsManager().GetColorSettings( "_builtin_default" );
+        return m_parent->GetSettingsManager()->GetColorSettings( "_builtin_default" );
 
     return static_cast<COLOR_SETTINGS*>( m_colorTheme->GetClientData( selection ) );
 }
@@ -515,18 +510,18 @@ void DIALOG_PLOT_SCHEMATIC::createDxfFile( bool aPlotAll, bool aPlotDrawingSheet
             if( plotOneSheetDxf( plotFileName.GetFullPath(), screen, aRenderSettings,
                                  plot_offset, 1.0, aPlotDrawingSheet ) )
             {
-                msg.Printf( _( "Plot: \"%s\" OK.\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Plotted to '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ACTION );
             }
             else    // Error
             {
-                msg.Printf( _( "Unable to create file \"%s\".\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Unable to create file '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ERROR );
             }
         }
         catch( IO_ERROR& e )
         {
-            msg.Printf( wxT( "DXF Plotter exception: %s"), e.What() );
+            msg.Printf( wxT( "DXF Plotter exception: %s\n"), e.What() );
             reporter.Report( msg, RPT_SEVERITY_ERROR );
             schframe->SetCurrentSheet( oldsheetpath );
             schframe->GetCurrentSheet().UpdateAllScreenReferences();
@@ -685,18 +680,18 @@ void DIALOG_PLOT_SCHEMATIC::createHPGLFile( bool aPlotAll, bool aPlotFrameRef,
             if( plotOneSheetHpgl( plotFileName.GetFullPath(), screen, plotPage, aRenderSettings,
                                   plotOffset, plot_scale, aPlotFrameRef, getPlotOriginAndUnits() ) )
             {
-                msg.Printf( _( "Plot: \"%s\" OK.\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Plotted to '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ACTION );
             }
             else
             {
-                msg.Printf( _( "Unable to create file \"%s\".\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Unable to create file '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ERROR );
             }
         }
         catch( IO_ERROR& e )
         {
-            msg.Printf( wxT( "HPGL Plotter exception: %s"), e.What() );
+            msg.Printf( wxT( "HPGL Plotter exception: %s\n"), e.What() );
             reporter.Report( msg, RPT_SEVERITY_ERROR );
         }
 
@@ -785,10 +780,10 @@ void DIALOG_PLOT_SCHEMATIC::createPDFFile( bool aPlotAll, bool aPlotDrawingSheet
     SCH_SHEET_PATH  oldsheetpath = m_parent->GetCurrentSheet();     // sheetpath is saved here
 
     /* When printing all pages, the printed page is not the current page.  In
-     * complex hierarchies, we must update component references and others
+     * complex hierarchies, we must update symbol references and other
      * parameters in the given printed SCH_SCREEN, accordant to the sheet path
      * because in complex hierarchies a SCH_SCREEN (a drawing ) is shared
-     * between many sheets and component references depend on the actual sheet
+     * between many sheets and symbol references depend on the actual sheet
      * path used
      */
     SCH_SHEET_LIST sheetList;
@@ -842,7 +837,7 @@ void DIALOG_PLOT_SCHEMATIC::createPDFFile( bool aPlotAll, bool aPlotDrawingSheet
 
                 if( !plotter->OpenFile( plotFileName.GetFullPath() ) )
                 {
-                    msg.Printf( _( "Unable to create file \"%s\".\n" ),
+                    msg.Printf( _( "Unable to create file '%s'.\n" ),
                                 plotFileName.GetFullPath() );
                     reporter.Report( msg, RPT_SEVERITY_ERROR );
                     delete plotter;
@@ -856,7 +851,7 @@ void DIALOG_PLOT_SCHEMATIC::createPDFFile( bool aPlotAll, bool aPlotDrawingSheet
             catch( const IO_ERROR& e )
             {
                 // Cannot plot PDF file
-                msg.Printf( wxT( "PDF Plotter exception: %s" ), e.What() );
+                msg.Printf( wxT( "PDF Plotter exception: %s\n" ), e.What() );
                 reporter.Report( msg, RPT_SEVERITY_ERROR );
 
                 restoreEnvironment( plotter, oldsheetpath );
@@ -877,7 +872,7 @@ void DIALOG_PLOT_SCHEMATIC::createPDFFile( bool aPlotAll, bool aPlotDrawingSheet
     }
 
     // Everything done, close the plot and restore the environment
-    msg.Printf( _( "Plot: \"%s\" OK.\n" ), plotFileName.GetFullPath() );
+    msg.Printf( _( "Plotted to '%s'.\n" ), plotFileName.GetFullPath() );
     reporter.Report( msg, RPT_SEVERITY_ACTION );
 
     restoreEnvironment( plotter, oldsheetpath );
@@ -967,10 +962,10 @@ void DIALOG_PLOT_SCHEMATIC::createPSFile( bool aPlotAll, bool aPlotFrameRef,
     PAGE_INFO       plotPage;                                    // page size selected to plot
 
     /* When printing all pages, the printed page is not the current page.
-     * In complex hierarchies, we must update component references
-     *  and others parameters in the given printed SCH_SCREEN, accordant to the sheet path
-     *  because in complex hierarchies a SCH_SCREEN (a drawing )
-     *  is shared between many sheets and component references depend on the actual sheet path used
+     * In complex hierarchies, we must update symbol references and other parameters in the
+     * given printed SCH_SCREEN, accordant to the sheet path because in complex hierarchies
+     * a SCH_SCREEN (a drawing ) is shared between many sheets and symbol references
+     * depend on the actual sheet path used.
      */
     SCH_SHEET_LIST  sheetList;
 
@@ -1039,20 +1034,20 @@ void DIALOG_PLOT_SCHEMATIC::createPSFile( bool aPlotAll, bool aPlotFrameRef,
             if( plotOneSheetPS( plotFileName.GetFullPath(), screen, aRenderSettings, plotPage,
                                 plot_offset, scale, aPlotFrameRef ) )
             {
-                msg.Printf( _( "Plot: \"%s\" OK.\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Plotted to '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ACTION );
             }
             else
             {
                 // Error
-                msg.Printf( _( "Unable to create file \"%s\".\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Unable to create file '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ERROR );
             }
 
         }
         catch( IO_ERROR& e )
         {
-            msg.Printf( wxT( "PS Plotter exception: %s"), e.What() );
+            msg.Printf( wxT( "PS Plotter exception: %s\n"), e.What() );
             reporter.Report( msg, RPT_SEVERITY_ERROR );
         }
     }
@@ -1165,19 +1160,19 @@ void DIALOG_PLOT_SCHEMATIC::createSVGFile( bool aPrintAll, bool aPrintFrameRef,
 
             if( !success )
             {
-                msg.Printf( _( "Cannot create file \"%s\".\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Cannot create file '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ERROR );
             }
             else
             {
-                msg.Printf( _( "Plot: \"%s\" OK.\n" ), plotFileName.GetFullPath() );
+                msg.Printf( _( "Plotted to '%s'.\n" ), plotFileName.GetFullPath() );
                 reporter.Report( msg, RPT_SEVERITY_ACTION );
             }
         }
         catch( const IO_ERROR& e )
         {
             // Cannot plot SVG file
-            msg.Printf( wxT( "SVG Plotter exception: %s" ), e.What() );
+            msg.Printf( wxT( "SVG Plotter exception: %s\n" ), e.What() );
             reporter.Report( msg, RPT_SEVERITY_ERROR );
             break;
         }

@@ -30,7 +30,6 @@
 #include <kiface_i.h>
 #include <math/util.h>      // for KiROUND
 #include <kiway.h>
-#include <pgm_base.h>
 #include <potracelib.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/clipbrd.h>
@@ -39,6 +38,7 @@
 #include <wx/rawbmp.h>
 #include <wx/msgdlg.h>
 #include <wx/dcclient.h>
+#include <wx/log.h>
 
 
 #include "bitmap2cmp_gui_base.h"
@@ -752,7 +752,7 @@ void BM2CMP_FRAME::OnExportLogo()
     if( outfile == NULL )
     {
         wxString msg;
-        msg.Printf( _( "File \"%s\" could not be created." ), m_ConvertedFileName );
+        msg.Printf( _( "File '%s' could not be created." ), m_ConvertedFileName );
         wxMessageBox( msg );
         return;
     }
@@ -792,7 +792,7 @@ void BM2CMP_FRAME::exportPostScriptFormat()
     if( outfile == NULL )
     {
         wxString msg;
-        msg.Printf( _( "File \"%s\" could not be created." ), m_ConvertedFileName );
+        msg.Printf( _( "File '%s' could not be created." ), m_ConvertedFileName );
         wxMessageBox( msg );
         return;
     }
@@ -831,7 +831,7 @@ void BM2CMP_FRAME::exportEeschemaFormat()
     if( outfile == NULL )
     {
         wxString msg;
-        msg.Printf( _( "File \"%s\" could not be created." ), m_ConvertedFileName );
+        msg.Printf( _( "File '%s' could not be created." ), m_ConvertedFileName );
         wxMessageBox( msg );
         return;
     }
@@ -870,7 +870,7 @@ void BM2CMP_FRAME::exportPcbnewFormat()
     if( outfile == NULL )
     {
         wxString msg;
-        msg.Printf( _( "File \"%s\" could not be created." ), m_ConvertedFileName );
+        msg.Printf( _( "File '%s' could not be created." ), m_ConvertedFileName );
         wxMessageBox( msg );
         return;
     }

@@ -40,6 +40,7 @@
 #include <wx/filedlg.h>
 #include <wx/tooltip.h>
 
+#include <common.h>
 #include <config_params.h>
 #include <confirm.h>
 #include <core/arraydim.h>
@@ -101,7 +102,6 @@ LANGUAGE_DESCR LanguagesList[] =
 
 PGM_BASE::PGM_BASE()
 {
-    m_pgm_checker = nullptr;
     m_locale = nullptr;
     m_Printing = false;
     m_ModalDialogCount = 0;
@@ -123,9 +123,6 @@ PGM_BASE::~PGM_BASE()
 void PGM_BASE::Destroy()
 {
     // unlike a normal destructor, this is designed to be called more than once safely:
-    delete m_pgm_checker;
-    m_pgm_checker = nullptr;
-
     delete m_locale;
     m_locale = nullptr;
 }
@@ -205,7 +202,7 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 
 bool PGM_BASE::InitPgm( bool aHeadless )
 {
-    wxFileName pgm_name( App().argv[0] );
+    wxString pgm_name = wxFileName( App().argv[0] ).GetName().Lower();
 
     wxInitAllImageHandlers();
 
@@ -217,18 +214,6 @@ bool PGM_BASE::InitPgm( bool aHeadless )
         return false;
     }
 #endif
-
-    m_pgm_checker = new wxSingleInstanceChecker( pgm_name.GetName().Lower() + wxT( "-" ) +
-                                                 wxGetUserId(), GetKicadLockFilePath() );
-
-    if( m_pgm_checker->IsAnotherRunning() )
-    {
-        if( !IsOK( NULL, wxString::Format( _( "%s is already running. Continue?" ),
-                                           App().GetAppDisplayName() ) ) )
-        {
-            return false;
-        }
-    }
 
     // Init KiCad environment
     // the environment variable KICAD (if exists) gives the kicad path:
@@ -245,7 +230,7 @@ bool PGM_BASE::InitPgm( bool aHeadless )
 
     // Init parameters for configuration
     App().SetVendorName( "KiCad" );
-    App().SetAppName( pgm_name.GetName().Lower() );
+    App().SetAppName( pgm_name );
 
     // Install some image handlers, mainly for help
     if( wxImage::FindHandler( wxBITMAP_TYPE_PNG ) == NULL )
@@ -281,6 +266,9 @@ bool PGM_BASE::InitPgm( bool aHeadless )
     // env vars could be incorrectly initialized on Linux
     // (if the value contains some non ASCII7 chars, the env var is not initialized)
     SetLanguage( tmp, true );
+
+    // Now that translations are available, inform the user if the OS is unsupported
+    WarnUserIfOperatingSystemUnsupported();
 
     loadCommonSettings();
 
@@ -350,9 +338,6 @@ bool PGM_BASE::setExecutablePath()
 
 void PGM_BASE::loadCommonSettings()
 {
-    m_help_size.x = 500;
-    m_help_size.y = 400;
-
     m_show_env_var_dialog = GetCommonSettings()->m_Env.show_warning_dialog;
     m_editor_name = GetCommonSettings()->m_System.editor_name;
 

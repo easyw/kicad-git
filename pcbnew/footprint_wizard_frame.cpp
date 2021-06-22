@@ -37,6 +37,7 @@
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
 #include "footprint_wizard_frame.h"
+#include <wx/listbox.h>
 #include <wx/tokenzr.h>
 #include <wx/numformatter.h>
 #include <wildcards_and_files_ext.h>
@@ -229,11 +230,11 @@ FOOTPRINT_WIZARD_FRAME::~FOOTPRINT_WIZARD_FRAME()
     // Be sure any event cannot be fired after frame deletion:
     GetCanvas()->SetEvtHandlerEnabled( false );
 
-    // Be sure a active tool (if exists) is desactivated:
+    // Be sure a active tool (if exists) is deactivated:
     if( m_toolManager )
         m_toolManager->DeactivateTool();
 
-    EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
+    EDA_3D_VIEWER_FRAME* draw3DFrame = Get3DViewerFrame();
 
     if( draw3DFrame )
         draw3DFrame->Destroy();

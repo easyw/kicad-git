@@ -79,9 +79,10 @@ const SHAPE_LINE_CHAIN VIA::Hull( int aClearance, int aWalkaroundThickness, int 
     if( !ROUTER::GetInstance()->GetInterface()->IsFlashedOnLayer( this, aLayer ) )
         width = m_drill;
 
-    return OctagonalHull( m_pos -
-        VECTOR2I( width / 2, width / 2 ), VECTOR2I( width, width ),
-        cl + 1, ( 2 * cl + width ) * 0.26 );
+    // Chamfer = width * ( 1 - sqrt(2)/2 ) for equilateral octagon
+    return OctagonalHull( m_pos - VECTOR2I( width / 2, width / 2 ),
+                         VECTOR2I( width, width ),
+                         cl + 1, ( 2 * cl + width ) * ( 1.0 - M_SQRT1_2 ) );
 }
 
 
@@ -100,6 +101,7 @@ VIA* VIA::Clone() const
     v->m_viaType = m_viaType;
     v->m_parent = m_parent;
     v->m_isFree = m_isFree;
+    v->m_isVirtual = m_isVirtual;
 
     return v;
 }

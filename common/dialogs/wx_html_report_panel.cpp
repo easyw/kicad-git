@@ -28,6 +28,10 @@
 #include <wx/clipbrd.h>
 #include <kicad_string.h>
 #include <wx/ffile.h>
+#include <wx/log.h>
+#include <wx/filedlg.h>
+#include <wx/msgdlg.h>
+#include <wx/menu.h>
 
 WX_HTML_REPORT_PANEL::WX_HTML_REPORT_PANEL( wxWindow* parent,
                                             wxWindowID id,
@@ -344,7 +348,7 @@ void WX_HTML_REPORT_PANEL::onBtnSaveToFile( wxCommandEvent& event )
     {
         wxString msg;
 
-        msg.Printf( _( "Cannot write report to file \"%s\"." ),
+        msg.Printf( _( "Cannot write report to file '%s'." ),
                     fn.GetFullPath().GetData() );
         wxMessageBox( msg, _( "File save error" ), wxOK | wxICON_ERROR, this );
         return;

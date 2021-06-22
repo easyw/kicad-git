@@ -31,6 +31,7 @@
 #include <kicad_string.h>
 #include <pcb_text.h>
 #include <fp_text.h>
+#include <pcbnew.h>
 #include <pcb_edit_frame.h>
 #include <pcb_layer_box_selector.h>
 #include <wx/valnum.h>
@@ -358,7 +359,11 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
             BOARD*   board = m_Parent->GetBoard();
             wxString txt = board->ConvertCrossReferencesToKIIDs( m_MultiLineText->GetValue() );
 
-#ifdef __WINDOWS__
+#ifdef __WXMAC__
+            // On macOS CTRL+Enter produces '\r' instead of '\n' regardless of EOL setting.
+            // Replace it now.
+            txt.Replace( "\r", "\n" );
+#elif defined( __WINDOWS__ )
             // On Windows, a new line is coded as \r\n.  We use only \n in kicad files and in
             // drawing routines so strip the \r char.
             txt.Replace( "\r", "" );

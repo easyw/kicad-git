@@ -237,9 +237,6 @@ struct APP_TEST : public wxApp
 
 bool PGM_TEST_FRAME::OnPgmInit()
 {
-    if( !InitPgm() )
-        return false;
-
     return true;
 }
 
@@ -257,7 +254,7 @@ int main( int argc, char** argv )
 {
     wxInitialize( argc, argv );
 
-    Pgm().InitPgm();
+    Pgm().InitPgm( true );
 
     auto ret = wxEntry( argc, argv );
 

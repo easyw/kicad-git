@@ -21,7 +21,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <pgm_base.h>
 #include <sch_edit_frame.h>
 #include <kiface_i.h>
 #include <bitmaps.h>
@@ -35,6 +34,7 @@
 #include <id.h>
 #include <wx/bmpbuttn.h>
 #include <wx/statline.h>
+#include <wx/stattext.h>
 
 
 // Control identifiers for events

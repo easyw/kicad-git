@@ -44,6 +44,7 @@
 #include <connection_graph.h>
 #include <widgets/ui_common.h>
 #include <kicad_string.h>
+#include <wx/log.h>
 
 #include <advanced_config.h> // for realtime connectivity switch
 
@@ -516,9 +517,9 @@ void CONNECTION_GRAPH::updateItemConnectivity( const SCH_SHEET_PATH& aSheet,
                 m_items.emplace_back( pin );
             }
         }
-        else if( item->Type() == SCH_COMPONENT_T )
+        else if( item->Type() == SCH_SYMBOL_T )
         {
-            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+            SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
 
             for( SCH_PIN* pin : symbol->GetPins( &aSheet ) )
             {
@@ -944,7 +945,7 @@ void CONNECTION_GRAPH::buildConnectionGraph()
         if( connection->SubgraphCode() > 0 )
             continue;
 
-        connection->SetName( pin->GetName() );
+        connection->SetName( pin->GetShownName() );
 
         int code = assignNewNetCode( *connection );
 
@@ -1240,7 +1241,7 @@ void CONNECTION_GRAPH::buildConnectionGraph()
                         {
                             auto pin = static_cast<SCH_PIN*>( driver );
 
-                            if( pin->IsPowerConnection() && pin->GetName() == test_name )
+                            if( pin->IsPowerConnection() && pin->GetShownName() == test_name )
                             {
                                 match = true;
                                 break;

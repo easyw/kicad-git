@@ -32,8 +32,11 @@
  */
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
+#include <zone.h>
 #include <collectors.h>
 #include <eda_dde.h>
 #include <kiface_i.h>
@@ -48,6 +51,7 @@
 #include <tools/pcb_actions.h>
 #include <tools/pcb_selection_tool.h>
 #include <netlist_reader/netlist_reader.h>
+#include <wx/log.h>
 
 /* Execute a remote command send by Eeschema via a socket,
  * port KICAD_PCB_PORT_SERVICE_NUMBER
@@ -253,7 +257,7 @@ void PCB_EDIT_FRAME::ExecuteRemoteCommand( const char* cmdline )
             for( ZONE* zone : pcb->Zones() )
                 merge_area( zone );
 
-            for( TRACK* track : pcb->Tracks() )
+            for( PCB_TRACK* track : pcb->Tracks() )
                 merge_area( track );
 
             for( FOOTPRINT* fp : pcb->Footprints() )

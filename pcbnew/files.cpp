@@ -28,8 +28,8 @@
 #include <kicad_string.h>
 #include <gestfich.h>
 #include <pcb_edit_frame.h>
+#include <board_design_settings.h>
 #include <3d_viewer/eda_3d_viewer.h>
-#include <pgm_base.h>
 #include <widgets/msgpanel.h>
 #include <fp_lib_table.h>
 #include <kiface_i.h>
@@ -42,6 +42,7 @@
 #include <wildcards_and_files_ext.h>
 #include <tool/tool_manager.h>
 #include <board.h>
+#include <wx/checkbox.h>
 #include <wx/stdpaths.h>
 #include <ratsnest/ratsnest_data.h>
 #include <kiplatform/app.h>
@@ -58,6 +59,7 @@
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
 #include "footprint_info_impl.h"
+#include <wx_filename.h>  // For ::ResolvePossibleSymlinks()
 
 #include <wx/wupdlock.h>
 #include <wx/filedlg.h>
@@ -342,12 +344,12 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
 
         if( !fn.FileExists() )
         {
-            msg.Printf( _( "Recovery file \"%s\" not found." ), fn.GetFullPath() );
+            msg.Printf( _( "Recovery file '%s' not found." ), fn.GetFullPath() );
             DisplayInfoMessage( this, msg );
             return false;
         }
 
-        msg.Printf( _( "OK to load recovery file \"%s\"" ), fn.GetFullPath() );
+        msg.Printf( _( "OK to load recovery file '%s'?" ), fn.GetFullPath() );
 
         if( !IsOK( this, msg ) )
             return false;
@@ -777,10 +779,10 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         else
             GetScreen()->SetContentModified( false );
 
-        if( ( pluginType == IO_MGR::LEGACY &&
-              loadedBoard->GetFileFormatVersionAtLoad() < LEGACY_BOARD_FILE_VERSION ) ||
-            ( pluginType == IO_MGR::KICAD_SEXP &&
-              loadedBoard->GetFileFormatVersionAtLoad() < SEXPR_BOARD_FILE_VERSION ) )
+        if( ( pluginType == IO_MGR::LEGACY )
+         || ( pluginType == IO_MGR::KICAD_SEXP
+                && loadedBoard->GetFileFormatVersionAtLoad() < SEXPR_BOARD_FILE_VERSION
+                && loadedBoard->GetGenerator().Lower() != "gerbview" ) )
         {
             m_infoBar->RemoveAllButtons();
             m_infoBar->AddCloseButton();
@@ -802,7 +804,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             // The footprints are saved in a new .pretty library.
             // If this library already exists, all previous footprints will be deleted
             std::vector<FOOTPRINT*> loadedFootprints = pi->GetImportedCachedLibraryFootprints();
-            wxString                newLibPath = CreateNewLibrary( libNickName );
+            wxString                newLibPath = CreateNewProjectLibrary( libNickName );
 
             // Only create the new library if CreateNewLibrary succeeded (note that this fails if
             // the library already exists and the user aborts after seeing the warning message
@@ -904,7 +906,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     onBoardLoaded();
 
     // Refresh the 3D view, if any
-    EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
+    EDA_3D_VIEWER_FRAME* draw3DFrame = Get3DViewerFrame();
 
     if( draw3DFrame )
         draw3DFrame->NewDisplay();
@@ -940,6 +942,9 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
 
     if( pcbFileName.GetExt() == LegacyPcbFileExtension )
         pcbFileName.SetExt( KiCadPcbFileExtension );
+
+    // Write through symlinks, don't replace them
+    WX_FILENAME::ResolvePossibleSymlinks( pcbFileName );
 
     if( !IsWritable( pcbFileName ) )
     {
@@ -1019,12 +1024,12 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     // If save succeeded, replace the original with what we just wrote
     if( !wxRenameFile( tempFile.GetFullPath(), pcbFileName.GetFullPath() ) )
     {
-        DisplayError( this, wxString::Format( _( "Error saving board file \"%s\".\n"
-                                                 "Failed to rename temporary file \"%s\"" ),
+        DisplayError( this, wxString::Format( _( "Error saving board file '%s'.\n"
+                                                 "Failed to rename temporary file '%s." ),
                                               pcbFileName.GetFullPath(),
                                               tempFile.GetFullPath() ) );
 
-        lowerTxt.Printf( _( "Failed to rename temporary file \"%s\"" ),
+        lowerTxt.Printf( _( "Failed to rename temporary file '%s'." ),
                          tempFile.GetFullPath() );
 
         SetMsgPanel( upperTxt, lowerTxt );

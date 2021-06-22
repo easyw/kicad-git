@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
+ * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
  *
  * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
@@ -27,12 +27,14 @@
 
 #include <algorithm>
 #include <iterator>
+#include <drc/drc_rtree.h>
 #include <pcb_base_frame.h>
+#include <board_design_settings.h>
 #include <reporter.h>
 #include <board_commit.h>
 #include <board.h>
 #include <footprint.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <pcb_marker.h>
 #include <pcb_group.h>
@@ -50,6 +52,7 @@
 #include <ratsnest/ratsnest_data.h>
 #include <tool/selection_conditions.h>
 #include <convert_drawsegment_list_to_polygon.h>
+#include <wx/log.h>
 
 // This is an odd place for this, but CvPcb won't link if it's in board_item.cpp like I first
 // tried it.
@@ -58,15 +61,15 @@ wxPoint BOARD_ITEM::ZeroOffset( 0, 0 );
 
 BOARD::BOARD() :
         BOARD_ITEM_CONTAINER( (BOARD_ITEM*) nullptr, PCB_T ),
+        m_LegacyDesignSettingsLoaded( false ),
+        m_LegacyCopperEdgeClearanceLoaded( false ),
+        m_LegacyNetclassesLoaded( false ),
         m_boardUse( BOARD_USE::NORMAL ),
         m_timeStamp( 1 ),
         m_paper( PAGE_INFO::A4 ),
         m_project( nullptr ),
         m_designSettings( new BOARD_DESIGN_SETTINGS( nullptr, "board.design_settings" ) ),
-        m_NetInfo( this ),
-        m_LegacyDesignSettingsLoaded( false ),
-        m_LegacyCopperEdgeClearanceLoaded( false ),
-        m_LegacyNetclassesLoaded( false )
+        m_NetInfo( this )
 {
     // we have not loaded a board yet, assume latest until then.
     m_fileFormatVersionAtLoad = LEGACY_BOARD_FILE_VERSION;
@@ -113,7 +116,7 @@ BOARD::~BOARD()
 
     m_footprints.clear();
 
-    for( TRACK* t : m_tracks )
+    for( PCB_TRACK* t : m_tracks )
         delete t;
 
     m_tracks.clear();
@@ -184,6 +187,21 @@ void BOARD::ClearProject()
     m_project = nullptr;
 }
 
+
+void BOARD::IncrementTimeStamp()
+{
+    m_timeStamp++;
+
+    {
+        std::unique_lock<std::mutex> cacheLock( m_CachesMutex );
+        m_InsideAreaCache.clear();
+        m_InsideCourtyardCache.clear();
+        m_InsideFCourtyardCache.clear();
+        m_InsideBCourtyardCache.clear();
+    }
+
+    m_CopperZoneRTrees.clear();
+}
 
 std::vector<PCB_MARKER*> BOARD::ResolveDRCExclusions()
 {
@@ -289,7 +307,7 @@ TRACKS BOARD::TracksInNet( int aNetCode )
 
     INSPECTOR_FUNC inspector = [aNetCode, &ret]( EDA_ITEM* item, void* testData )
                                {
-                                   TRACK* t = static_cast<TRACK*>( item );
+                                   PCB_TRACK* t = static_cast<PCB_TRACK*>( item );
 
                                    if( t->GetNetCode() == aNetCode )
                                        ret.push_back( t );
@@ -297,7 +315,7 @@ TRACKS BOARD::TracksInNet( int aNetCode )
                                    return SEARCH_RESULT::CONTINUE;
                                };
 
-    // visit this BOARD's TRACKs and VIAs with above TRACK INSPECTOR which
+    // visit this BOARD's PCB_TRACKs and PCB_VIAs with above TRACK INSPECTOR which
     // appends all in aNetCode to ret.
     Visit( inspector, nullptr, GENERAL_COLLECTOR::Tracks );
 
@@ -470,6 +488,12 @@ void BOARD::SetEnabledLayers( LSET aLayerSet )
 }
 
 
+bool BOARD::IsLayerEnabled( PCB_LAYER_ID aLayer ) const
+{
+    return GetDesignSettings().IsLayerEnabled( aLayer );
+}
+
+
 void BOARD::SetVisibleLayers( LSET aLayerSet )
 {
     if( m_project )
@@ -522,7 +546,7 @@ void BOARD::SetElementVisibility( GAL_LAYER_ID aLayer, bool isEnabled )
         // because we have a tool to show/hide ratsnest relative to a pad or a footprint
         // so the hide/show option is a per item selection
 
-        for( TRACK* track : Tracks() )
+        for( PCB_TRACK* track : Tracks() )
             track->SetLocalRatsnestVisible( isEnabled );
 
         for( FOOTPRINT* footprint : Footprints() )
@@ -557,6 +581,25 @@ bool BOARD::IsFootprintLayerVisible( PCB_LAYER_ID aLayer ) const
         wxFAIL_MSG( wxT( "BOARD::IsModuleLayerVisible() param error: bad layer" ) );
         return true;
     }
+}
+
+
+
+BOARD_DESIGN_SETTINGS& BOARD::GetDesignSettings() const
+{
+    return *m_designSettings;
+}
+
+
+const ZONE_SETTINGS& BOARD::GetZoneSettings() const
+{
+    return GetDesignSettings().GetDefaultZoneSettings();
+}
+
+
+void BOARD::SetZoneSettings( const ZONE_SETTINGS& aSettings )
+{
+    GetDesignSettings().SetDefaultZoneSettings( aSettings );
 }
 
 
@@ -601,9 +644,9 @@ void BOARD::Add( BOARD_ITEM* aBoardItem, ADD_MODE aMode )
         }
 
         if( aMode == ADD_MODE::APPEND || aMode == ADD_MODE::BULK_APPEND )
-            m_tracks.push_back( static_cast<TRACK*>( aBoardItem ) );
+            m_tracks.push_back( static_cast<PCB_TRACK*>( aBoardItem ) );
         else
-            m_tracks.push_front( static_cast<TRACK*>( aBoardItem ) );
+            m_tracks.push_front( static_cast<PCB_TRACK*>( aBoardItem ) );
 
         break;
 
@@ -689,7 +732,7 @@ void BOARD::Remove( BOARD_ITEM* aBoardItem, REMOVE_MODE aRemoveMode )
                 zone->SetNet( unconnected );
         }
 
-        for( TRACK* track : m_tracks )
+        for( PCB_TRACK* track : m_tracks )
         {
             if( track->GetNet() == item )
                 track->SetNet( unconnected );
@@ -812,12 +855,21 @@ void BOARD::DeleteMARKERs( bool aWarningsAndErrors, bool aExclusions )
 }
 
 
+void BOARD::DeleteAllFootprints()
+{
+    for( FOOTPRINT* footprint : m_footprints )
+        delete footprint;
+
+    m_footprints.clear();
+}
+
+
 BOARD_ITEM* BOARD::GetItem( const KIID& aID ) const
 {
     if( aID == niluuid )
         return nullptr;
 
-    for( TRACK* track : Tracks() )
+    for( PCB_TRACK* track : Tracks() )
     {
         if( track->m_Uuid == aID )
             return track;
@@ -896,7 +948,7 @@ void BOARD::FillItemMap( std::map<KIID, EDA_ITEM*>& aMap )
     // the board itself
     aMap[ m_Uuid ] = this;
 
-    for( TRACK* track : Tracks() )
+    for( PCB_TRACK* track : Tracks() )
         aMap[ track->m_Uuid ] = track;
 
     for( FOOTPRINT* footprint : Footprints() )
@@ -1092,7 +1144,7 @@ EDA_RECT BOARD::ComputeBoundingBox( bool aBoardEdgesOnly ) const
     if( !aBoardEdgesOnly )
     {
         // Check tracks
-        for( TRACK* track : m_tracks )
+        for( PCB_TRACK* track : m_tracks )
         {
             if( ( track->GetLayerSet() & visible ).any() )
                 area.Merge( track->GetBoundingBox() );
@@ -1116,7 +1168,7 @@ void BOARD::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>
     int      viasCount = 0;
     int      trackSegmentsCount = 0;
 
-    for( TRACK* item : m_tracks )
+    for( PCB_TRACK* item : m_tracks )
     {
         if( item->Type() == PCB_VIA_T )
             viasCount++;
@@ -1236,13 +1288,13 @@ SEARCH_RESULT BOARD::Visit( INSPECTOR inspector, void* testData, const KICAD_T s
             break;
 
         case PCB_VIA_T:
-            result = IterateForward<TRACK*>( m_tracks, inspector, testData, p );
+            result = IterateForward<PCB_TRACK*>( m_tracks, inspector, testData, p );
             ++p;
             break;
 
         case PCB_TRACE_T:
         case PCB_ARC_T:
-            result = IterateForward<TRACK*>( m_tracks, inspector, testData, p );
+            result = IterateForward<PCB_TRACK*>( m_tracks, inspector, testData, p );
             ++p;
             break;
 
@@ -1520,7 +1572,7 @@ PAD* BOARD::GetPad( const wxPoint& aPosition, LSET aLayerSet ) const
 }
 
 
-PAD* BOARD::GetPad( const TRACK* aTrace, ENDPOINT_T aEndPoint ) const
+PAD* BOARD::GetPad( const PCB_TRACK* aTrace, ENDPOINT_T aEndPoint ) const
 {
     const wxPoint& aPosition = aTrace->GetEndPoint( aEndPoint );
 
@@ -1682,7 +1734,7 @@ void BOARD::PadDelete( PAD* aPad )
 }
 
 
-std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) const
+std::tuple<int, double, double> BOARD::GetTrackLength( const PCB_TRACK& aTrack ) const
 {
     int    count = 0;
     double length = 0.0;
@@ -1698,11 +1750,11 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
     {
         count++;
 
-        if( TRACK* track = dynamic_cast<TRACK*>( item ) )
+        if( PCB_TRACK* track = dynamic_cast<PCB_TRACK*>( item ) )
         {
             if( track->Type() == PCB_VIA_T && useHeight )
             {
-                VIA* via = static_cast<VIA*>( track );
+                PCB_VIA* via = static_cast<PCB_VIA*>( track );
                 length += stackup.GetLayerDistance( via->TopLayer(), via->BottomLayer() );
                 continue;
             }
@@ -1746,7 +1798,7 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
 
                         segLen = trackSeg.Length();
 
-                        // Part 2: length from the interesection to the pad anchor
+                        // Part 2: length from the intersection to the pad anchor
                         segInPadLen += ( loc - pad->GetPosition() ).EuclideanNorm();
                     }
                 }
@@ -1966,7 +2018,7 @@ const std::vector<BOARD_CONNECTED_ITEM*> BOARD::AllConnectedItems()
 {
     std::vector<BOARD_CONNECTED_ITEM*> items;
 
-    for( TRACK* track : Tracks() )
+    for( PCB_TRACK* track : Tracks() )
         items.push_back( track );
 
     for( FOOTPRINT* footprint : Footprints() )

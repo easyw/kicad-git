@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2004-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,11 +34,81 @@
 
 
 /**
- * Illegal file name characters used to insure file names will be valid on all supported
+ * Illegal file name characters used to ensure file names will be valid on all supported
  * platforms.  This is the list of illegal file name characters for Windows which includes
  * the illegal file name characters for Linux and OSX.
  */
 static const char illegalFileNameChars[] = "\\/:\"<>|";
+
+
+wxString ConvertToNewOverbarNotation( const wxString& aOldStr )
+{
+    wxString newStr;
+    bool inOverbar = false;
+
+    // Don't get tripped up by the legacy empty-string token.
+    if( aOldStr == "~" )
+        return aOldStr;
+
+    for( wxString::const_iterator chIt = aOldStr.begin(); chIt != aOldStr.end(); ++chIt )
+    {
+        if( *chIt == '~' )
+        {
+            wxString::const_iterator lookahead = chIt + 1;
+
+            if( lookahead != aOldStr.end() && *lookahead == '~' )
+            {
+                if( ++lookahead != aOldStr.end() && *lookahead == '{' )
+                {
+                    // This way the subseqent opening curly brace will not start an
+                    // overbar.
+                    newStr << "~~{}";
+                    continue;
+                }
+
+                // Two subsequent tildes mean a tilde.
+                newStr << "~";
+                ++chIt;
+                continue;
+            }
+            else if( lookahead != aOldStr.end() && *lookahead == '{' )
+            {
+                // Could mean the user wants "{" with an overbar, but more likely this
+                // is a case of double notation conversion.  Bail out.
+                return aOldStr;
+            }
+            else
+            {
+                if( inOverbar )
+                {
+                    newStr << "}";
+                    inOverbar = false;
+                }
+                else
+                {
+                    newStr << "~{";
+                    inOverbar = true;
+                }
+
+                continue;
+            }
+        }
+        else if( ( *chIt == ' ' || *chIt == '}' || *chIt == ')' ) && inOverbar )
+        {
+            // Spaces were used to terminate overbar as well
+            newStr << "}";
+            inOverbar = false;
+        }
+
+        newStr << *chIt;
+    }
+
+    // Explicitly end the overbar even if there was no terminating '~' in the aOldStr.
+    if( inOverbar )
+        newStr << "}";
+
+    return newStr;
+}
 
 
 bool ConvertSmartQuotesAndDashes( wxString* aString )
@@ -68,13 +138,6 @@ bool ConvertSmartQuotesAndDashes( wxString* aString )
 }
 
 
-/**
- * These Escape/Unescape routines use HTML-entity-reference-style encoding to handle
- * characters which are:
- *   (a) not legal in filenames
- *   (b) used as control characters in LIB_IDs
- *   (c) used to delineate hierarchical paths
- */
 wxString EscapeString( const wxString& aSource, ESCAPE_CONTEXT aContext )
 {
     wxString converted;
@@ -326,11 +389,13 @@ int ReadDelimitedText( char* aDest, const char* aSource, int aDestSize )
 }
 
 
-std::string EscapedUTF8( wxString aString )
+std::string EscapedUTF8( const wxString& aString )
 {
+    wxString str = aString;
+
     // No new-lines allowed in quoted strings
-    aString.Replace( "\r\n", "\r" );
-    aString.Replace( "\n", "\r" );
+    str.Replace( "\r\n", "\r" );
+    str.Replace( "\n", "\r" );
 
     std::string utf8 = TO_UTF8( aString );
 
@@ -387,9 +452,11 @@ wxString EscapeHTML( const wxString& aString )
 }
 
 
-bool NoPrintableChars( wxString aString )
+bool NoPrintableChars( const wxString& aString )
 {
-    return aString.Trim( true ).Trim( false ).IsEmpty();
+    wxString tmp = aString;
+
+    return tmp.Trim( true ).Trim( false ).IsEmpty();
 }
 
 
@@ -673,7 +740,7 @@ int ValueStringCompare( wxString strFWord, wxString strSWord )
 }
 
 
-int SplitString( wxString  strToSplit,
+int SplitString( const wxString& strToSplit,
                  wxString* strBeginning,
                  wxString* strDigits,
                  wxString* strEnd )

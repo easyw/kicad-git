@@ -28,6 +28,7 @@
 #include <pcb_edit_frame.h>
 #include <pcbnew_settings.h>
 #include <pcbplot.h>
+#include <pgm_base.h>
 #include <gerber_jobfile_writer.h>
 #include <reporter.h>
 #include <wildcards_and_files_ext.h>
@@ -35,6 +36,7 @@
 #include <locale_io.h>
 #include <bitmaps.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <dialog_plot.h>
 #include <dialog_gendrill.h>
 #include <wx_html_report_panel.h>
@@ -43,6 +45,9 @@
 #include <tools/drc_tool.h>
 #include <math/util.h>      // for KiROUND
 #include <macros.h>
+
+#include <wx/dirdlg.h>
+
 
 
 DIALOG_PLOT::DIALOG_PLOT( PCB_EDIT_FRAME* aParent ) :
@@ -390,7 +395,7 @@ void DIALOG_PLOT::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
     // Test if making the path relative is possible before asking the user if they want to do it
     if( relPathTest.MakeRelativeTo( defaultPath ) )
     {
-        msg.Printf( _( "Do you want to use a path relative to\n\"%s\"" ), defaultPath );
+        msg.Printf( _( "Do you want to use a path relative to\n'%s'?" ), defaultPath );
 
         wxMessageDialog dialog( this, msg, _( "Plot Output Directory" ),
                                 wxYES_NO | wxICON_QUESTION | wxYES_DEFAULT );
@@ -802,7 +807,7 @@ void DIALOG_PLOT::Plot( wxCommandEvent& event )
     if( !EnsureFileDirectoryExists( &outputDir, boardFilename, &reporter ) )
     {
         wxString msg;
-        msg.Printf( _( "Could not write plot files to folder \"%s\"." ), outputDir.GetPath() );
+        msg.Printf( _( "Could not write plot files to folder '%s'." ), outputDir.GetPath() );
         DisplayError( this, msg );
         return;
     }
@@ -894,12 +899,12 @@ void DIALOG_PLOT::Plot( wxCommandEvent& event )
             delete plotter->RenderSettings();
             delete plotter;
 
-            msg.Printf( _( "Plot file \"%s\" created." ), fn.GetFullPath() );
+            msg.Printf( _( "Plotted to '%s'." ), fn.GetFullPath() );
             reporter.Report( msg, RPT_SEVERITY_ACTION );
         }
         else
         {
-            msg.Printf( _( "Unable to create file \"%s\"." ), fn.GetFullPath() );
+            msg.Printf( _( "Unable to create file '%s'." ), fn.GetFullPath() );
             reporter.Report( msg, RPT_SEVERITY_ERROR );
         }
 

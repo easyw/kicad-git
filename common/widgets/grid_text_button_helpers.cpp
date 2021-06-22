@@ -25,6 +25,7 @@
 #include <wx/combo.h>
 #include <wx/filedlg.h>
 #include <wx/dirdlg.h>
+#include <wx/textctrl.h>
 
 #include <bitmaps.h>
 #include <kiway.h>
@@ -32,6 +33,7 @@
 #include <dialog_shim.h>
 #include <common.h>
 #include <env_paths.h>
+#include <pgm_base.h>
 #include <widgets/wx_grid.h>
 #include <widgets/grid_text_button_helpers.h>
 #include <eda_doc.h>

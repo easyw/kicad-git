@@ -25,9 +25,10 @@
 #include <bitmaps.h>
 #include <board_commit.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <pcb_shape.h>
 #include <fp_shape.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <collectors.h>
 #include <confirm.h>
@@ -155,12 +156,8 @@ int CONVERT_TOOL::LinesToPoly( const TOOL_EVENT& aEvent )
     if( selection.Empty() )
         return 0;
 
-    // TODO(JE) From a context menu, the selection condition enforces that the items are on
-    // a single layer.  But, you can still trigger this with items on multiple layer selected.
-    // Technically we should make this work if each contiguous poly shares a layer
-    PCB_LAYER_ID destLayer = static_cast<BOARD_ITEM*>( selection.Front() )->GetLayer();
-
-    SHAPE_POLY_SET polySet = makePolysFromSegs( selection.GetItems() );
+    PCB_LAYER_ID   destLayer = m_frame->GetActiveLayer();
+    SHAPE_POLY_SET polySet   = makePolysFromSegs( selection.GetItems() );
 
     polySet.Append( makePolysFromRects( selection.GetItems() ) );
 
@@ -206,10 +203,15 @@ int CONVERT_TOOL::LinesToPoly( const TOOL_EVENT& aEvent )
         BOARD_ITEM_CONTAINER* parent   = frame->GetModel();
         ZONE_SETTINGS         zoneInfo = frame->GetZoneSettings();
 
+        bool nonCopper = IsNonCopperLayer( destLayer );
+        zoneInfo.m_Layers.reset().set( destLayer );
+
         int ret;
 
         if( aEvent.IsAction( &PCB_ACTIONS::convertToKeepout ) )
             ret = InvokeRuleAreaEditor( frame, &zoneInfo );
+        else if( nonCopper )
+            ret = InvokeNonCopperZonesEditor( frame, &zoneInfo );
         else
             ret = InvokeCopperZonesEditor( frame, &zoneInfo );
 
@@ -570,7 +572,7 @@ int CONVERT_TOOL::PolyToLines( const TOOL_EVENT& aEvent )
                 // Creating tracks
                 for( SEG& seg : segs )
                 {
-                    TRACK* track = new TRACK( parent );
+                    PCB_TRACK* track = new PCB_TRACK( parent );
 
                     track->SetLayer( layer );
                     track->SetStart( wxPoint( seg.A ) );
@@ -659,8 +661,8 @@ int CONVERT_TOOL::SegmentToArc( const TOOL_EVENT& aEvent )
     else
     {
         wxASSERT( source->Type() == PCB_TRACE_T );
-        TRACK* line = static_cast<TRACK*>( source );
-        ARC*   arc  = new ARC( parent );
+        PCB_TRACK* line = static_cast<PCB_TRACK*>( source );
+        PCB_ARC*   arc  = new PCB_ARC( parent );
 
         arc->SetLayer( layer );
         arc->SetWidth( line->GetWidth() );
@@ -695,7 +697,7 @@ OPT<SEG> CONVERT_TOOL::getStartEndPoints( EDA_ITEM* aItem, int* aWidth )
 
     case PCB_TRACE_T:
     {
-        TRACK* line = static_cast<TRACK*>( aItem );
+        PCB_TRACK* line = static_cast<PCB_TRACK*>( aItem );
 
         if( aWidth )
             *aWidth = line->GetWidth();
@@ -706,7 +708,7 @@ OPT<SEG> CONVERT_TOOL::getStartEndPoints( EDA_ITEM* aItem, int* aWidth )
 
     case PCB_ARC_T:
     {
-        ARC* arc = static_cast<ARC*>( aItem );
+        PCB_ARC* arc = static_cast<PCB_ARC*>( aItem );
 
         if( aWidth )
             *aWidth = arc->GetWidth();

@@ -24,8 +24,11 @@
 
 #include <widgets/paged_dialog.h>
 #include <pcb_edit_frame.h>
+#include <board_design_settings.h>
 #include <board_stackup_manager/stackup_predefined_prms.h>
 #include "panel_board_finish.h"
+
+#include <wx/treebook.h>
 
 
 PANEL_SETUP_BOARD_FINISH::PANEL_SETUP_BOARD_FINISH( PAGED_DIALOG* aParent, BOARD* aBoard ) :

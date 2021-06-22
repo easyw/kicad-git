@@ -25,6 +25,7 @@
 #include <dialog_sheet_properties.h>
 #include <kiface_i.h>
 #include <wx/string.h>
+#include <wx/log.h>
 #include <wx/tooltip.h>
 #include <confirm.h>
 #include <validators.h>
@@ -295,17 +296,19 @@ bool DIALOG_SHEET_PROPERTIES::TransferDataFromWindow()
                                         _( "Sheet File Path" ),
                                         wxYES_NO | wxYES_DEFAULT | wxICON_QUESTION | wxCENTER );
 
-            makeRelDlg.SetExtendedMessage(
-                    _( "Using relative hierarchical sheet file name paths improves schematic\n"
-                       "portability across systems and platforms.  Using absolute paths can\n"
-                       "result in portability issues." ) );
+            makeRelDlg.SetExtendedMessage( _( "Using relative hierarchical sheet file name paths "
+                                              "improves schematic portability across systems and "
+                                              "platforms.  Using absolute paths can result in "
+                                              "portability issues." ) );
             makeRelDlg.SetYesNoLabels( wxMessageDialog::ButtonLabel( _( "Use Relative Path" ) ),
                                        wxMessageDialog::ButtonLabel( _( "Use Absolute Path" ) ) );
 
             if( makeRelDlg.ShowModal() == wxID_YES )
             {
-                wxLogTrace( tracePathsAndFiles, "\n    Converted absolute path: '%s'\n"
-                            "    to relative path: '%s'", tmp.GetPath(), fn.GetPath() );
+                wxLogTrace( tracePathsAndFiles, "\n    Converted absolute path: '%s'"
+                                                "\n    to relative path: '%s'",
+                                                tmp.GetPath(),
+                                                fn.GetPath() );
                 m_fields->at( SHEETFILENAME ).SetText( fn.GetFullPath() );
                 newRelativeFilename = fn.GetFullPath();
             }
@@ -403,8 +406,8 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
     }
     else if( sheetFileName.GetExt().CmpNoCase( KiCadSchematicFileExtension ) != 0 )
     {
-        msg.Printf( _( "The file \"%s\" does not appear to be a valid schematic file." ),
-                    sheetFileName.GetFullName() );
+        msg = wxString::Format( _( "The file '%s' does not appear to be a valid schematic file." ),
+                                sheetFileName.GetFullName() );
         wxMessageDialog badSchFileDialog( this, msg, _( "Invalid Schematic File" ),
                                           wxOK | wxCENTRE | wxICON_EXCLAMATION );
         badSchFileDialog.ShowModal();
@@ -423,9 +426,12 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
 
     if( !screenFileName.Normalize( wxPATH_NORM_ALL, currentScreenFileName.GetPath() ) )
     {
-        msg.Printf( _( "Cannot normalize new sheet schematic file path:\n'%s'\n"
-                       "against parent sheet schematic file path:\n`%s`." ),
-                    sheetFileName.GetPath(), currentScreenFileName.GetPath() );
+        msg = wxString::Format( _( "Cannot normalize new sheet schematic file path:\n"
+                                   "'%s'\n"
+                                   "against parent sheet schematic file path:\n"
+                                   "'%s'." ),
+                                sheetFileName.GetPath(),
+                                currentScreenFileName.GetPath() );
         DisplayError( this, msg );
         return false;
     }
@@ -448,8 +454,9 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
     {
         loadFromFile = wxFileExists( newAbsoluteFilename );
 
-        wxLogTrace( tracePathsAndFiles, "\n    Sheet requested file \"%s\", %s",
-                    newAbsoluteFilename, ( loadFromFile ) ? "found" : "not found" );
+        wxLogTrace( tracePathsAndFiles, "\n    Sheet requested file '%s', %s",
+                                        newAbsoluteFilename,
+                                        loadFromFile ? "found" : "not found" );
     }
 
     if( m_sheet->GetScreen() == nullptr )      // New just created sheet.
@@ -460,14 +467,15 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
         if( useScreen || loadFromFile )     // Load from existing file.
         {
             clearAnnotation = true;
-            wxString existsMsg;
-            wxString linkMsg;
-            existsMsg.Printf( _( "\"%s\" already exists." ), sheetFileName.GetFullName() );
-            linkMsg.Printf( _( "Link \"%s\" to this file?" ), newAbsoluteFilename );
-            msg.Printf( wxT( "%s\n\n%s" ), existsMsg, linkMsg );
 
-            if( !IsOK( this, msg ) )
+            if( !IsOK( this, wxString::Format( _( "'%s' already exists." ),
+                                               sheetFileName.GetFullName() )
+                             + wxT( "\n\n" )
+                             + wxString::Format( _( "Link '%s' to this file?" ),
+                                                 newAbsoluteFilename ) ) )
+            {
                 return false;
+            }
         }
         else                                // New file.
         {
@@ -477,25 +485,10 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
     else                                    // Existing sheet.
     {
         bool isUndoable = true;
-        wxString replaceMsg;
-        wxString newMsg;
-        wxString noUndoMsg;
         isExistingSheet = true;
 
         if( !m_frame->AllowCaseSensitiveFileNameClashes( newAbsoluteFilename ) )
             return false;
-
-        // Changing the filename of a sheet can modify the full hierarchy structure
-        // and can be not always undoable.
-        // So prepare messages for user notifications:
-        replaceMsg.Printf( _( "Change \"%s\" link from \"%s\" to \"%s\"?" ),
-                           newAbsoluteFilename,
-                           m_sheet->GetFileName(),
-                           sheetFileName.GetFullName() );
-        newMsg.Printf( _( "Create new file \"%s\" with contents of \"%s\"?" ),
-                       sheetFileName.GetFullName(),
-                       m_sheet->GetFileName() );
-        noUndoMsg = _( "This action cannot be undone." );
 
         // We are always using here a case insensitive comparison to avoid issues
         // under Windows, although under Unix filenames are case sensitive.
@@ -518,10 +511,15 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
             {
                 clearAnnotation = true;
 
-                msg.Printf( wxT( "%s\n\n%s" ), replaceMsg, noUndoMsg );
-
-                if( !IsOK( this, msg ) )
+                if( !IsOK( this, wxString::Format( _( "Change '%s' link from '%s' to '%s'?" ),
+                                                   newAbsoluteFilename,
+                                                   m_sheet->GetFileName(),
+                                                   sheetFileName.GetFullName() )
+                                 + wxT( "\n\n" )
+                                 + _( "This action cannot be undone." ) ) )
+                {
                     return false;
+                }
 
                 if( loadFromFile )
                     m_sheet->SetScreen( nullptr );
@@ -530,10 +528,14 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
             {
                 if( m_sheet->GetScreenCount() > 1 )
                 {
-                    msg.Printf( wxT( "%s\n\n%s" ), newMsg, noUndoMsg );
-
-                    if( !IsOK( this, msg ) )
+                    if( !IsOK( this, wxString::Format( _( "Create new file '%s' with contents of '%s'?" ),
+                                                       sheetFileName.GetFullName(),
+                                                       m_sheet->GetFileName() )
+                                     + wxT( "\n\n" )
+                                     + _( "This action cannot be undone." ) ) )
+                    {
                         return false;
+                    }
                 }
 
                 renameFile = true;
@@ -547,7 +549,7 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
         {
             SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD ) );
 
-            // If the the associated screen is shared by more than one sheet, do not
+            // If the associated screen is shared by more than one sheet, do not
             // change the filename of the corresponding screen here.
             // (a new screen will be created later)
             // if it is not shared, update the filename
@@ -560,16 +562,17 @@ bool DIALOG_SHEET_PROPERTIES::onSheetFilenameChanged( const wxString& aNewFilena
             }
             catch( const IO_ERROR& ioe )
             {
-                msg.Printf( _( "Error occurred saving schematic file \"%s\"." ),
-                            newAbsoluteFilename );
+                msg = wxString::Format( _( "Error occurred saving schematic file '%s'." ),
+                                        newAbsoluteFilename );
                 DisplayErrorMessage( this, msg, ioe.What() );
 
-                msg.Printf( _( "Failed to save schematic \"%s\"" ), newAbsoluteFilename );
+                msg = wxString::Format( _( "Failed to save schematic '%s'" ),
+                                        newAbsoluteFilename );
                 m_frame->SetMsgPanel( wxEmptyString, msg );
                 return false;
             }
 
-            // If the the associated screen is shared by more than one sheet, remove the
+            // If the associated screen is shared by more than one sheet, remove the
             // screen and reload the file to a new screen.  Failure to do this will trash
             // the screen reference counting in complex hierarchies.
             if( m_sheet->GetScreenCount() > 1 )

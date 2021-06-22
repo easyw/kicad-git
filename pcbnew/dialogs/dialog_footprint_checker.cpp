@@ -25,6 +25,7 @@
 #include <widgets/appearance_controls.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
+#include <footprint.h>
 #include <pcb_marker.h>
 #include <drc/drc_results_provider.h>
 #include <footprint_edit_frame.h>
@@ -230,7 +231,7 @@ void DIALOG_FOOTPRINT_CHECKER::OnLeftDClickItem( wxMouseEvent& event )
             Show( false );
     }
 
-    // Do not skip aVent here: tihs is not useful, and Pcbnew crashes
+    // Do not skip aVent here: this is not useful, and Pcbnew crashes
     // if skipped (at least on Windows)
 }
 

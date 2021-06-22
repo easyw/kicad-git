@@ -36,15 +36,17 @@
 #include <math/util.h>      // for KiROUND
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <core/arraydim.h>
 #include <footprint.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <fp_shape.h>
+#include <pad.h>
 #include <pcb_text.h>
 #include <zone.h>
 #include <pcb_shape.h>
 #include <pcb_target.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 
 #include <pcbplot.h>
 #include <plotters_specific.h>
@@ -111,8 +113,10 @@ void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, PCB_LAYER_ID aLayer,
                     PlotStandardLayer( aBoard, aPlotter, layer_mask, plotOpt );
             }
             else
+            {
                 PlotSolderMaskLayer( aBoard, aPlotter, layer_mask, plotOpt,
                                      soldermask_min_thickness );
+            }
 
             break;
 
@@ -128,6 +132,7 @@ void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, PCB_LAYER_ID aLayer,
                 PlotLayerOutlines( aBoard, aPlotter, layer_mask, plotOpt );
             else
                 PlotStandardLayer( aBoard, aPlotter, layer_mask, plotOpt );
+
             break;
 
         case F_SilkS:
@@ -157,6 +162,7 @@ void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, PCB_LAYER_ID aLayer,
                 // Plot the mask
                 PlotStandardLayer( aBoard, aPlotter, layer_mask, plotOpt );
             }
+
             break;
 
         // These layers are plotted like silk screen layers.
@@ -181,6 +187,7 @@ void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, PCB_LAYER_ID aLayer,
                 PlotLayerOutlines( aBoard, aPlotter, layer_mask, plotOpt );
             else
                 PlotStandardLayer( aBoard, aPlotter, layer_mask, plotOpt );
+
             break;
 
         default:
@@ -193,6 +200,7 @@ void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, PCB_LAYER_ID aLayer,
                 PlotLayerOutlines( aBoard, aPlotter, layer_mask, plotOpt );
             else
                 PlotStandardLayer( aBoard, aPlotter, layer_mask, plotOpt );
+
             break;
         }
     }
@@ -243,9 +251,13 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                 if( sketchPads &&
                         ( ( onFrontFab && pad->GetLayerSet().Contains( F_Cu ) ) ||
                           ( onBackFab && pad->GetLayerSet().Contains( B_Cu ) ) ) )
+                {
                     padPlotMode = SKETCH;
+                }
                 else
+                {
                     continue;
+                }
             }
 
             /// pads not connected to copper are optionally not drawn
@@ -306,7 +318,9 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                     ( aPlotOpt.GetDrillMarksType() == PCB_PLOT_PARAMS::NO_DRILL_SHAPE ) &&
                     ( pad->GetSize() == pad->GetDrillSize() ) &&
                     ( pad->GetAttribute() == PAD_ATTRIB::NPTH ) )
+                {
                     break;
+                }
 
                 itemplotter.PlotPad( pad, color, padPlotMode );
                 break;
@@ -330,7 +344,9 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                 // because inflating/deflating using different values for y and y
                 // we are using only margin.x as inflate/deflate value
                 if( mask_clearance == 0 )
+                {
                     itemplotter.PlotPad( pad, color, padPlotMode );
+                }
                 else
                 {
                     PAD dummy( *pad );
@@ -341,7 +357,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                     int dx = padSize.x / 2;
                     int dy = padSize.y / 2;
                     int ddx = padDelta.x / 2;
-                    int  ddy = padDelta.y / 2;
+                    int ddy = padDelta.y / 2;
 
                     outline.Append( -dx - ddy,  dy + ddx );
                     outline.Append(  dx + ddy,  dy - ddx );
@@ -367,10 +383,57 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                 break;
 
             case PAD_SHAPE::ROUNDRECT:
-            case PAD_SHAPE::CHAMFERED_RECT:
-                // Chamfer and rounding are stored as a percent and so don't need scaling
+            {
+                // rounding is stored as a percent, but we have to change the new radius
+                // to initial_radius + clearance to have a inflated/deflated similar shape
+                int initial_radius = pad->GetRoundRectCornerRadius();
                 pad->SetSize( padPlotsSize );
+                pad->SetRoundRectCornerRadius( std::max( initial_radius + mask_clearance, 0 ) );
+
                 itemplotter.PlotPad( pad, color, padPlotMode );
+            }
+                break;
+
+            case PAD_SHAPE::CHAMFERED_RECT:
+                if( mask_clearance == 0 )
+                {
+                    // the size can be slightly inflated by width_adj (PS/PDF only)
+                    pad->SetSize( padPlotsSize );
+                    itemplotter.PlotPad( pad, color, padPlotMode );
+                }
+                else
+                {
+                    // Due to the polygonal shape of a CHAMFERED_RECT pad, the best way is to
+                    // convert the pad shape to a full polygon, inflate/deflate the polygon
+                    // and use a dummy  CUSTOM pad to plot the final shape.
+                    PAD dummy( *pad );
+                    // Build the dummy pad outline with coordinates relative to the pad position
+                    // and orientation 0. The actual pos and rotation will be taken in account
+                    // later by the plot function
+                    dummy.SetPosition( wxPoint( 0, 0 ) );
+                    dummy.SetOrientation( 0 );
+                    SHAPE_POLY_SET outline;
+                    int maxError = aBoard->GetDesignSettings().m_MaxError;
+                    int numSegs = GetArcToSegmentCount( mask_clearance, maxError, 360.0 );
+                    dummy.TransformShapeWithClearanceToPolygon( outline, UNDEFINED_LAYER, 0,
+                                                                maxError, ERROR_INSIDE );
+                    outline.InflateWithLinkedHoles( mask_clearance, numSegs, SHAPE_POLY_SET::PM_FAST );
+
+                    // Initialize the dummy pad shape:
+                    dummy.SetAnchorPadShape( PAD_SHAPE::CIRCLE );
+                    dummy.SetShape( PAD_SHAPE::CUSTOM );
+                    dummy.DeletePrimitivesList();
+                    dummy.AddPrimitivePoly( outline, 0, true );
+
+                    // Be sure the anchor pad is not bigger than the deflated shape because this
+                    // anchor will be added to the pad shape when plotting the pad.
+                    // So we set the anchor size to 0
+                    dummy.SetSize( wxSize( 0,0 ) );
+                    dummy.SetPosition( pad->GetPosition() );
+                    dummy.SetOrientation( pad->GetOrientation() );
+
+                    itemplotter.PlotPad( &dummy, color, padPlotMode );
+                }
                 break;
 
             case PAD_SHAPE::CUSTOM:
@@ -424,9 +487,9 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
     aPlotter->StartBlock( NULL );
 
-    for( const TRACK* track : aBoard->Tracks() )
+    for( const PCB_TRACK* track : aBoard->Tracks() )
     {
-        const VIA* via = dyn_cast<const VIA*>( track );
+        const PCB_VIA* via = dyn_cast<const PCB_VIA*>( track );
 
         if( !via )
             continue;
@@ -487,7 +550,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
     gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CONDUCTOR );
 
     // Plot tracks (not vias) :
-    for( const TRACK* track : aBoard->Tracks() )
+    for( const PCB_TRACK* track : aBoard->Tracks() )
     {
         if( track->Type() == PCB_VIA_T )
             continue;
@@ -505,11 +568,11 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
         if( track->Type() == PCB_ARC_T )
         {
-            const ARC* arc = static_cast<const ARC*>( track );
+            const    PCB_ARC* arc = static_cast<const PCB_ARC*>( track );
             VECTOR2D center( arc->GetCenter() );
-            int radius = arc->GetRadius();
-            double start_angle = arc->GetArcAngleStart();
-            double end_angle = start_angle + arc->GetAngle();
+            int      radius = arc->GetRadius();
+            double   start_angle = arc->GetArcAngleStart();
+            double   end_angle = start_angle + arc->GetAngle();
 
             aPlotter->ThickArc( wxPoint( center.x, center.y ), -end_angle, -start_angle,
                                 radius, width, plotMode, &gbr_metadata );
@@ -657,14 +720,7 @@ void PlotLayerOutlines( BOARD* aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                 cornerList.clear();
                 const SHAPE_LINE_CHAIN& path = (kk == 0) ? outlines.COutline( ii ) : outlines.CHole( ii, kk - 1 );
 
-                for( int jj = 0; jj < path.PointCount(); jj++ )
-                    cornerList.emplace_back( (wxPoint) path.CPoint( jj ) );
-
-                // Ensure the polygon is closed
-                if( cornerList[0] != cornerList[cornerList.size() - 1] )
-                    cornerList.push_back( cornerList[0] );
-
-                aPlotter->PlotPoly( cornerList, FILL_TYPE::NO_FILL );
+                aPlotter->PlotPoly( path, FILL_TYPE::NO_FILL );
             }
         }
 
@@ -701,9 +757,9 @@ void PlotLayerOutlines( BOARD* aBoard, PLOTTER* aPlotter, LSET aLayerMask,
         }
 
         // Plot vias holes
-        for( TRACK* track : aBoard->Tracks() )
+        for( PCB_TRACK* track : aBoard->Tracks() )
         {
-            const VIA* via = dyn_cast<const VIA*>( track );
+            const PCB_VIA* via = dyn_cast<const PCB_VIA*>( track );
 
             if( via && via->IsOnLayer( layer ) )    // via holes can be not through holes
             {
@@ -816,9 +872,9 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
             int via_clearance = aBoard->GetDesignSettings().m_SolderMaskMargin;
             int via_margin = via_clearance + inflate;
 
-            for( TRACK* track : aBoard->Tracks() )
+            for( PCB_TRACK* track : aBoard->Tracks() )
             {
-                const VIA* via = dyn_cast<const VIA*>( track );
+                const PCB_VIA* via = dyn_cast<const PCB_VIA*>( track );
 
                 if( !via )
                     continue;
@@ -905,12 +961,8 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
     // Plot each initial shape (pads and polygons on mask layer), with suitable attributes:
     PlotStandardLayer( aBoard, aPlotter, aLayerMask, aPlotOpt );
 
-    // Add shapes corresponding to areas having too small thickness.
-    std::vector<wxPoint> cornerList;
-
     for( int ii = 0; ii < areas.OutlineCount(); ii++ )
     {
-        cornerList.clear();
         const SHAPE_LINE_CHAIN& path = areas.COutline( ii );
 
         // polygon area in mm^2 :
@@ -924,14 +976,7 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
         if( curr_area < poly_min_area_mm2 )
             continue;
 
-        for( int jj = 0; jj < path.PointCount(); jj++ )
-            cornerList.emplace_back( (wxPoint) path.CPoint( jj ) );
-
-        // Ensure the polygon is closed
-        if( cornerList[0] != cornerList[cornerList.size() - 1] )
-            cornerList.push_back( cornerList[0] );
-
-        aPlotter->PlotPoly( cornerList, FILL_TYPE::FILLED_SHAPE );
+        aPlotter->PlotPoly( path, FILL_TYPE::FILLED_SHAPE );
     }
 #endif
 }
@@ -992,8 +1037,9 @@ static void initializePlotter( PLOTTER* aPlotter, const BOARD* aBoard,
         compound_scale = std::min( xscale, yscale ) * paperscale;
     }
     else
+    {
         compound_scale = aPlotOpts->GetScale() * paperscale;
-
+    }
 
     // For the plot offset we have to keep in mind the auxiliary origin too: if autoscaling is
     // off we check that plot option (i.e. autoscaling overrides auxiliary origin)

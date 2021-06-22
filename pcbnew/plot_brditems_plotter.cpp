@@ -54,19 +54,19 @@
 
 #include <board.h>
 #include <board_item.h>                       // for BOARD_ITEM, S_CIRCLE
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <pcb_shape.h>
 #include <fp_shape.h>
 #include <footprint.h>
 #include <fp_text.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <pad.h>
 #include <pcb_target.h>
 #include <pcb_text.h>
 #include <zone.h>
 
 #include <wx/debug.h>                         // for wxASSERT_MSG
-#include <wx/wx.h>                            // for wxPoint, wxSize, wxArra...
+#include <wx/gdicmn.h>
 
 
 /* class BRDITEMS_PLOTTER is a helper class to plot board items
@@ -291,7 +291,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItems( const FOOTPRINT* aFootprint )
     const FP_TEXT* textItem = &aFootprint->Reference();
     LAYER_NUM textLayer = textItem->GetLayer();
 
-    // Reference and value are specfic items, not in graphic items list
+    // Reference and value are specific items, not in graphic items list
     if( GetPlotReference() && m_layerMask[textLayer]
         && ( textItem->IsVisible() || GetPlotInvisibleText() ) )
     {
@@ -355,7 +355,7 @@ void BRDITEMS_PLOTTER::PlotBoardGraphicItems()
         case PCB_DIM_CENTER_T:
         case PCB_DIM_ORTHOGONAL_T:
         case PCB_DIM_LEADER_T:
-            PlotDimension( (DIMENSION_BASE*) item );
+            PlotDimension( (PCB_DIMENSION_BASE*) item );
             break;
 
         case PCB_TARGET_T:
@@ -407,7 +407,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, COLOR4D a
 }
 
 
-void BRDITEMS_PLOTTER::PlotDimension( const DIMENSION_BASE* aDim )
+void BRDITEMS_PLOTTER::PlotDimension( const PCB_DIMENSION_BASE* aDim )
 {
     if( !m_layerMask[aDim->GetLayer()] )
         return;
@@ -779,9 +779,6 @@ void BRDITEMS_PLOTTER::PlotFilledAreas( const ZONE* aZone, const SHAPE_POLY_SET&
         }
     }
 
-    // We need a buffer to store corners coordinates:
-    std::vector< wxPoint > cornerList;
-
     m_plotter->SetColor( getColor( aZone->GetLayer() ) );
 
     m_plotter->StartBlock( nullptr );    // Clean current object attributes
@@ -798,54 +795,41 @@ void BRDITEMS_PLOTTER::PlotFilledAreas( const ZONE* aZone, const SHAPE_POLY_SET&
     {
         const SHAPE_LINE_CHAIN& outline = polysList.Outline( idx );
 
-        cornerList.clear();
-        cornerList.reserve( outline.PointCount() );
-
-        for( int ic = 0; ic < outline.PointCount(); ++ic )
+        // Plot the current filled area (as region for Gerber plotter
+        // to manage attributes) and its outline for thick outline
+        if( GetPlotMode() == FILLED )
         {
-            cornerList.emplace_back( wxPoint( outline.CPoint( ic ) ) );
-        }
-
-        if( cornerList.size() )   // Plot the current filled area outline
-        {
-            // First, close the outline
-            if( cornerList[0] != cornerList[cornerList.size() - 1] )
-                cornerList.push_back( cornerList[0] );
-
-            // Plot the current filled area (as region for Gerber plotter
-            // to manage attributes) and its outline for thick outline
-            if( GetPlotMode() == FILLED )
+            if( m_plotter->GetPlotterType() == PLOT_FORMAT::GERBER )
             {
-                if( m_plotter->GetPlotterType() == PLOT_FORMAT::GERBER )
+                if( outline_thickness > 0 )
                 {
-                    if( outline_thickness > 0 )
-                    {
-                        m_plotter->PlotPoly( cornerList, FILL_TYPE::NO_FILL, outline_thickness,
-                                             &gbr_metadata );
-                    }
+                    m_plotter->PlotPoly( outline, FILL_TYPE::NO_FILL,
+                                         outline_thickness, &gbr_metadata );
+                }
 
-                    static_cast<GERBER_PLOTTER*>( m_plotter )->PlotGerberRegion( cornerList,
-                                                                                 &gbr_metadata );
-                }
-                else
-                {
-                    m_plotter->PlotPoly( cornerList, FILL_TYPE::FILLED_SHAPE, outline_thickness,
-                                         &gbr_metadata );
-                }
+                static_cast<GERBER_PLOTTER*>( m_plotter )->PlotGerberRegion(
+                                                    outline, &gbr_metadata );
             }
             else
             {
-                if( outline_thickness )
-                {
-                    for( unsigned jj = 1; jj < cornerList.size(); jj++ )
-                    {
-                        m_plotter->ThickSegment( cornerList[jj -1], cornerList[jj],
-                                                 outline_thickness, GetPlotMode(), &gbr_metadata );
-                    }
-                }
-
-                m_plotter->SetCurrentLineWidth( -1 );
+                m_plotter->PlotPoly( outline, FILL_TYPE::FILLED_SHAPE,
+                                     outline_thickness, &gbr_metadata );
             }
+        }
+        else
+        {
+            if( outline_thickness )
+            {
+                for( int jj = 1; jj < outline.PointCount(); jj++ )
+                {
+                    m_plotter->ThickSegment( wxPoint( outline.CPoint( jj - 1) ),
+                                             wxPoint( outline.CPoint( jj ) ),
+                                             outline_thickness,
+                                             GetPlotMode(), &gbr_metadata );
+                }
+            }
+
+            m_plotter->SetCurrentLineWidth( -1 );
         }
     }
 
@@ -1032,9 +1016,9 @@ void BRDITEMS_PLOTTER::PlotDrillMarks()
     if( GetPlotMode() == FILLED )
          m_plotter->SetColor( WHITE );
 
-    for( TRACK* tracks : m_board->Tracks() )
+    for( PCB_TRACK* tracks : m_board->Tracks() )
     {
-        const VIA* via = dyn_cast<const VIA*>( tracks );
+        const PCB_VIA* via = dyn_cast<const PCB_VIA*>( tracks );
 
         if( via )
         {

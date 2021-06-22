@@ -26,7 +26,6 @@
 #define KIWAY_PLAYER_H_
 
 #include <wx/frame.h>
-#include <wx/cmdline.h>
 
 #include <vector>
 #include <kiway_holder.h>
@@ -44,6 +43,8 @@ class WX_EVENT_LOOP;
 
 class wxSocketServer;
 class wxSocketBase;
+class wxSocketEvent;
+class wxCmdLineParser;
 
 
 /**
@@ -223,7 +224,7 @@ protected:
 };
 
 
-// psuedo code for OpenProjectFiles
+// pseudo code for OpenProjectFiles
 #if 0
 
 bool OpenProjectFiles( const std::vector<wxString>& aFileList, int aCtl = 0 )

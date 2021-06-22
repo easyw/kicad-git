@@ -24,17 +24,23 @@
  */
 
 #include <eda_base_frame.h>
+#include <kiplatform/app.h>
 #include <project.h>
 #include <common.h>
 #include <reporter.h>
 #include <macros.h>
 #include <mutex>
-#include <wx/process.h>
 #include <wx/config.h>
-#include <wx/utils.h>
+#include <wx/log.h>
+#include <wx/msgdlg.h>
+#include <wx/process.h>
 #include <wx/stdpaths.h>
 #include <wx/url.h>
-#include <wx/wx.h>
+#include <wx/utils.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 
 int ProcessExecute( const wxString& aCommandLine, int aFlags, wxProcess *callback )
@@ -311,7 +317,7 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
     {
         if( aReporter )
         {
-            msg.Printf( _( "Cannot make path \"%s\" absolute with respect to \"%s\"." ),
+            msg.Printf( _( "Cannot make path '%s' absolute with respect to '%s'." ),
                         aTargetFullFileName->GetPath(),
                         baseFilePath );
             aReporter->Report( msg, RPT_SEVERITY_ERROR );
@@ -330,7 +336,7 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
         {
             if( aReporter )
             {
-                msg.Printf( _( "Output directory \"%s\" created.\n" ), outputPath );
+                msg.Printf( _( "Output directory '%s' created.\n" ), outputPath );
                 aReporter->Report( msg, RPT_SEVERITY_INFO );
                 return true;
             }
@@ -339,7 +345,7 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
         {
             if( aReporter )
             {
-                msg.Printf( _( "Cannot create output directory \"%s\".\n" ), outputPath );
+                msg.Printf( _( "Cannot create output directory '%s'.\n" ), outputPath );
                 aReporter->Report( msg, RPT_SEVERITY_ERROR );
             }
 
@@ -599,4 +605,21 @@ long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
 #endif
 
     return timestamp;
+}
+
+bool WarnUserIfOperatingSystemUnsupported()
+{
+    if( !KIPLATFORM::APP::IsOperatingSystemUnsupported() )
+        return false;
+
+    wxMessageDialog dialog( NULL, _( "This operating system is not supported "
+                                     "by KiCad and its dependencies." ), 
+                            _( "Unsupported Operating System" ),
+                            wxOK | wxICON_EXCLAMATION );
+
+    dialog.SetExtendedMessage( _( "Any issues with KiCad on this system cannot "
+                                  "be reported to the official bugtracker." ) );
+    dialog.ShowModal();
+
+    return true;
 }

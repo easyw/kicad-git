@@ -83,6 +83,7 @@ uniform float worldPixelSize;
 uniform vec2 screenPixelSize;
 uniform float pixelSizeMultiplier;
 uniform float minLinePixelWidth;
+uniform vec2 antialiasingOffset;
 
 
 float roundr( float f, float r )
@@ -239,6 +240,7 @@ void main()
 
     }
 
+    gl_Position.xy += antialiasingOffset;
 }
 
 )SHADER_SOURCE";
@@ -753,12 +755,9 @@ const char smaa_base_shader_p1[] = R"SHADER_SOURCE(
 #define SMAA_MAX_SEARCH_STEPS_DIAG 8
 #define SMAA_CORNER_ROUNDING 25
 #elif defined(SMAA_PRESET_ULTRA)
-#define SMAA_THRESHOLD 0.005
-//0.05
-#define SMAA_MAX_SEARCH_STEPS 64
-//32
-#define SMAA_MAX_SEARCH_STEPS_DIAG 32
-//16
+#define SMAA_THRESHOLD 0.05
+#define SMAA_MAX_SEARCH_STEPS 32
+#define SMAA_MAX_SEARCH_STEPS_DIAG 16
 #define SMAA_CORNER_ROUNDING 25
 #endif
 
@@ -1831,7 +1830,7 @@ void main()
 
 )SHADER_SOURCE";
 
-const char smaa_pass_1_fragment_shader[] = R"SHADER_SOURCE(
+const char smaa_pass_1_fragment_shader_luma[] = R"SHADER_SOURCE(
 
 varying vec2 texcoord;
 varying vec4 offset[3];
@@ -1840,6 +1839,19 @@ uniform sampler2D colorTex;
 void main()
 {
     gl_FragColor.xy = SMAALumaEdgeDetectionPS(texcoord, offset, colorTex).xy;
+}
+
+)SHADER_SOURCE";
+
+const char smaa_pass_1_fragment_shader_color[] = R"SHADER_SOURCE(
+
+varying vec2 texcoord;
+varying vec4 offset[3];
+uniform sampler2D colorTex;
+
+void main()
+{
+    gl_FragColor.xy = SMAAColorEdgeDetectionPS(texcoord, offset, colorTex).xy;
 }
 
 )SHADER_SOURCE";

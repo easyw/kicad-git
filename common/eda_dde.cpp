@@ -30,7 +30,8 @@
 #include <kiway_player.h>
 #include <id.h>
 
-#include <wx/wx.h>
+#include <wx/crt.h>
+
 
 static const wxString HOSTNAME( wxT( "localhost" ) );
 
@@ -217,7 +218,7 @@ private:
             wxSocketClient* sock_client;
             wxIPV4address   addr;
 
-            // Create a connexion
+            // Create a connection
             addr.Hostname( HOSTNAME );
             addr.Service( port );
 

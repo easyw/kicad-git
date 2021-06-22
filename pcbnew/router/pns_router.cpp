@@ -27,7 +27,6 @@
 #include <view/view_group.h>
 #include <gal/graphics_abstraction_layer.h>
 
-#include <pgm_base.h>
 #include <settings/settings_manager.h>
 
 #include <pcb_painter.h>
@@ -96,8 +95,9 @@ void ROUTER::SyncWorld()
 
     m_world = std::make_unique<NODE>( );
     m_iface->SyncWorld( m_world.get() );
-
+    m_world->FixupVirtualVias();
 }
+
 
 void ROUTER::ClearWorld()
 {
@@ -117,10 +117,30 @@ bool ROUTER::RoutingInProgress() const
 }
 
 
-const ITEM_SET ROUTER::QueryHoverItems( const VECTOR2I& aP )
+const ITEM_SET ROUTER::QueryHoverItems( const VECTOR2I& aP, bool aUseClearance )
 {
     if( m_state == IDLE || m_placer == nullptr )
-        return m_world->HitTest( aP );
+    {
+        if( aUseClearance )
+        {
+            SEGMENT test( SEG( aP, aP ), -1 );
+            test.SetWidth( 1 );
+            test.SetLayers( LAYER_RANGE::All() );
+            NODE::OBSTACLES obs;
+            m_world->QueryColliding( &test, obs, ITEM::ANY_T, -1, false );
+
+            PNS::ITEM_SET ret;
+
+            for( OBSTACLE& obstacle : obs )
+                ret.Add( obstacle.m_item, false );
+
+            return ret;
+        }
+        else
+        {
+            return m_world->HitTest( aP );
+        }
+    }
     else
         return m_placer->CurrentNode()->HitTest( aP );
 }
@@ -612,15 +632,25 @@ void ROUTER::CommitRouting( NODE* aNode )
             }
         }
 
-        if( !is_changed )
+        if( !is_changed && !item->IsVirtual() )
             m_iface->RemoveItem( item );
     }
 
     for( ITEM* item : added )
-        m_iface->AddItem( item );
+    {
+        if( !item->IsVirtual() )
+        {
+            m_iface->AddItem( item );
+        }
+    }
 
     for( ITEM* item : changed )
-        m_iface->UpdateItem( item );
+    {
+        if( !item->IsVirtual() )
+        {
+            m_iface->UpdateItem( item );
+        }
+    }
 
     m_iface->Commit();
     m_world->Commit( aNode );

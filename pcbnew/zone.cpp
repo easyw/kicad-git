@@ -31,6 +31,8 @@
 #include <pcb_edit_frame.h>
 #include <pcb_screen.h>
 #include <board.h>
+#include <board_design_settings.h>
+#include <pad.h>
 #include <zone.h>
 #include <kicad_string.h>
 #include <math_for_graphics.h>
@@ -1171,22 +1173,14 @@ bool ZONE::BuildSmoothedPoly( SHAPE_POLY_SET& aSmoothedPoly, PCB_LAYER_ID aLayer
     if( GetNumCorners() <= 2 )  // malformed zone. polygon calculations will not like it ...
         return false;
 
-    int zoneClearance = m_ZoneClearance;
-
     if( GetIsRuleArea() )
     {
         // We like keepouts just the way they are....
         aSmoothedPoly = *m_Poly;
         return true;
     }
-    else if( !IsOnCopperLayer() )
-    {
-        // Non-copper zones don't have electrical clearances
-        zoneClearance = 0;
-    }
 
     BOARD* board = GetBoard();
-    int    edgeClearance = 0;
     int    maxError = ARC_HIGH_DEF;
     bool   keepExternalFillets = false;
 
@@ -1194,9 +1188,6 @@ bool ZONE::BuildSmoothedPoly( SHAPE_POLY_SET& aSmoothedPoly, PCB_LAYER_ID aLayer
     {
         BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
 
-        DRC_CONSTRAINT c = bds.m_DRCEngine->EvalRules( EDGE_CLEARANCE_CONSTRAINT, this, nullptr,
-                                                       aLayer );
-        edgeClearance = c.Value().Min();
         maxError = bds.m_MaxError;
         keepExternalFillets = bds.m_ZoneKeepExternalFillets;
     }
@@ -1245,7 +1236,6 @@ bool ZONE::BuildSmoothedPoly( SHAPE_POLY_SET& aSmoothedPoly, PCB_LAYER_ID aLayer
     if( aBoardOutline )
     {
         SHAPE_POLY_SET poly = *aBoardOutline;
-        poly.Deflate( std::max( zoneClearance, edgeClearance ), 16 );
         aSmoothedPoly.BooleanIntersection( poly, SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
     }
 
@@ -1254,7 +1244,7 @@ bool ZONE::BuildSmoothedPoly( SHAPE_POLY_SET& aSmoothedPoly, PCB_LAYER_ID aLayer
     if( aSmoothedPolyWithApron )
     {
         SHAPE_POLY_SET poly = *maxExtents;
-        poly.Inflate( m_ZoneMinThickness, 16 );
+        poly.Inflate( m_ZoneMinThickness, 64 );
         *aSmoothedPolyWithApron = aSmoothedPoly;
         aSmoothedPolyWithApron->BooleanIntersection( poly, SHAPE_POLY_SET::PM_FAST );
     }

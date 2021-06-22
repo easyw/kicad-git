@@ -31,12 +31,14 @@
 #include "edit_tool.h"
 #include "tool/tool_event.h"
 #include <bitmaps.h>
-#include <board_commit.h>
 #include <board.h>
+#include <board_commit.h>
+#include <board_design_settings.h>
 #include <pcb_group.h>
 #include <footprint.h>
+#include <pad.h>
 #include <pcb_target.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <pcb_marker.h>
 #include <collectors.h>
@@ -66,6 +68,7 @@
 #include <drawing_sheet/ds_proxy_undo_item.h>
 #include <footprint_edit_frame.h>
 #include <wx/filedlg.h>
+#include <wx/log.h>
 
 using namespace std::placeholders;
 
@@ -174,7 +177,9 @@ protected:
 
 BOARD_EDITOR_CONTROL::BOARD_EDITOR_CONTROL() :
     PCB_TOOL_BASE( "pcbnew.EditorControl" ),
-    m_frame( nullptr )
+    m_frame( nullptr ),
+    m_inPlaceFootprint( false ),
+    m_inPlaceTarget( false )
 {
     m_placeOrigin = std::make_unique<KIGFX::ORIGIN_VIEWITEM>(
             KIGFX::COLOR4D( 0.8, 0.0, 0.0, 1.0 ),
@@ -416,7 +421,7 @@ int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
     wxFileName fn = m_frame->Prj().GetProjectFullName();
 
     // Use a different file extension for the board netlist so the schematic netlist file
-    // is accidently overwritten.
+    // is accidentally overwritten.
     fn.SetExt( "pcb_net" );
 
     wxFileDialog dlg( m_frame, _( "Export Board Netlist" ), fn.GetPath(), fn.GetFullName(),
@@ -548,7 +553,7 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
             processItem( pad );
     }
 
-    for( TRACK* track : board()->Tracks() )
+    for( PCB_TRACK* track : board()->Tracks() )
         processItem( track );
 
     // From here out I don't think order matters much.
@@ -685,7 +690,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthInc( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_TRACE_T )
             {
-                TRACK* track = (TRACK*) item;
+                PCB_TRACK* track = static_cast<PCB_TRACK*>( item );
 
                 for( int candidate : designSettings.m_TrackWidthList )
                 {
@@ -751,7 +756,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_TRACE_T )
             {
-                TRACK* track = (TRACK*) item;
+                PCB_TRACK* track = static_cast<PCB_TRACK*>( item );
 
                 for( int i = designSettings.m_TrackWidthList.size() - 1; i >= 0; --i )
                 {
@@ -819,7 +824,7 @@ int BOARD_EDITOR_CONTROL::ViaSizeInc( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_VIA_T )
             {
-                VIA* via = (VIA*) item;
+                PCB_VIA* via = static_cast<PCB_VIA*>( item );
 
                 for( VIA_DIMENSION candidate : designSettings.m_ViasDimensionsList )
                 {
@@ -868,7 +873,7 @@ int BOARD_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_VIA_T )
             {
-                VIA* via = (VIA*) item;
+                PCB_VIA* via = static_cast<PCB_VIA*>( item );
 
                 for( int i = designSettings.m_ViasDimensionsList.size() - 1; i >= 0; --i )
                 {
@@ -913,6 +918,11 @@ int BOARD_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
 
 int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
 {
+    if( m_inPlaceFootprint )
+        return 0;
+    else
+        m_inPlaceFootprint = true;
+
     FOOTPRINT*            fp = aEvent.Parameter<FOOTPRINT*>();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     BOARD_COMMIT          commit( m_frame );
@@ -1070,11 +1080,15 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
         }
 
         // Enable autopanning and cursor capture only when there is a footprint to be placed
-        controls->SetAutoPan( !!fp );
-        controls->CaptureCursor( !!fp );
+        controls->SetAutoPan( fp != nullptr );
+        controls->CaptureCursor( fp != nullptr );
     }
 
+    controls->SetAutoPan( false );
+    controls->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
+    m_inPlaceFootprint = false;
     return 0;
 }
 
@@ -1158,6 +1172,11 @@ int BOARD_EDITOR_CONTROL::modifyLockSelected( MODIFY_MODE aMode )
 
 int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 {
+    if( m_inPlaceTarget )
+        return 0;
+    else
+        m_inPlaceTarget = true;
+
     KIGFX::VIEW* view = getView();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     BOARD* board = getModel<BOARD>();
@@ -1264,6 +1283,8 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
     view->Remove( &preview );
 
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
+    m_inPlaceTarget = false;
     return 0;
 }
 
@@ -1283,7 +1304,7 @@ static bool mergeZones( BOARD_COMMIT& aCommit, std::vector<ZONE*>& aOriginZones,
 
     // We should have one polygon with hole
     // We can have 2 polygons with hole, if the 2 initial polygons have only one common corner
-    // and therefore cannot be merged (they are dectected as intersecting)
+    // and therefore cannot be merged (they are detected as intersecting)
     // but we should never have more than 2 polys
     if( aOriginZones[0]->Outline()->OutlineCount() > 1 )
     {
@@ -1401,7 +1422,7 @@ int BOARD_EDITOR_CONTROL::ZoneDuplicate( const TOOL_EVENT& aEvent )
     newZone->UnFill();
     zoneSettings.ExportSetting( *newZone );
 
-    // If the new zone is on the same layer(s) as the the initial zone,
+    // If the new zone is on the same layer(s) as the initial zone,
     // offset it a bit so it can more easily be picked.
     if( oldZone->GetIsRuleArea() && ( oldZone->GetLayerSet() == zoneSettings.m_Layers ) )
         newZone->Move( wxPoint( IU_PER_MM, IU_PER_MM ) );

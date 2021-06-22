@@ -32,9 +32,12 @@
 #include <bitmaps.h>
 #include <tools/board_editor_control.h>
 #include <board.h>
-#include <track.h>
+#include <board_design_settings.h>
 #include <footprint.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <paths.h>
+#include <project.h>
 #include <dialog_gendrill.h>
 #include <wildcards_and_files_ext.h>
 #include <reporter.h>
@@ -169,9 +172,9 @@ void DIALOG_GENDRILL::InitDisplayParams()
         }
     }
 
-    for( TRACK* track : m_board->Tracks() )
+    for( PCB_TRACK* track : m_board->Tracks() )
     {
-        const VIA *via = dynamic_cast<const VIA*>( track );
+        const PCB_VIA *via = dynamic_cast<const PCB_VIA*>( track );
 
         if( via )
         {
@@ -299,7 +302,7 @@ void DIALOG_GENDRILL::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
     wxFileName fn( Prj().AbsolutePath( m_board->GetFileName() ) );
     wxString   defaultPath = fn.GetPathWithSep();
     wxString   msg;
-    msg.Printf( _( "Do you want to use a path relative to\n\"%s\"" ), defaultPath );
+    msg.Printf( _( "Do you want to use a path relative to\n'%s'?" ), defaultPath );
 
     wxMessageDialog dialog( this, msg, _( "Plot Output Directory" ),
                             wxYES_NO | wxICON_QUESTION | wxYES_DEFAULT );
@@ -381,7 +384,7 @@ void DIALOG_GENDRILL::GenDrillAndMapFiles( bool aGenDrill, bool aGenMap )
     if( !EnsureFileDirectoryExists( &outputDir, boardFilename, &reporter ) )
     {
         wxString msg;
-        msg.Printf( _( "Could not write drill and/or map files to folder \"%s\"." ),
+        msg.Printf( _( "Could not write drill and/or map files to folder '%s'." ),
                 outputDir.GetPath() );
         DisplayError( this, msg );
         return;

@@ -22,6 +22,7 @@
 #include <tool/tool_manager.h>
 #include <tools/kicad_manager_actions.h>
 #include <widgets/bitmap_button.h>
+#include <wx/stattext.h>
 
 #include "panel_kicad_launcher.h"
 
@@ -62,6 +63,10 @@ void PANEL_KICAD_LAUNCHER::CreateLaunchers()
             auto handler =
                     [&]( wxEvent& aEvent )
                     {
+                        // Defocus the button because leaving the large buttons 
+                        // focused after a click looks out of place in the launcher
+                        GetParent()->SetFocus();
+
                         OPT_TOOL_EVENT evt = aAction.MakeEvent();
                         evt->SetHasPosition( false );
                         m_toolManager->ProcessEvent( *evt );

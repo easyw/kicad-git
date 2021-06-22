@@ -47,6 +47,8 @@
 #include <settings/settings_manager.h>
 #include <footprint_editor_settings.h>
 #include "footprint_viewer_frame.h"
+#include <wx/choicdlg.h>
+#include <wx/filedlg.h>
 
 
 // unique, "file local" translations:
@@ -354,7 +356,7 @@ void FOOTPRINT_EDIT_FRAME::ExportFootprint( FOOTPRINT* aFootprint )
 
         if( fp == nullptr )
         {
-            wxMessageBox( wxString::Format( _( "Unable to create or write file \"%s\"" ),
+            wxMessageBox( wxString::Format( _( "Unable to create or write file '%s'." ),
                                             dlg.GetPath() ) );
             return;
         }
@@ -368,29 +370,42 @@ void FOOTPRINT_EDIT_FRAME::ExportFootprint( FOOTPRINT* aFootprint )
         return;
     }
 
-    wxString msg = wxString::Format( _( "Footprint exported to file \"%s\"" ), dlg.GetPath() );
+    wxString msg = wxString::Format( _( "Footprint exported to file '%s'." ), dlg.GetPath() );
     DisplayInfoMessage( this, msg );
+}
+
+
+wxString PCB_BASE_EDIT_FRAME::CreateNewProjectLibrary( const wxString& aLibName,
+                                                       const wxString& aProposedName )
+{
+    return createNewLibrary( aLibName, aProposedName, Prj().PcbFootprintLibs() );
 }
 
 
 wxString PCB_BASE_EDIT_FRAME::CreateNewLibrary( const wxString& aLibName,
                                                 const wxString& aProposedName )
 {
-    // Kicad cannot write legacy format libraries, only .pretty new format
-    // because the legacy format cannot handle current features.
-    // The footprint library is actually a directory
-
     FP_LIB_TABLE* table  = selectLibTable();
 
-    if( table == nullptr )
-    {
-        return wxEmptyString;
-    }
+    return createNewLibrary( aLibName, aProposedName, table );
+}
 
-    wxString initialPath = aProposedName.IsEmpty() ? Prj().GetProjectPath() : aProposedName;
+
+wxString PCB_BASE_EDIT_FRAME::createNewLibrary( const wxString& aLibName,
+                                                const wxString& aProposedName,
+                                                FP_LIB_TABLE* aTable )
+{
+    // Kicad cannot write legacy format libraries, only .pretty new format because the legacy
+    // format cannot handle current features.
+    // The footprint library is actually a directory.
+
+    if( aTable == nullptr )
+        return wxEmptyString;
+
+    wxString   initialPath = aProposedName.IsEmpty() ? Prj().GetProjectPath() : aProposedName;
     wxFileName fn;
     bool       doAdd = false;
-    bool       isGlobal = ( table == &GFootprintTable );
+    bool       isGlobal = ( aTable == &GFootprintTable );
 
     if( aLibName.IsEmpty() )
     {
@@ -436,13 +451,15 @@ wxString PCB_BASE_EDIT_FRAME::CreateNewLibrary( const wxString& aLibName,
             exists   = true;    // no exception was thrown, lib must exist.
         }
         catch( const IO_ERROR& )
-        { }
+        {
+            // best efforts....
+        }
 
         if( exists )
         {
             if( !writable )
             {
-                wxString msg = wxString::Format( _( "Library \"%s\" is read only." ), libPath );
+                wxString msg = wxString::Format( _( "Library %s is read only." ), libPath );
                 ShowInfoBarError( msg );
                 return wxEmptyString;
             }
@@ -469,7 +486,7 @@ wxString PCB_BASE_EDIT_FRAME::CreateNewLibrary( const wxString& aLibName,
     }
 
     if( doAdd )
-        AddLibrary( libPath, table );
+        AddLibrary( libPath, aTable );
 
     return libPath;
 }
@@ -521,15 +538,11 @@ FP_LIB_TABLE* PCB_BASE_EDIT_FRAME::selectLibTable( bool aOptional )
 
 bool PCB_BASE_EDIT_FRAME::AddLibrary( const wxString& aFilename, FP_LIB_TABLE* aTable )
 {
-    if( aTable  == nullptr )
-    {
+    if( aTable == nullptr )
         aTable = selectLibTable();
 
-        if( aTable == nullptr )
-        {
-            return wxEmptyString;
-        }
-    }
+    if( aTable == nullptr )
+        return wxEmptyString;
 
     bool isGlobal = ( aTable == &GFootprintTable );
 
@@ -551,7 +564,6 @@ bool PCB_BASE_EDIT_FRAME::AddLibrary( const wxString& aFilename, FP_LIB_TABLE* a
     if( libName.IsEmpty() )
         return false;
 
-
     wxString type = IO_MGR::ShowType( IO_MGR::GuessPluginTypeFromLibPath( libPath ) );
 
     // try to use path normalized to an environmental variable or project path
@@ -562,17 +574,13 @@ bool PCB_BASE_EDIT_FRAME::AddLibrary( const wxString& aFilename, FP_LIB_TABLE* a
 
     try
     {
-        auto row = new FP_LIB_TABLE_ROW( libName, normalizedPath, type, wxEmptyString );
+        FP_LIB_TABLE_ROW* row = new FP_LIB_TABLE_ROW( libName, normalizedPath, type, wxEmptyString );
         aTable->InsertRow( row );
 
         if( isGlobal )
-        {
             GFootprintTable.Save( FP_LIB_TABLE::GetGlobalTableFileName() );
-        }
         else
-        {
             Prj().PcbFootprintLibs()->Save( Prj().FootprintLibTblName() );
-        }
     }
     catch( const IO_ERROR& ioe )
     {

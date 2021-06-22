@@ -36,6 +36,7 @@
 #include <kiface_i.h>
 #include <wildcards_and_files_ext.h>
 #include <connection_graph.h>
+#include <wx/log.h>
 
 
 BACK_ANNOTATE::BACK_ANNOTATE( SCH_EDIT_FRAME* aFrame, REPORTER& aReporter, bool aRelinkFootprints,
@@ -316,7 +317,7 @@ void BACK_ANNOTATE::applyChangelist()
     {
         SCH_REFERENCE& ref = item.first;
         PCB_FP_DATA&   fpData = *item.second;
-        SCH_COMPONENT* symbol = ref.GetSymbol();
+        SCH_SYMBOL*    symbol = ref.GetSymbol();
         SCH_SCREEN*    screen = ref.GetSheetPath().LastScreen();
         wxString       oldFootprint = ref.GetFootprint();
         wxString       oldValue = ref.GetValue();
@@ -437,23 +438,23 @@ static LABEL_SPIN_STYLE orientLabel( SCH_PIN* aPin )
     }
     orientations[] =
     {
-        { CMP_ORIENT_0,                  0, 0, 0 },
-        { CMP_ORIENT_90,                 1, 0, 0 },
-        { CMP_ORIENT_180,                2, 0, 0 },
-        { CMP_ORIENT_270,                3, 0, 0 },
-        { CMP_MIRROR_X + CMP_ORIENT_0,   0, 1, 0 },
-        { CMP_MIRROR_X + CMP_ORIENT_90,  1, 1, 0 },
-        { CMP_MIRROR_Y,                  0, 0, 1 },
-        { CMP_MIRROR_X + CMP_ORIENT_270, 3, 1, 0 },
-        { CMP_MIRROR_Y + CMP_ORIENT_0,   0, 0, 1 },
-        { CMP_MIRROR_Y + CMP_ORIENT_90,  1, 0, 1 },
-        { CMP_MIRROR_Y + CMP_ORIENT_180, 2, 0, 1 },
-        { CMP_MIRROR_Y + CMP_ORIENT_270, 3, 0, 1 }
+        { SYM_ORIENT_0,                  0, 0, 0 },
+        { SYM_ORIENT_90,                 1, 0, 0 },
+        { SYM_ORIENT_180,                2, 0, 0 },
+        { SYM_ORIENT_270,                3, 0, 0 },
+        { SYM_MIRROR_X + SYM_ORIENT_0,   0, 1, 0 },
+        { SYM_MIRROR_X + SYM_ORIENT_90,  1, 1, 0 },
+        { SYM_MIRROR_Y,                  0, 0, 1 },
+        { SYM_MIRROR_X + SYM_ORIENT_270, 3, 1, 0 },
+        { SYM_MIRROR_Y + SYM_ORIENT_0,   0, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_90,  1, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_180, 2, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_270, 3, 0, 1 }
     };
 
     ORIENT o = orientations[ 0 ];
 
-    SCH_COMPONENT* parentSymbol = aPin->GetParentSymbol();
+    SCH_SYMBOL* parentSymbol = aPin->GetParentSymbol();
 
     if( !parentSymbol )
         return spin;
@@ -530,7 +531,7 @@ void BACK_ANNOTATE::processNetNameChange( const wxString& aRef, SCH_PIN* aPin,
 
         msg.Printf( _( "Change %s pin %s net label from '%s' to '%s'." ),
                     aRef,
-                    aPin->GetNumber(),
+                    aPin->GetShownNumber(),
                     aOldName,
                     aNewName );
 
@@ -553,15 +554,19 @@ void BACK_ANNOTATE::processNetNameChange( const wxString& aRef, SCH_PIN* aPin,
 
         if( schPin->IsPowerConnection() )
         {
-            msg.Printf( _( "Net %s cannot be changed to '%s' because it is driven by a power "
-                           "pin." ), aOldName, aNewName );
+            msg.Printf( _( "Net %s cannot be changed to %s because it is driven by a power pin." ),
+                        aOldName,
+                        aNewName );
 
             m_reporter.ReportHead( msg, RPT_SEVERITY_ERROR );
             break;
         }
 
         ++m_changesCount;
-        msg.Printf( _( "Add label '%s' to %s pin %s net." ), aNewName, aRef, aPin->GetNumber() );
+        msg.Printf( _( "Add label '%s' to %s pin %s net." ),
+                    aNewName,
+                    aRef,
+                    aPin->GetShownNumber() );
 
         if( !m_dryRun )
         {

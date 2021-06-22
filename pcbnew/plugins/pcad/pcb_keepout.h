@@ -22,23 +22,20 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-/**
- * @file pcb_keepout.h
- */
-
 #ifndef PCB_KEEPOUT_H_
 #define PCB_KEEPOUT_H_
 
-#include <wx/wx.h>
+#include <pcad/pcb_polygon.h>
 
-#include <pcb_polygon.h>
+class BOARD;
+class wxString;
+class XNODE;
 
 namespace PCAD2KICAD {
 
 class PCB_KEEPOUT : public PCB_POLYGON
 {
 public:
-
     PCB_KEEPOUT( PCB_CALLBACKS* aCallbacks, BOARD* aBoard, int aPCadLayer );
     ~PCB_KEEPOUT();
 

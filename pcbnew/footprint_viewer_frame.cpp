@@ -56,6 +56,7 @@
 #include <tools/pcb_picker_tool.h>
 #include <tools/pcb_selection_tool.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/listbox.h>
 #include <wx/tokenzr.h>
 
 using namespace std::placeholders;
@@ -976,8 +977,7 @@ bool FOOTPRINT_VIEWER_FRAME::ShowModal( wxString* aFootprint, wxWindow* aParent 
 
 void FOOTPRINT_VIEWER_FRAME::Update3DView( bool aMarkDirty, bool aRefresh, const wxString* aTitle )
 {
-    wxString title = wxString::Format( _( "3D Viewer" ) + wxT( " \u2014 %s" ),
-                                       getCurFootprintName() );
+    wxString title = _( "3D Viewer" ) + wxT( " \u2014 " ) + getCurFootprintName();
     PCB_BASE_FRAME::Update3DView( aMarkDirty, aRefresh, &title );
 }
 
@@ -1012,16 +1012,19 @@ void FOOTPRINT_VIEWER_FRAME::UpdateTitle()
     wxString title;
     wxString path;
 
-    title.Printf( getCurNickname().IsEmpty() ? _( "no library selected" ) : getCurNickname() );
-
-    // Now, add the full path, for info
     if( !getCurNickname().IsEmpty() )
     {
+        title = getCurNickname();
+
         FP_LIB_TABLE* libtable = Prj().PcbFootprintLibs();
         const LIB_TABLE_ROW* row = libtable->FindRow( getCurNickname() );
 
         if( row )
-            title << L" \u2014 " << row->GetFullURI( true );
+            title += wxT( " \u2014 " ) + row->GetFullURI( true );
+    }
+    else
+    {
+        title = _( "[no library selected]" );
     }
 
     title += wxT( " \u2014 " ) + _( "Footprint Library Browser" );

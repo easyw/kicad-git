@@ -37,13 +37,17 @@
 #include <i18n_utility.h>
 #include <view/view.h>
 #include <board.h>
+#include <board_connected_item.h>
+#include <board_design_settings.h>
 #include <footprint.h>
+#include <pad.h>
 #include <pcb_shape.h>
 #include <connectivity/connectivity_data.h>
 #include <convert_to_biu.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <widgets/msgpanel.h>
 #include <pcb_painter.h>
+#include <wx/log.h>
 
 #include <memory>
 

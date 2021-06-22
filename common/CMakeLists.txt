@@ -19,11 +19,6 @@ include_directories(
     ${INC_AFTER}
     )
 
-if( NOT APPLE )     # windows and linux use openssl under curl
-    find_package( OpenSSL REQUIRED )
-    include_directories( SYSTEM ${OPENSSL_INCLUDE_DIR} )
-endif()
-
 set( GAL_SRCS
     # Common part
     basic_gal.cpp
@@ -440,6 +435,7 @@ set( COMMON_SRCS
     tool/grid_helper.cpp
     tool/grid_menu.cpp
     tool/picker_tool.cpp
+    tool/selection.cpp
     tool/selection_conditions.cpp
     tool/tool_action.cpp
     tool/tool_base.cpp
@@ -457,6 +453,7 @@ set( COMMON_SRCS
     settings/common_settings.cpp
     settings/json_settings.cpp
     settings/nested_settings.cpp
+    settings/parameters.cpp
     settings/settings_manager.cpp
 
     project/board_project_settings.cpp
@@ -487,7 +484,6 @@ target_link_libraries( common
     pybind11::embed
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
-    ${OPENSSL_LIBRARIES}        # empty on Apple
     ${wxWidgets_LIBRARIES}
     ${EXTRA_LIBS}
     )
@@ -514,7 +510,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/board_items_to_polygon_shape_transform.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/board.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/board_item.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/dimension.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/pcb_dimension.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_shape.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/fp_shape.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_group.cpp
@@ -527,7 +523,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_text.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/board_stackup_manager/board_stackup.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/fp_text.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/track.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/pcb_track.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/zone.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/collectors.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/connectivity/connectivity_algo.cpp

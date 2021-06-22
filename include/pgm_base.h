@@ -36,7 +36,6 @@
 #include <search_stack.h>
 #include <settings/environment.h>
 #include <wx/filename.h>
-#include <wx/gdicmn.h>
 
 #undef pid_t
 #include <pybind11/embed.h>
@@ -309,9 +308,6 @@ protected:
 
     std::unique_ptr<SCRIPTING> m_python_scripting;
 
-    /// prevents multiple instances of a program from being run at the same time.
-    wxSingleInstanceChecker* m_pgm_checker;
-
     /// full path to this program
     wxString        m_bin_dir;
 
@@ -330,7 +326,6 @@ protected:
     /// The file name of the the program selected for browsing pdf files.
     wxString        m_pdf_browser;
     wxString        m_editor_name;
-    wxSize          m_help_size;
 
     /// Flag to indicate if the environment variable overwrite warning dialog should be shown.
     bool            m_show_env_var_dialog;

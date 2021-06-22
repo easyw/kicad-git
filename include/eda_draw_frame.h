@@ -32,8 +32,10 @@
 #include <gal/color4d.h>
 #include <class_draw_panel_gal.h>
 #include <origin_transforms.h>
+#include <kiid.h>
 #include "hotkeys_basic.h"
 
+class EDA_ITEM;
 class wxSingleInstanceChecker;
 class ACTION_TOOLBAR;
 class COLOR_SETTINGS;
@@ -272,7 +274,7 @@ public:
     /**
      * Recalculate the size of toolbars and display panel when the frame size changes.
      */
-    virtual void OnSize( wxSizeEvent& event );
+    virtual void OnSize( wxSizeEvent& event ) override;
 
     void OnMove( wxMoveEvent& aEvent ) override;
 

@@ -23,11 +23,13 @@
 
 #include <common.h>
 #include <board.h>
+#include <footprint.h>
 #include <pcb_shape.h>
 
 #include <geometry/seg.h>
 #include <geometry/shape_segment.h>
 
+#include <drc/drc_engine.h>
 #include <drc/drc_item.h>
 #include <drc/drc_rule.h>
 #include <drc/drc_test_provider_clearance_base.h>

@@ -60,12 +60,12 @@ option( KICAD_SCRIPTING_WXPYTHON
 mark_as_advanced( KICAD_SCRIPTING_WXPYTHON )
 
 option( KICAD_USE_OCE
-    "Build tools and plugins related to OpenCascade Community Edition (default ON)"
-    ON )
+    "Build tools and plugins related to OpenCascade Community Edition (default OFF)"
+    OFF )
 
 option( KICAD_USE_OCC
-    "Build tools and plugins related to OpenCascade Technology (overrides KICAD_USE_OCE, default OFF)"
-    OFF )
+    "Build tools and plugins related to OpenCascade Technology (overrides KICAD_USE_OCE, default ON)"
+    ON )
 
 option( KICAD_INSTALL_DEMOS
     "Install KiCad demos and examples (default ON)"
@@ -136,6 +136,10 @@ cmake_dependent_option( KICAD_USE_BUNDLED_GLEW
 
 option( KICAD_DRC_PROTO
     "Build the DRC prototype QA tool"
+    OFF )
+
+option( KICAD_BUILD_PNS_DEBUG_TOOL
+    "Build the P&S debugging/playground QA tool"
     OFF )
 
 option( KICAD_GAL_PROFILE
@@ -426,7 +430,7 @@ if( MSVC )
     string( APPEND CMAKE_CXX_FLAGS " /bigobj" )
 
     # Exception handling
-    # Remove the potential default EHsc option cmake doesnt allow us to remove easily
+    # Remove the potential default EHsc option cmake doesn't allow us to remove easily
     string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} )
     if( KICAD_WIN32_CONTEXT_WINFIBER )
     # /EHsc: ensure standard exception C++ unwinding is enabled, "extern C" can never throw exceptions
@@ -830,7 +834,7 @@ if( KICAD_SCRIPTING_WXPYTHON )
 endif()
 
 # GTK3 is required on Linux
-if( UNIX AND NOT APPLE )
+if( UNIX AND NOT APPLE AND KICAD_SCRIPTING_WXPYTHON )
     if( NOT "${WXPYTHON_TOOLKIT}" STREQUAL "gtk3" )
         message( FATAL_ERROR "GTK3-based wxPython/Phoenix toolkit is required.")
     endif()

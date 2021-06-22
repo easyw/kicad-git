@@ -31,7 +31,8 @@
 #include <pcbnew_settings.h>
 #include <pgm_base.h>
 #include <board.h>
-#include <dimension.h>
+#include <board_design_settings.h>
+#include <pcb_dimension.h>
 #include <footprint_info_impl.h>
 #include <project.h>
 #include <settings/color_settings.h>
@@ -40,6 +41,7 @@
 #include <dialogs/dialog_grid_settings.h>
 #include <dialogs/eda_view_switcher.h>
 #include <wildcards_and_files_ext.h>
+#include <collectors.h>
 
 
 PCB_BASE_EDIT_FRAME::PCB_BASE_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
@@ -185,7 +187,7 @@ void PCB_BASE_EDIT_FRAME::unitsChangeRefresh()
         INSPECTOR_FUNC inspector =
                 [units, view]( EDA_ITEM* aItem, void* aTestData )
                 {
-                    DIMENSION_BASE* dimension = static_cast<DIMENSION_BASE*>( aItem );
+                    PCB_DIMENSION_BASE* dimension = static_cast<PCB_DIMENSION_BASE*>( aItem );
 
                     if( dimension->GetUnitsMode() == DIM_UNITS_MODE::AUTOMATIC )
                     {

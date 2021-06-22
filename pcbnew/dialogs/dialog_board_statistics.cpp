@@ -25,6 +25,8 @@
 
 #include "dialog_board_statistics.h"
 #include "base_units.h"
+#include <confirm.h>
+#include <pad.h>
 #include <macros.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/filedlg.h>
@@ -255,9 +257,9 @@ void DIALOG_BOARD_STATISTICS::getDataFromPCB()
     }
 
     // Get via counts
-    for( TRACK* track : board->Tracks() )
+    for( PCB_TRACK* track : board->Tracks() )
     {
-        if( VIA* via = dyn_cast<VIA*>( track ) )
+        if( PCB_VIA* via = dyn_cast<PCB_VIA*>( track ) )
         {
             for( auto& type : m_viasTypes )
             {
@@ -640,7 +642,7 @@ void DIALOG_BOARD_STATISTICS::saveReportClicked( wxCommandEvent& aEvent )
 
     if( outFile == NULL )
     {
-        msg.Printf( _( "Unable to create file \"%s\"" ), saveFileDialog.GetPath() );
+        msg.Printf( _( "Unable to create file '%s'." ), saveFileDialog.GetPath() );
         DisplayErrorMessage( this, msg );
         return;
     }
@@ -723,7 +725,7 @@ void DIALOG_BOARD_STATISTICS::saveReportClicked( wxCommandEvent& aEvent )
 
     if( fprintf( outFile, "%s", TO_UTF8( msg ) ) < 0 )
     {
-        msg.Printf( _( "Error writing to file \"%s\"" ), saveFileDialog.GetPath() );
+        msg.Printf( _( "Error writing file '%s'." ), saveFileDialog.GetPath() );
         DisplayErrorMessage( this, msg );
     }
 

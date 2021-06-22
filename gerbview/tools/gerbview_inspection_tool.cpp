@@ -29,6 +29,7 @@
 #include "gerbview_inspection_tool.h"
 #include "gerbview_actions.h"
 #include <painter.h>
+#include <pgm_base.h>
 #include <preview_items/ruler_item.h>
 #include <preview_items/selection_area.h>
 #include <tool/tool_event.h>
@@ -171,7 +172,7 @@ int GERBVIEW_INSPECTION_TOOL::ShowSource( const TOOL_EVENT& aEvent )
             if( !fn.FileExists() )
             {
                 wxString msg;
-                msg.Printf( _( "Source file \"%s\" is not available" ), fn.GetFullPath() );
+                msg.Printf( _( "Source file '%s' not found." ), fn.GetFullPath() );
                 wxMessageBox( msg );
             }
             else
@@ -181,13 +182,13 @@ int GERBVIEW_INSPECTION_TOOL::ShowSource( const TOOL_EVENT& aEvent )
         }
         else
         {
-            wxMessageBox( _( "No editor defined. Please select one" ) );
+            wxMessageBox( _( "No editor defined. Please select one." ) );
         }
     }
     else
     {
         wxString msg;
-        msg.Printf( _( "No file loaded on the active layer %d" ), layer + 1 );
+        msg.Printf( _( "No file loaded on the active layer %d." ), layer + 1 );
         wxMessageBox( msg );
     }
 

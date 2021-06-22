@@ -29,6 +29,7 @@
 
 #include "../3d_rendering/camera.h"
 #include "board_adapter.h"
+#include <board_design_settings.h>
 #include <3d_rendering/3d_render_raytracing/shapes2D/polygon_2d.h>
 #include <board.h>
 #include <3d_math.h>
@@ -37,6 +38,7 @@
 #include <convert_to_biu.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
+#include <wx/log.h>
 
 /**
  *  Trace mask used to enable or disable the trace output of this class.

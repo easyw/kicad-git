@@ -40,13 +40,24 @@ const SHAPE_LINE_CHAIN OctagonalHull( const VECTOR2I& aP0, const VECTOR2I& aSize
     s.SetClosed( true );
 
     s.Append( aP0.x - aClearance, aP0.y - aClearance + aChamfer );
-    s.Append( aP0.x - aClearance + aChamfer, aP0.y - aClearance );
+
+    if( aChamfer )
+        s.Append( aP0.x - aClearance + aChamfer, aP0.y - aClearance );
+
     s.Append( aP0.x + aSize.x + aClearance - aChamfer, aP0.y - aClearance );
-    s.Append( aP0.x + aSize.x + aClearance, aP0.y - aClearance + aChamfer );
+
+    if( aChamfer )
+        s.Append( aP0.x + aSize.x + aClearance, aP0.y - aClearance + aChamfer );
+
     s.Append( aP0.x + aSize.x + aClearance, aP0.y + aSize.y + aClearance - aChamfer );
-    s.Append( aP0.x + aSize.x + aClearance - aChamfer, aP0.y + aSize.y + aClearance );
+
+    if( aChamfer )
+        s.Append( aP0.x + aSize.x + aClearance - aChamfer, aP0.y + aSize.y + aClearance );
+
     s.Append( aP0.x - aClearance + aChamfer, aP0.y + aSize.y + aClearance );
-    s.Append( aP0.x - aClearance, aP0.y + aSize.y + aClearance - aChamfer );
+
+    if( aChamfer )
+        s.Append( aP0.x - aClearance, aP0.y + aSize.y + aClearance - aChamfer );
 
     return s;
 }
@@ -124,7 +135,7 @@ const SHAPE_LINE_CHAIN SegmentHull ( const SHAPE_SEGMENT& aSeg, int aClearance,
         return OctagonalHull( a - VECTOR2I( aSeg.GetWidth() / 2, aSeg.GetWidth() / 2 ),
                               VECTOR2I( aSeg.GetWidth(), aSeg.GetWidth() ),
                               cl + 1,
-                              0.52 * d );
+                              2.0 * ( 1.0 - M_SQRT1_2 ) * d );
     }
 
     VECTOR2I dir = b - a;
@@ -271,7 +282,7 @@ void HullIntersection( const SHAPE_LINE_CHAIN& hull, const SHAPE_LINE_CHAIN& lin
 
     hull.Intersect( line, ips_raw );
 
-    for( const auto& p : ips_raw )
+    for( auto& p : ips_raw )
     {
         SHAPE_LINE_CHAIN::INTERSECTION ipp;
 
@@ -288,6 +299,9 @@ void HullIntersection( const SHAPE_LINE_CHAIN& hull, const SHAPE_LINE_CHAIN& lin
             ips.push_back( ipp );
             continue;
         }
+
+        if( p.index_our >= hull.SegmentCount() )
+            p.index_our -= hull.SegmentCount();
 
         if( p.is_corner_our )
         {

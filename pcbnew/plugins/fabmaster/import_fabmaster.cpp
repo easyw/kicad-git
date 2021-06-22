@@ -39,13 +39,17 @@
 #include <wx/log.h>
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <board_item.h>
 #include <convert_to_biu.h>
+#include <footprint.h>
 #include <fp_shape.h>
+#include <pad.h>
 #include <pad_shapes.h>
 #include <pcb_shape.h>
 #include <pcb_text.h>
-#include <track.h>
+#include <pcb_track.h>
+#include <zone.h>
 #include <common.h>
 #include <geometry/shape_arc.h>
 #include <kicad_string.h>
@@ -2387,7 +2391,7 @@ bool FABMASTER::loadVias( BOARD* aBoard )
         auto net_it = netinfo.find( via->net );
         auto padstack = pads.find( via->padstack );
 
-        VIA* new_via = new VIA( aBoard );
+        PCB_VIA* new_via = new PCB_VIA( aBoard );
 
         new_via->SetPosition( wxPoint( via->x, via->y ) );
 
@@ -2452,7 +2456,7 @@ bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
             {
                 const GRAPHIC_LINE* src = static_cast<const GRAPHIC_LINE*>( seg.get() );
 
-                TRACK* trk = new TRACK( aBoard );
+                PCB_TRACK* trk = new PCB_TRACK( aBoard );
 
                 trk->SetLayer( layer );
                 trk->SetStart( wxPoint( src->start_x, src->start_y ) );
@@ -2468,7 +2472,7 @@ bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
             {
                 const GRAPHIC_ARC* src = static_cast<const GRAPHIC_ARC*>( seg.get() );
 
-                ARC* trk = new ARC( aBoard, &src->result );
+                PCB_ARC* trk = new PCB_ARC( aBoard, &src->result );
                 trk->SetLayer( layer );
                 trk->SetWidth( src->width );
 

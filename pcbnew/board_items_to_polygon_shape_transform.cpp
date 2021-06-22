@@ -24,11 +24,12 @@
 
 #include <vector>
 #include <bezier_curves.h>
+#include <board_design_settings.h>
 #include <trigo.h>
 #include <board.h>
 #include <pad.h>
-#include <dimension.h>
-#include <track.h>
+#include <pcb_dimension.h>
+#include <pcb_track.h>
 #include <kicad_string.h>
 #include <pcb_shape.h>
 #include <pcb_text.h>
@@ -71,7 +72,7 @@ void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_
     int maxError = GetDesignSettings().m_MaxError;
 
     // convert tracks and vias:
-    for( const TRACK* track : m_tracks )
+    for( const PCB_TRACK* track : m_tracks )
     {
         if( !track->IsOnLayer( aLayer ) )
             continue;
@@ -537,10 +538,10 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
 }
 
 
-void TRACK::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
-                                                  PCB_LAYER_ID aLayer, int aClearanceValue,
-                                                  int aError, ERROR_LOC aErrorLoc,
-                                                  bool ignoreLineWidth ) const
+void PCB_TRACK::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                      PCB_LAYER_ID aLayer, int aClearanceValue,
+                                                      int aError, ERROR_LOC aErrorLoc,
+                                                      bool ignoreLineWidth ) const
 {
     wxASSERT_MSG( !ignoreLineWidth, "IgnoreLineWidth has no meaning for tracks." );
 
@@ -556,8 +557,8 @@ void TRACK::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
 
     case PCB_ARC_T:
     {
-        const ARC* arc = static_cast<const ARC*>( this );
-        int        width = m_Width + ( 2 * aClearanceValue );
+        const PCB_ARC* arc = static_cast<const PCB_ARC*>( this );
+        int            width = m_Width + ( 2 * aClearanceValue );
 
         TransformArcToPolygon( aCornerBuffer, arc->GetStart(), arc->GetMid(),
                                arc->GetEnd(), width, aError, aErrorLoc );
@@ -597,7 +598,8 @@ void PAD::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
     {
     case PAD_SHAPE::CIRCLE:
     case PAD_SHAPE::OVAL:
-        if( dx == dy )
+        // Note: dx == dy is not guaranted for circle pads in legacy boards
+        if( dx == dy || ( GetShape() == PAD_SHAPE::CIRCLE ) )
         {
             TransformCircleToPolygon( aCornerBuffer, padShapePos, dx + aClearanceValue, aError,
                                       aErrorLoc );
@@ -773,10 +775,10 @@ void ZONE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
 }
 
 
-void DIMENSION_BASE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
-                                                           PCB_LAYER_ID aLayer, int aClearance,
-                                                           int aError, ERROR_LOC aErrorLoc,
-                                                           bool aIgnoreLineWidth ) const
+void PCB_DIMENSION_BASE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                               PCB_LAYER_ID aLayer, int aClearance,
+                                                               int aError, ERROR_LOC aErrorLoc,
+                                                               bool aIgnoreLineWidth ) const
 {
     wxASSERT_MSG( !aIgnoreLineWidth, "IgnoreLineWidth has no meaning for dimensions." );
 
@@ -799,7 +801,7 @@ void DIMENSION_BASE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorn
         }
         else
         {
-            wxFAIL_MSG( "DIMENSION::TransformShapeWithClearanceToPolygon unexpected shape type." );
+            wxFAIL_MSG( "PCB_DIMENSION_BASE::TransformShapeWithClearanceToPolygon unexpected shape type." );
         }
     }
 }
