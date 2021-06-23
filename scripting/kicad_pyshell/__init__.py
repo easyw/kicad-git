@@ -166,7 +166,7 @@ class KiCadPyShell(KiCadEditorNotebookFrame):
         if self.dataDir:
             try:
                 name = self.history_file
-                f = file(name, 'w')
+                f = open(name, 'w')
                 hist = []
                 enc = wx.GetDefaultPyEncoding()
                 for h in self.shell.history:
@@ -189,7 +189,7 @@ class KiCadPyShell(KiCadEditorNotebookFrame):
             name = self.history_file
             if os.path.exists(name):
                 try:
-                    f = file(name, 'U')
+                    f = open(name, 'U')
                     hist = f.read()
                     f.close()
                     self.shell.history = hist.split('\x00\n')

@@ -72,6 +72,7 @@ gerbview/Info.plist
 kicad/Info.plist
 pagelayout_editor/Info.plist
 pcb_calculator/Info.plist
+pcb_calculator/eserie_help.h
 pcbnew/Info.plist
 
 # editor/OS fluff
