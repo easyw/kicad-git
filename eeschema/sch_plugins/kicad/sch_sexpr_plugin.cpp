@@ -484,10 +484,10 @@ void SCH_SEXPR_PLUGIN::loadHierarchy( SCH_SHEET* aSheet )
         // Save the current path so that it gets restored when descending and ascending the
         // sheet hierarchy which allows for sheet schematic files to be nested in folders
         // relative to the last path a schematic was loaded from.
-        wxLogTrace( traceSchLegacyPlugin, "Saving path    \"%s\"", m_currentPath.top() );
+        wxLogTrace( traceSchLegacyPlugin, "Saving path    '%s'", m_currentPath.top() );
         m_currentPath.push( fileName.GetPath() );
-        wxLogTrace( traceSchLegacyPlugin, "Current path   \"%s\"", m_currentPath.top() );
-        wxLogTrace( traceSchLegacyPlugin, "Loading        \"%s\"", fileName.GetFullPath() );
+        wxLogTrace( traceSchLegacyPlugin, "Current path   '%s'", m_currentPath.top() );
+        wxLogTrace( traceSchLegacyPlugin, "Loading        '%s'", fileName.GetFullPath() );
 
         m_rootSheet->SearchHierarchy( fileName.GetFullPath(), &screen );
 
@@ -1518,19 +1518,19 @@ void SCH_SEXPR_PLUGIN_CACHE::Load()
 {
     if( !m_libFileName.FileExists() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Library file \"%s\" not found." ),
+        THROW_IO_ERROR( wxString::Format( _( "Library file '%s' not found." ),
                                           m_libFileName.GetFullPath() ) );
     }
 
     wxCHECK_RET( m_libFileName.IsAbsolute(),
                  wxString::Format( "Cannot use relative file paths in sexpr plugin to "
-                                   "open library \"%s\".", m_libFileName.GetFullPath() ) );
+                                   "open library '%s'.", m_libFileName.GetFullPath() ) );
 
     // The current locale must use period as the decimal point.
     wxCHECK2( wxLocale::GetInfo( wxLOCALE_DECIMAL_POINT, wxLOCALE_CAT_NUMBER ) == ".",
               LOCALE_IO toggle );
 
-    wxLogTrace( traceSchLegacyPlugin, "Loading sexpr symbol library file \"%s\"",
+    wxLogTrace( traceSchLegacyPlugin, "Loading sexpr symbol library file '%s'",
                 m_libFileName.GetFullPath() );
 
     FILE_LINE_READER reader( m_libFileName.GetFullPath() );
@@ -2246,9 +2246,8 @@ void SCH_SEXPR_PLUGIN::CreateSymbolLib( const wxString& aLibraryPath,
 {
     if( wxFileExists( aLibraryPath ) )
     {
-        THROW_IO_ERROR( wxString::Format(
-            _( "symbol library \"%s\" already exists, cannot create a new library" ),
-            aLibraryPath.GetData() ) );
+        THROW_IO_ERROR( wxString::Format( _( "Symbol library '%s' already exists." ),
+                                          aLibraryPath.GetData() ) );
     }
 
     LOCALE_IO toggle;
@@ -2273,7 +2272,7 @@ bool SCH_SEXPR_PLUGIN::DeleteSymbolLib( const wxString& aLibraryPath,
     // we don't want that.  we want bare metal portability with no UI here.
     if( wxRemove( aLibraryPath ) )
     {
-        THROW_IO_ERROR( wxString::Format( _( "library \"%s\" cannot be deleted" ),
+        THROW_IO_ERROR( wxString::Format( _( "Symbol library '%s' cannot be deleted." ),
                                           aLibraryPath.GetData() ) );
     }
 

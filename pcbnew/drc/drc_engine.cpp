@@ -156,7 +156,7 @@ void DRC_ENGINE::loadImplicitRules()
     rule->AddConstraint( drillConstraint );
 
     DRC_CONSTRAINT annulusConstraint( ANNULAR_WIDTH_CONSTRAINT );
-    annulusConstraint.Value().SetMin( bds.m_ViasMinAnnulus );
+    annulusConstraint.Value().SetMin( bds.m_ViasMinAnnularWidth );
     rule->AddConstraint( annulusConstraint );
 
     DRC_CONSTRAINT diameterConstraint( VIA_DIAMETER_CONSTRAINT );
@@ -1003,7 +1003,7 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRules( DRC_CONSTRAINT_T aConstraintId, const BOAR
                     }
                     else
                     {
-                        REPORT( wxString::Format( _( "Checking rule condition \"%s\"." ),
+                        REPORT( wxString::Format( _( "Checking rule condition '%s'." ),
                                                   EscapeHTML( c->condition->GetExpression() ) ) )
                     }
 

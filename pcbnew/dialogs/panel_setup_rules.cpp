@@ -47,7 +47,11 @@ PANEL_SETUP_RULES::PANEL_SETUP_RULES( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFr
         m_scintillaTricks( nullptr ),
         m_helpWindow( nullptr )
 {
-    m_scintillaTricks = new SCINTILLA_TRICKS( m_textEditor, wxT( "()" ) );
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_textEditor, wxT( "()" ), false,
+            [this]()
+            {
+                wxPostEvent( m_Parent, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
+            } );
 
     m_netClassRegex.Compile( "NetClass\\s*[!=]=\\s*$", wxRE_ADVANCED );
     m_netNameRegex.Compile( "NetName\\s*[!=]=\\s*$", wxRE_ADVANCED );
@@ -239,7 +243,7 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent &aEvent )
         }
         else if( sexprs.top() == "constraint" )
         {
-            tokens = "annulus_width "
+            tokens = "annular_width "
                      "clearance "
                      "courtyard_clearance "
                      "diff_pair_gap "

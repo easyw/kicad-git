@@ -61,8 +61,8 @@ bool SCH_EDIT_FRAME::CheckSheetForRecursion( SCH_SHEET* aSheet, SCH_SHEET_PATH* 
     if( hierarchy.TestForRecursion( sheetHierarchy, destFile.GetFullPath() ) )
     {
         msg.Printf( _( "The sheet changes cannot be made because the destination sheet already "
-                       "has the sheet \"%s\" or one of it's subsheets as a parent somewhere in "
-                       "the schematic hierarchy." ),
+                       "has the sheet '%s' or one of its subsheets as a parent somewhere in the "
+                       "schematic hierarchy." ),
                     destFile.GetFullPath() );
         DisplayError( this, msg );
         return true;
@@ -159,7 +159,7 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
     }
     catch( const IO_ERROR& ioe )
     {
-        msg.Printf( _( "Error occurred loading schematic file '%s'." ), fullFilename );
+        msg.Printf( _( "Error loading schematic '%s'." ), fullFilename );
         DisplayErrorMessage( this, msg, ioe.What() );
 
         msg.Printf( _( "Failed to load '%s'." ), fullFilename );
@@ -281,7 +281,7 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
                 }
                 catch( const IO_ERROR& ioe )
                 {
-                    msg.Printf( _( "An error occurred loading the symbol library table '%s'." ),
+                    msg.Printf( _( "Error loading the symbol library table '%s'." ),
                                 symLibTableFn.GetFullPath() );
                     DisplayErrorMessage( nullptr, msg, ioe.What() );
                     return false;

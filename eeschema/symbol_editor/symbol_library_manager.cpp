@@ -102,7 +102,7 @@ void SYMBOL_LIBRARY_MANAGER::Preload( PROGRESS_REPORTER& aReporter )
     {
         HTML_MESSAGE_BOX dlg( &m_frame, _( "Load Error" ) );
 
-        dlg.MessageSet( _( "Errors were encountered loading symbols:" ) );
+        dlg.MessageSet( _( "Errors loading symbols:" ) );
 
         wxString msg = loader.GetErrors();
         msg.Replace( "\n", "<BR>" );
@@ -172,8 +172,8 @@ SYMBOL_LIB_TABLE_ROW* SYMBOL_LIBRARY_MANAGER::GetLibrary( const wxString& aLibra
     }
     catch( const IO_ERROR& e )
     {
-        wxLogMessage( _( "Cannot find library \"%s\" in the Symbol Library Table (%s)" ),
-                      aLibrary, e.What() );
+        wxLogMessage( _( "Library '%s' not found in the Symbol Library Table." ) + e.What(),
+                      aLibrary );
     }
 
     return row;
@@ -429,7 +429,7 @@ LIB_SYMBOL* SYMBOL_LIBRARY_MANAGER::GetBufferedSymbol( const wxString& aAlias,
         }
         catch( const IO_ERROR& e )
         {
-            wxLogMessage( _( "Error loading symbol \"%s\" from library \"%s\". (%s)" ),
+            wxLogMessage( _( "Error loading symbol %s from library '%s'. (%s)" ),
                           aAlias, aLibrary, e.What() );
             bufferedSymbol = nullptr;
         }
@@ -615,8 +615,9 @@ LIB_SYMBOL* SYMBOL_LIBRARY_MANAGER::GetAlias( const wxString& aAlias,
     }
     catch( const IO_ERROR& e )
     {
-        wxLogMessage( _( "Cannot load symbol \"%s\" from library \"%s\" (%s)" ),
-                      aAlias, aLibrary, e.What() );
+        wxLogMessage( _( "Cannot load symbol '%s' from library '%s'." ) + e.What(),
+                      aAlias,
+                      aLibrary );
     }
 
     return alias;
@@ -770,7 +771,7 @@ std::set<LIB_SYMBOL*> SYMBOL_LIBRARY_MANAGER::getOriginalSymbols( const wxString
     }
     catch( const IO_ERROR& e )
     {
-        wxLogMessage( _( "Cannot enumerate library \"%s\" (%s)" ), aLibrary, e.What() );
+        wxLogMessage( _( "Cannot enumerate library '%s'." ) + e.What(), aLibrary );
     }
 
     return symbols;
@@ -1048,7 +1049,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
     wxCHECK( libSymbol && originalSymbol, false );
     wxCHECK( !aFileName.IsEmpty(), false );
 
-    wxString errorMsg = _( "An error \"%s\" occurred saving symbol \"%s\" to library \"%s\"" );
+    wxString errorMsg = _( "Error saving symbol %s to library '%s'." ) + wxS( "\n%s" );
 
     // set properties to prevent save file on every symbol save
     PROPERTIES properties;
@@ -1090,7 +1091,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
             }
             catch( const IO_ERROR& ioe )
             {
-                wxLogError( errorMsg, ioe.What(), cachedParent->GetName() );
+                wxLogError( errorMsg, cachedParent->GetName(), aFileName, ioe.What() );
                 return false;
             }
 
@@ -1100,7 +1101,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
             }
             catch( const IO_ERROR& ioe )
             {
-                wxLogError( errorMsg, ioe.What(), newCachedSymbol->GetName() );
+                wxLogError( errorMsg, newCachedSymbol->GetName(), aFileName, ioe.What() );
                 return false;
             }
 
@@ -1120,7 +1121,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
             }
             catch( const IO_ERROR& ioe )
             {
-                wxLogError( errorMsg, ioe.What(), newCachedSymbol->GetName() );
+                wxLogError( errorMsg, newCachedSymbol->GetName(), aFileName, ioe.What() );
                 return false;
             }
 
@@ -1145,7 +1146,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
             }
             catch( const IO_ERROR& ioe )
             {
-                wxLogError( errorMsg, ioe.What(), libSymbol->GetName() );
+                wxLogError( errorMsg, libSymbol->GetName(), aFileName, ioe.What() );
                 return false;
             }
 
@@ -1162,7 +1163,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
             }
             catch( const IO_ERROR& ioe )
             {
-                wxLogError( errorMsg, ioe.What(), libSymbol->GetName() );
+                wxLogError( errorMsg, libSymbol->GetName(), aFileName, ioe.What() );
                 return false;
             }
 
@@ -1182,7 +1183,7 @@ bool SYMBOL_LIBRARY_MANAGER::LIB_BUFFER::SaveBuffer(
                 }
                 catch( const IO_ERROR& ioe )
                 {
-                    wxLogError( errorMsg, ioe.What(), derivedSymbol->GetName() );
+                    wxLogError( errorMsg, derivedSymbol->GetName(), aFileName, ioe.What() );
                     return false;
                 }
             }
