@@ -32,7 +32,6 @@
 #include <kiway_express.h>
 #include <macros.h>
 #include <netlist_reader/netlist_reader.h>
-#include <footprint_info_impl.h>
 #include <numeric>
 #include <tool/action_manager.h>
 #include <tool/action_toolbar.h>
@@ -57,13 +56,8 @@
 #include <wx/button.h>
 #include <wx/settings.h>
 
+
 #define CVPCB_MAINFRAME_NAME wxT( "CvpcbFrame" )
-
-
-/// The global footprint info table.  This is performance-intensive to build so we
-/// keep a hash-stamped global version.  Any deviation from the request vs. stored
-/// hash will result in it being rebuilt.
-FOOTPRINT_LIST_IMPL   GFootprintList;
 
 
 CVPCB_MAINFRAME::CVPCB_MAINFRAME( KIWAY* aKiway, wxWindow* aParent ) :
@@ -78,7 +72,7 @@ CVPCB_MAINFRAME::CVPCB_MAINFRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_skipComponentSelect = false;
     m_filteringOptions    = FOOTPRINTS_LISTBOX::UNFILTERED_FP_LIST;
     m_tcFilterString      = NULL;
-    m_FootprintsList      = &GFootprintList;
+    m_FootprintsList      = FOOTPRINT_LIST::GetInstance( Kiway() );
     m_initialized         = false;
     m_aboutTitle          = "CvPcb";
 
@@ -95,8 +89,6 @@ CVPCB_MAINFRAME::CVPCB_MAINFRAME( KIWAY* aKiway, wxWindow* aParent ) :
     setupUIConditions();
     ReCreateMenuBar();
     ReCreateHToolbar();
-
-    GFootprintList.ReadCacheFromFile( Prj().GetProjectPath() + "fp-info-cache" );
 
     // Create list of available footprints and symbols of the schematic
     BuildSymbolsListBox();
@@ -140,11 +132,9 @@ CVPCB_MAINFRAME::CVPCB_MAINFRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxStaticLine* staticline1 = new wxStaticLine( bottomPanel );
     panelSizer->Add( staticline1, 0, wxEXPAND, 5 );
 
-    wxFont statusFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    statusFont.SetSymbolicSize( wxFONTSIZE_SMALL );
-    m_statusLine1->SetFont( statusFont );
-    m_statusLine2->SetFont( statusFont );
-    m_statusLine3->SetFont( statusFont );
+    m_statusLine1->SetFont( KIUI::GetInfoFont() );
+    m_statusLine2->SetFont( KIUI::GetInfoFont() );
+    m_statusLine3->SetFont( KIUI::GetInfoFont() );
 
     // Add buttons:
     auto buttonsSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -777,7 +767,7 @@ void CVPCB_MAINFRAME::DisplayStatus()
     }
 
     // Extract the library information
-    FP_LIB_TABLE* fptbl = Prj().PcbFootprintLibs( Kiway() );
+    FP_LIB_TABLE* fptbl = Prj().PcbFootprintLibs();
 
     if( fptbl->HasLibrary( lib ) )
         msg = wxString::Format( _( "Library location: %s" ), fptbl->GetFullURI( lib ) );
@@ -790,7 +780,7 @@ void CVPCB_MAINFRAME::DisplayStatus()
 
 bool CVPCB_MAINFRAME::LoadFootprintFiles()
 {
-    FP_LIB_TABLE* fptbl = Prj().PcbFootprintLibs( Kiway() );
+    FP_LIB_TABLE* fptbl = Prj().PcbFootprintLibs();
 
     // Check if there are footprint libraries in the footprint library table.
     if( !fptbl || !fptbl->GetLogicalLibs().size() )
@@ -891,8 +881,7 @@ void CVPCB_MAINFRAME::BuildFootprintsListBox()
     if( m_footprintListBox == NULL )
     {
         m_footprintListBox = new FOOTPRINTS_LISTBOX( this, ID_CVPCB_FOOTPRINT_LIST );
-        m_footprintListBox->SetFont( wxFont( guiFont.GetPointSize(), wxFONTFAMILY_MODERN,
-                                             wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL ) );
+        m_footprintListBox->SetFont( KIUI::GetMonospacedUIFont() );
     }
 
     m_footprintListBox->SetFootprints( *m_FootprintsList, wxEmptyString, NULL, wxEmptyString,
@@ -910,8 +899,7 @@ void CVPCB_MAINFRAME::BuildSymbolsListBox()
     if( m_symbolsListBox == NULL )
     {
         m_symbolsListBox = new COMPONENTS_LISTBOX( this, ID_CVPCB_COMPONENT_LIST );
-        m_symbolsListBox->SetFont( wxFont( guiFont.GetPointSize(), wxFONTFAMILY_MODERN,
-                                           wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL ) );
+        m_symbolsListBox->SetFont( KIUI::GetMonospacedUIFont() );
     }
 
     m_symbolsListBox->m_ComponentList.Clear();
@@ -945,11 +933,10 @@ void CVPCB_MAINFRAME::BuildLibrariesListBox()
     if( m_librariesListBox == NULL )
     {
         m_librariesListBox = new LIBRARY_LISTBOX( this, ID_CVPCB_LIBRARY_LIST );
-        m_librariesListBox->SetFont( wxFont( guiFont.GetPointSize(), wxFONTFAMILY_MODERN,
-                                             wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL ) );
+        m_librariesListBox->SetFont( KIUI::GetMonospacedUIFont() );
     }
 
-    FP_LIB_TABLE* tbl = Prj().PcbFootprintLibs( Kiway() );
+    FP_LIB_TABLE* tbl = Prj().PcbFootprintLibs();
 
     if( tbl )
     {
