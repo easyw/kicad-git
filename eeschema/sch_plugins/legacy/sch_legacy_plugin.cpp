@@ -1575,7 +1575,7 @@ SCH_SYMBOL* SCH_LEGACY_PLUGIN::loadSymbol( LINE_READER& aReader )
             if( m_version > 3 )
                 libId.Parse( libName, true );
             else
-                libId.SetLibItemName( libName, false );
+                libId.SetLibItemName( libName );
 
             symbol->SetLibId( libId );
 
@@ -2734,7 +2734,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDocs()
 
         aliasName = wxString::FromUTF8( line );
         aliasName.Trim();
-        aliasName = LIB_ID::FixIllegalChars( aliasName );
+        aliasName = EscapeString( aliasName, CTX_LIBID );
 
         LIB_SYMBOL_MAP::iterator it = m_symbols.find( aliasName );
 
