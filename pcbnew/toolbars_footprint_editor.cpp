@@ -81,6 +81,11 @@ void FOOTPRINT_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( PCB_ACTIONS::ungroup );
 
     m_mainToolBar->AddScaledSeparator( this );
+    // maui show3DViewer flipBoard
+    m_mainToolBar->Add( ACTIONS::show3DViewer );
+    m_mainToolBar->Add( PCB_ACTIONS::flipBoard, ACTION_TOOLBAR::TOGGLE );
+    m_mainToolBar->AddScaledSeparator( this );
+    // maui end
     m_mainToolBar->Add( PCB_ACTIONS::footprintProperties );
     m_mainToolBar->Add( PCB_ACTIONS::defaultPadProperties );
     m_mainToolBar->Add( PCB_ACTIONS::checkFootprint );
