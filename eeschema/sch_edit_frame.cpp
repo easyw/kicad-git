@@ -45,6 +45,7 @@
 #include <project.h>
 #include <project/project_file.h>
 #include <project/net_settings.h>
+#include <python_scripting.h>
 #include <sch_edit_frame.h>
 #include <sch_painter.h>
 #include <sch_sheet.h>
@@ -411,6 +412,9 @@ void SCH_EDIT_FRAME::setupUIConditions()
 
     mgr->SetConditions( ACTIONS::zoomTool,            CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
     mgr->SetConditions( ACTIONS::selectionTool,       CHECK( cond.CurrentTool( ACTIONS::selectionTool ) ) );
+
+    if( SCRIPTING::IsWxAvailable() )
+        mgr->SetConditions( EE_ACTIONS::showPythonConsole, CHECK( cond.ScriptingConsoleVisible() ) );
 
     auto showHiddenPinsCond =
         [this] ( const SELECTION& )
@@ -1297,6 +1301,13 @@ void SCH_EDIT_FRAME::initScreenZoom()
 
 void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
 {
+    const SCH_CONNECTION* highlight       = GetHighlightedConnection();
+    SCH_ITEM*             highlightedItem = highlight ? highlight->Parent() : nullptr;
+    SCH_SHEET_PATH highlightPath;
+
+    if( highlight )
+        highlightPath = highlight->Sheet();
+
     SCHEMATIC_SETTINGS& settings = Schematic().Settings();
     SCH_SHEET_LIST      list = Schematic().GetSheets();
 #ifdef PROFILE
@@ -1329,6 +1340,9 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
             };
 
     Schematic().ConnectionGraph()->Recalculate( list, true, &changeHandler );
+
+    if( highlightedItem )
+        SetHighlightedConnection( highlightedItem->Connection( &highlightPath ) );
 }
 
 

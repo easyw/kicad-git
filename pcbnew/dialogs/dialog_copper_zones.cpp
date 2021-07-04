@@ -51,10 +51,10 @@ private:
     ZONE_SETTINGS    m_settings;
     ZONE_SETTINGS*   m_ptr;
 
-    std::vector<int> m_listIndexToNetCodeMap;
+    std::map<wxString, int> m_displayNameToNetCodeMap;
 
     bool             m_netSortingByPadCount;
-    long             m_netFiltering;
+    bool             m_netFiltering;
     static wxString  m_netNameShowFilter;    // the filter to show nets (default * "*").  Static
                                              // to keep this pattern for an entire Pcbnew session
     int              m_cornerSmoothingType;
@@ -202,8 +202,8 @@ bool DIALOG_COPPER_ZONE::TransferDataToWindow()
 
     netNameDoNotShowFilter = cfg->m_Zones.net_filter;
 
-    m_ShowNetNameFilter->SetValue( m_netNameShowFilter );
-    m_DoNotShowNetNameFilter->SetValue( netNameDoNotShowFilter );
+    m_ShowNetNameFilter->ChangeValue( m_netNameShowFilter );
+    m_DoNotShowNetNameFilter->ChangeValue( netNameDoNotShowFilter );
     m_showAllNetsOpt->SetValue( !m_netFiltering );
     m_sortByPadsOpt->SetValue( m_netSortingByPadCount );
 
@@ -426,7 +426,7 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aUseExportableSetupOnly )
     int netcode = 0;
 
     if( m_ListNetNameSelection->GetSelection() > 0 )
-        netcode = m_listIndexToNetCodeMap[ m_ListNetNameSelection->GetSelection() ];
+        netcode = m_displayNameToNetCodeMap[ m_ListNetNameSelection->GetStringSelection() ];
 
     m_settings.m_NetcodeSelection = netcode;
 
@@ -471,7 +471,7 @@ void DIALOG_COPPER_ZONE::OnNetSortingOptionSelected( wxCommandEvent& event )
 
     buildAvailableListOfNets();
 
-    auto cfg = m_Parent->GetPcbNewSettings();
+    PCBNEW_SETTINGS* cfg = m_Parent->GetPcbNewSettings();
 
     int configValue = m_netFiltering ? 2 : 0;
 
@@ -511,6 +511,16 @@ void DIALOG_COPPER_ZONE::OnRunFiltersButtonClick( wxCommandEvent& event )
     m_showAllNetsOpt->SetValue( false );
 
     buildAvailableListOfNets();
+
+    PCBNEW_SETTINGS* cfg = m_Parent->GetPcbNewSettings();
+
+    int configValue = m_netFiltering ? 2 : 0;
+
+    if( m_netSortingByPadCount )
+        configValue += 1;
+
+    cfg->m_Zones.net_sort_mode = configValue;
+    cfg->m_Zones.net_filter = m_DoNotShowNetNameFilter->GetValue().ToStdString();
 }
 
 
@@ -543,8 +553,10 @@ static bool sortNetsByNames( const NETINFO_ITEM* a, const NETINFO_ITEM* b )
 void DIALOG_COPPER_ZONE::buildAvailableListOfNets()
 {
     NETINFO_LIST& netInfo = m_Parent->GetBoard()->GetNetInfo();
-    wxArrayString listNetName;
-    m_listIndexToNetCodeMap.clear();
+    wxString      displayNetName;
+    wxArrayString displayNetNameList;
+
+    m_displayNameToNetCodeMap.clear();
 
     if( netInfo.GetNetCount() > 0 )
     {
@@ -591,8 +603,9 @@ void DIALOG_COPPER_ZONE::buildAvailableListOfNets()
 
         for( NETINFO_ITEM* net : netBuffer )
         {
-            listNetName.Add( UnescapeString( net->GetNetname() ) );
-            m_listIndexToNetCodeMap.push_back( net->GetNetCode() );
+            displayNetName = UnescapeString( net->GetNetname() );
+            displayNetNameList.Add( displayNetName );
+            m_displayNameToNetCodeMap[ displayNetName ] = net->GetNetCode();
         }
     }
 
@@ -601,23 +614,24 @@ void DIALOG_COPPER_ZONE::buildAvailableListOfNets()
         wxString doNotShowFilter = m_DoNotShowNetNameFilter->GetValue().Lower();
         wxString ShowFilter = m_ShowNetNameFilter->GetValue().Lower();
 
-        for( unsigned ii = 0; ii < listNetName.GetCount(); ii++ )
+        for( unsigned ii = 0; ii < displayNetNameList.GetCount(); ii++ )
         {
-            if( listNetName[ii].Lower().Matches( doNotShowFilter ) )
+            if( displayNetNameList[ii].Lower().Matches( doNotShowFilter ) )
             {
-                listNetName.RemoveAt( ii );
+                displayNetNameList.RemoveAt( ii );
                 ii--;
             }
-            else if( !listNetName[ii].Lower().Matches( ShowFilter ) )
+            else if( !displayNetNameList[ii].Lower().Matches( ShowFilter ) )
             {
-                listNetName.RemoveAt( ii );
+                displayNetNameList.RemoveAt( ii );
                 ii--;
             }
         }
     }
 
-    listNetName.Insert( wxT( "<no net>" ), 0 );
-    m_listIndexToNetCodeMap.insert( m_listIndexToNetCodeMap.begin(), 0 );
+    displayNetName = _( "<no net>" );
+    displayNetNameList.Insert( displayNetName, 0 );
+    m_displayNameToNetCodeMap[ displayNetName ] = 0;
 
     // Ensure currently selected net for the zone is visible, regardless of filters
     int selectedNetListNdx = 0;
@@ -629,20 +643,20 @@ void DIALOG_COPPER_ZONE::buildAvailableListOfNets()
 
         if( selectedNet )
         {
-            selectedNetListNdx = listNetName.Index( selectedNet->GetNetname() );
+            selectedNetListNdx = displayNetNameList.Index( selectedNet->GetNetname() );
 
             if( wxNOT_FOUND == selectedNetListNdx )
             {
                 // the currently selected net must *always* be visible.
 		        // <no net> is the zero'th index, so pick next lowest
-                listNetName.Insert( selectedNet->GetNetname(), 1 );
+                displayNetNameList.Insert( selectedNet->GetNetname(), 1 );
                 selectedNetListNdx = 1;
             }
         }
     }
 
     m_ListNetNameSelection->Clear();
-    m_ListNetNameSelection->InsertItems( listNetName, 0 );
+    m_ListNetNameSelection->InsertItems( displayNetNameList, 0 );
     m_ListNetNameSelection->SetSelection( selectedNetListNdx );
     m_ListNetNameSelection->EnsureVisible( selectedNetListNdx );
 }
