@@ -115,6 +115,7 @@ private:
     void ParseComponent( int aIndex, const std::map<wxString, wxString>& aProperties );
     void ParsePin( const std::map<wxString, wxString>& aProperties );
     void ParseLabel( const std::map<wxString, wxString>& aProperties );
+    void ParseNote( const std::map<wxString, wxString>& aProperties );
     void ParseBezier( const std::map<wxString, wxString>& aProperties );
     void ParsePolyline( const std::map<wxString, wxString>& aProperties );
     void ParsePolygon( const std::map<wxString, wxString>& aProperties );
@@ -155,9 +156,9 @@ private:
 
     wxPoint                         m_sheetOffset;
     std::unique_ptr<ASCH_SHEET>     m_altiumSheet;
-    std::map<int, SCH_SYMBOL*>      m_components;
+    std::map<int, SCH_SYMBOL*>      m_symbols;
     std::map<int, SCH_SHEET*>       m_sheets;
-    std::map<int, LIB_SYMBOL*>      m_symbols;           // every component has its unique symbol
+    std::map<int, LIB_SYMBOL*>      m_libSymbols;        // every symbol has its unique lib_symbol
 
     std::map<wxString, LIB_SYMBOL*> m_powerSymbols;
     std::vector<ASCH_STORAGE_FILE>  m_altiumStorage;

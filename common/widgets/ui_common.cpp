@@ -18,8 +18,14 @@
  */
 
 #include <wx/dcclient.h>
+#include <wx/checkbox.h>
+#include <wx/choice.h>
 #include <wx/listbox.h>
 #include <wx/dataview.h>
+#include <wx/radiobut.h>
+#include <wx/slider.h>
+#include <wx/spinctrl.h>
+#include <wx/srchctrl.h>
 #include <wx/stc/stc.h>
 #include <widgets/ui_common.h>
 
@@ -167,15 +173,62 @@ void KIUI::SelectReferenceNumber( wxTextEntry* aTextEntry )
 }
 
 
-bool KIUI::IsInputControlFocused()
+bool KIUI::IsInputControlFocused( wxWindow* aFocus )
 {
-    wxWindow*         focus        = wxWindow::FindFocus();
-    wxTextEntry*      textEntry    = dynamic_cast<wxTextEntry*>( focus );
-    wxStyledTextCtrl* styledText   = dynamic_cast<wxStyledTextCtrl*>( focus );
-    wxListBox*        listBox      = dynamic_cast<wxListBox*>( focus );
-    wxDataViewCtrl*   dataViewCtrl = dynamic_cast<wxDataViewCtrl*>( focus );
+    if( aFocus == nullptr )
+    {
+        aFocus = wxWindow::FindFocus();
+    }
 
-    return ( textEntry || styledText || listBox || dataViewCtrl );
+    if( !aFocus )
+    {
+        return false;
+    }
+
+    wxTextEntry*      textEntry = dynamic_cast<wxTextEntry*>( aFocus );
+    wxStyledTextCtrl* styledText = dynamic_cast<wxStyledTextCtrl*>( aFocus );
+    wxListBox*        listBox = dynamic_cast<wxListBox*>( aFocus );
+    wxSearchCtrl*     searchCtrl = dynamic_cast<wxSearchCtrl*>( aFocus );
+    wxCheckBox*       checkboxCtrl = dynamic_cast<wxCheckBox*>( aFocus );
+    wxChoice*         choiceCtrl = dynamic_cast<wxChoice*>( aFocus );
+    wxRadioButton*    radioBtn = dynamic_cast<wxRadioButton*>( aFocus );
+    wxSpinCtrl*       spinCtrl = dynamic_cast<wxSpinCtrl*>( aFocus );
+    wxSpinCtrlDouble* spinDblCtrl = dynamic_cast<wxSpinCtrlDouble*>( aFocus );
+    wxSlider*         sliderCtl = dynamic_cast<wxSlider*>( aFocus );
+
+    // Data view control is annoying, the focus is on a "wxDataViewCtrlMainWindow"
+    // class that is not formerly exported via the header.
+    // However, we can test the parent is wxDataViewCtrl instead
+    wxDataViewCtrl* dataViewCtrl = nullptr;
+
+    wxWindow* parent = aFocus->GetParent();
+
+    if( parent )
+    {
+        dataViewCtrl = dynamic_cast<wxDataViewCtrl*>( parent );
+    }
+
+    return ( textEntry || styledText || listBox || dataViewCtrl || searchCtrl || dataViewCtrl
+             || checkboxCtrl || choiceCtrl || radioBtn || spinCtrl || spinDblCtrl || sliderCtl );
+}
+
+
+bool KIUI::IsInputControlEditable( wxWindow* aFocus )
+{
+    wxTextEntry*      textEntry = dynamic_cast<wxTextEntry*>( aFocus );
+    wxStyledTextCtrl* styledText = dynamic_cast<wxStyledTextCtrl*>( aFocus );
+    wxSearchCtrl*     searchCtrl = dynamic_cast<wxSearchCtrl*>( aFocus );
+    wxListBox*        listBox = dynamic_cast<wxListBox*>( aFocus );
+    wxCheckBox*       checkboxCtrl = dynamic_cast<wxCheckBox*>( aFocus );
+
+    if( textEntry )
+        return textEntry->IsEditable();
+    else if( styledText )
+        return styledText->IsEditable();
+    else if( searchCtrl )
+        return searchCtrl->IsEditable();
+
+    return true;    // Must return true if we can't determine the state, intentionally true for non inputs as well
 }
 
 
