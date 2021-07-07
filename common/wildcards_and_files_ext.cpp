@@ -370,7 +370,7 @@ wxString FootprintAssignmentFileWildcard()
 // Wildcard for reports and fabrication documents
 wxString DrillFileWildcard()
 {
-    return _( "Drill files" ) + AddFileExtListToFilter( { "drl", "nc", "xnc", "txt" } );
+    return _( "Drill files" ) + AddFileExtListToFilter( { "drl", "nc", "xnc", "txt", "ncd"} );  // maui gerbv
 }
 
 
