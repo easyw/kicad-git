@@ -233,13 +233,6 @@ SCH_SHEET* SCH_ALTIUM_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchem
 }
 
 
-/*wxString SCH_EAGLE_PLUGIN::fixSymbolName( const wxString& aName )
-{
-    wxString ret = LIB_ID::FixIllegalChars( aName, LIB_ID::ID_SCH );
-
-    return ret;
-}*/
-
 void SCH_ALTIUM_PLUGIN::ParseAltiumSch( const wxString& aFileName )
 {
     // Open file
@@ -428,6 +421,7 @@ void SCH_ALTIUM_PLUGIN::ParseFileHeader( const CFB::CompoundFileReader& aReader 
             ParseWire( properties );
             break;
         case ALTIUM_SCH_RECORD::TEXT_FRAME:
+            ParseTextFrame( properties );
             break;
         case ALTIUM_SCH_RECORD::JUNCTION:
             ParseJunction( properties );
@@ -861,6 +855,46 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
 }
 
 
+void SCH_ALTIUM_PLUGIN::ParseTextFrame( const std::map<wxString, wxString>& aProperties )
+{
+    ASCH_TEXT_FRAME elem( aProperties );
+
+    SCH_TEXT* text = new SCH_TEXT( elem.location + m_sheetOffset, elem.text );
+
+    switch( elem.alignment )
+    {
+    default:
+    case ASCH_TEXT_FRAME_ALIGNMENT::LEFT:
+        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+        break;
+    case ASCH_TEXT_FRAME_ALIGNMENT::CENTER:
+        // No support for centered text in Eeschema yet...
+        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+        break;
+    case ASCH_TEXT_FRAME_ALIGNMENT::RIGHT:
+        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::LEFT );
+        break;
+    }
+
+    // TODO: set size and word-wrap once KiCad supports wrapped text.
+
+    // TODO: set border and background color once KiCad supports them.
+
+    size_t fontId = static_cast<int>( elem.fontId );
+
+    if( m_altiumSheet && fontId > 0 && fontId <= m_altiumSheet->fonts.size() )
+    {
+        const ASCH_SHEET_FONT& font = m_altiumSheet->fonts.at( fontId - 1 );
+        text->SetItalic( font.italic );
+        text->SetBold( font.bold );
+        text->SetTextSize( { font.size / 2, font.size / 2 } );
+    }
+
+    text->SetFlags( IS_NEW );
+    m_currentSheet->GetScreen()->Append( text );
+}
+
+
 void SCH_ALTIUM_PLUGIN::ParseNote( const std::map<wxString, wxString>& aProperties )
 {
     ASCH_NOTE elem( aProperties );
@@ -870,14 +904,14 @@ void SCH_ALTIUM_PLUGIN::ParseNote( const std::map<wxString, wxString>& aProperti
     switch( elem.alignment )
     {
     default:
-    case ASCH_NOTE_ALIGNMENT::LEFT:
+    case ASCH_TEXT_FRAME_ALIGNMENT::LEFT:
         text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
         break;
-    case ASCH_NOTE_ALIGNMENT::CENTER:
+    case ASCH_TEXT_FRAME_ALIGNMENT::CENTER:
         // No support for centered text in Eeschema yet...
         text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
         break;
-    case ASCH_NOTE_ALIGNMENT::RIGHT:
+    case ASCH_TEXT_FRAME_ALIGNMENT::RIGHT:
         text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::LEFT );
         break;
     }
@@ -2303,11 +2337,11 @@ void SCH_ALTIUM_PLUGIN::ParseImplementation( const std::map<wxString, wxString>&
             return;
         }
 
-        const auto& component = m_symbols.at( libSymbolIt->first );
+        SCH_SYMBOL* symbol = m_symbols.at( libSymbolIt->first );
 
         if( elem.libname != "" )
-            component->SetFootprint( elem.libname + wxT( ":" ) + elem.name );
+            symbol->SetFootprint( elem.libname + wxT( ":" ) + elem.name );
         else
-            component->SetFootprint( elem.name );
+            symbol->SetFootprint( elem.name );
     }
 }
