@@ -179,6 +179,13 @@ SCH_SHEET* SCH_ALTIUM_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchem
     {
         m_rootSheet = new SCH_SHEET( aSchematic );
         m_rootSheet->SetFileName( fileName.GetFullPath() );
+
+        SCH_SHEET_PATH sheetpath;
+        sheetpath.push_back( m_rootSheet );
+
+        m_rootSheet->AddInstance( sheetpath.Path() );
+        m_rootSheet->SetPageNumber( sheetpath, "#" );   // We'll update later if we find a
+                                                        // pageNumber record for it
     }
 
     if( !m_rootSheet->GetScreen() )
@@ -228,6 +235,7 @@ SCH_SHEET* SCH_ALTIUM_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchem
 
     SCH_SCREENS allSheets( m_rootSheet );
     allSheets.UpdateSymbolLinks(); // Update all symbol library links for all sheets.
+    allSheets.ClearEditFlags();
 
     return m_rootSheet;
 }
@@ -342,9 +350,6 @@ void SCH_ALTIUM_PLUGIN::ParseFileHeader( const CFB::CompoundFileReader& aReader 
 
     m_currentTitleBlock = std::make_unique<TITLE_BLOCK>();
 
-    // Track implementation_list ownerindex, because subsequent implementations will depend on it
-    int implementationlistindex = -1;
-
     // index is required to resolve OWNERINDEX
     for( int index = 0; reader.GetRemainingBytes() > 0; index++ )
     {
@@ -454,13 +459,10 @@ void SCH_ALTIUM_PLUGIN::ParseFileHeader( const CFB::CompoundFileReader& aReader 
         case ALTIUM_SCH_RECORD::WARNING_SIGN:
             break;
         case ALTIUM_SCH_RECORD::IMPLEMENTATION_LIST:
-        {
-            ASCH_IMPLEMENTATION_LIST elem( properties );
-            implementationlistindex = elem.ownerindex;
-        }
+            ParseImplementationList( index, properties );
             break;
         case ALTIUM_SCH_RECORD::IMPLEMENTATION:
-            ParseImplementation( properties, implementationlistindex );
+            ParseImplementation( properties );
             break;
         case ALTIUM_SCH_RECORD::RECORD_46:
             break;
@@ -784,24 +786,29 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
 {
     ASCH_LABEL elem( aProperties );
 
-    // TODO: text variable support
+    // TODO: general text variable support
 
     if( elem.ownerpartid == ALTIUM_COMPONENT_NONE )
     {
-        if( elem.text == "=SheetNumber" )
-            elem.text = "${#}";
-        else if( elem.text == "=SheetTotal" )
-            elem.text = "${##}";
-        else if( elem.text == "=Title" )
-            elem.text = "${TITLE}";
-        else if( elem.text == "=ProjectRev" )
-            elem.text = "${REVISION}";
-        else if( elem.text == "=Date" )
-            elem.text = "${ISSUE_DATE}";
-        else if( elem.text == "=CompanyName" )
-            elem.text = "${COMPANY}";
-        else if( elem.text == "=DocumentName" )
-            elem.text = "${FILENAME}";
+        if( elem.text.StartsWith( "=" ) )
+        {
+            wxString token = elem.text.AfterFirst( '=' ).Upper();
+
+            if(      token == "SHEETNUMBER"  ) elem.text = "${#}";
+            else if( token == "SHEETTOTAL"   ) elem.text = "${##}";
+            else if( token == "TITLE"        ) elem.text = "${TITLE}";
+            else if( token == "PROJECTREV"   ) elem.text = "${REVISION}";
+            else if( token == "DATE"         ) elem.text = "${ISSUE_DATE}";
+            else if( token == "CURRENTDATE"  ) elem.text = "${CURRENT_DATE}";
+            else if( token == "COMPANYNAME"  ) elem.text = "${COMPANY}";
+            else if( token == "DOCUMENTNAME" ) elem.text = "${FILENAME}";
+            else if( token == "PROJECTNAME"  ) elem.text = "${PROJECTNAME}";
+            else
+            {
+                if( m_schematic->Prj().GetTextVars().count( token ) )
+                    elem.text = wxString::Format( "${%s}", token );
+            }
+        }
 
         SCH_TEXT* text = new SCH_TEXT( elem.location + m_sheetOffset, elem.text );
 
@@ -1443,8 +1450,8 @@ void SCH_ALTIUM_PLUGIN::ParseSheetSymbol( int aIndex, const std::map<wxString,
     SCH_SCREEN* screen = new SCH_SCREEN( m_schematic );
 
     sheet->SetSize( elem.size );
-
     sheet->SetBorderColor( GetColorFromInt( elem.color ) );
+
     if( elem.isSolid )
         sheet->SetBackgroundColor( GetColorFromInt( elem.areacolor ) );
 
@@ -1452,6 +1459,14 @@ void SCH_ALTIUM_PLUGIN::ParseSheetSymbol( int aIndex, const std::map<wxString,
 
     sheet->SetFlags( IS_NEW );
     m_currentSheet->GetScreen()->Append( sheet );
+
+    SCH_SHEET_PATH sheetpath;
+    m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
+    sheetpath.push_back( sheet );
+
+    sheet->AddInstance( sheetpath.Path() );
+    sheet->SetPageNumber( sheetpath, "#" );   // We'll update later if we find a pageNumber
+                                              // record for it
 
     m_sheets.insert( { aIndex, sheet } );
 }
@@ -1461,9 +1476,9 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
 {
     ASCH_SHEET_ENTRY elem( aProperties );
 
-    const auto& sheet = m_sheets.find( elem.ownerindex );
+    const auto& sheetIt = m_sheets.find( elem.ownerindex );
 
-    if( sheet == m_sheets.end() )
+    if( sheetIt == m_sheets.end() )
     {
         m_reporter->Report( wxString::Format( _( "Sheet entry's owner (%d) not found." ),
                                               elem.ownerindex ),
@@ -1471,16 +1486,16 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
         return;
     }
 
-    SCH_SHEET_PIN* sheetPin = new SCH_SHEET_PIN( sheet->second );
-    sheet->second->AddPin( sheetPin );
+    SCH_SHEET_PIN* sheetPin = new SCH_SHEET_PIN( sheetIt->second );
+    sheetIt->second->AddPin( sheetPin );
 
     sheetPin->SetText( elem.name );
     sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED );
     //sheetPin->SetLabelSpinStyle( getSpinStyle( term.OrientAngle, false ) );
     //sheetPin->SetPosition( getKiCadPoint( term.Position ) );
 
-    wxPoint pos  = sheet->second->GetPosition();
-    wxSize  size = sheet->second->GetSize();
+    wxPoint pos  = sheetIt->second->GetPosition();
+    wxSize  size = sheetIt->second->GetSize();
 
     switch( elem.side )
     {
@@ -2120,6 +2135,7 @@ void SCH_ALTIUM_PLUGIN::ParseSheet( const std::map<wxString, wxString>& aPropert
     PAGE_INFO pageInfo;
 
     bool isPortrait = m_altiumSheet->sheetOrientation == ASCH_SHEET_WORKSPACEORIENTATION::PORTRAIT;
+
     switch( m_altiumSheet->sheetSize )
     {
     default:
@@ -2166,8 +2182,9 @@ void SCH_ALTIUM_PLUGIN::ParseSheetName( const std::map<wxString, wxString>& aPro
 {
     ASCH_SHEET_NAME elem( aProperties );
 
-    const auto& sheet = m_sheets.find( elem.ownerindex );
-    if( sheet == m_sheets.end() )
+    const auto& sheetIt = m_sheets.find( elem.ownerindex );
+
+    if( sheetIt == m_sheets.end() )
     {
         m_reporter->Report( wxString::Format( _( "Sheetname's owner (%d) not found." ),
                                               elem.ownerindex ),
@@ -2175,7 +2192,7 @@ void SCH_ALTIUM_PLUGIN::ParseSheetName( const std::map<wxString, wxString>& aPro
         return;
     }
 
-    SCH_FIELD& sheetNameField = sheet->second->GetFields()[SHEETNAME];
+    SCH_FIELD& sheetNameField = sheetIt->second->GetFields()[SHEETNAME];
 
     sheetNameField.SetPosition( elem.location + m_sheetOffset );
     sheetNameField.SetText( elem.text );
@@ -2288,20 +2305,36 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         if( elem.text == "*" )
             return; // indicates parameter not set?
 
-        SCH_SHEET_PATH sheetpath;
-        m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
+        wxString paramName = elem.name.Upper();
 
-        if( elem.name == "SheetNumber" )
+        if( paramName == "SHEETNUMBER" )
+        {
+            SCH_SHEET_PATH sheetpath;
+            m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
+
             m_rootSheet->SetPageNumber( sheetpath, elem.text );
-        else if( elem.name == "Title" )
+        }
+        else if( paramName == "TITLE" )
+        {
             m_currentTitleBlock->SetTitle( elem.text );
-        else if( elem.name == "Revision" )
+        }
+        else if( paramName == "REVISION" )
+        {
             m_currentTitleBlock->SetRevision( elem.text );
-        else if( elem.name == "Date" )
+        }
+        else if( paramName == "DATE" )
+        {
             m_currentTitleBlock->SetDate( elem.text );
-        else if( elem.name == "CompanyName" )
+        }
+        else if( paramName == "COMPANYNAME" )
+        {
             m_currentTitleBlock->SetCompany( elem.text );
-        // TODO: parse other parameters
+        }
+        else
+        {
+            m_schematic->Prj().GetTextVars()[ paramName ] = elem.text;
+        }
+
         // TODO: handle parameters in labels
     }
     else
@@ -2350,29 +2383,48 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
     }
 }
 
-void SCH_ALTIUM_PLUGIN::ParseImplementation( const std::map<wxString, wxString>& aProperties,
-                                             int                                 ownerindex )
+
+void SCH_ALTIUM_PLUGIN::ParseImplementationList( int aIndex, const std::map<wxString, wxString>& aProperties )
+{
+    ASCH_IMPLEMENTATION_LIST elem( aProperties );
+
+    m_altiumImplementationList.emplace( aIndex, elem.ownerindex );
+}
+
+
+void SCH_ALTIUM_PLUGIN::ParseImplementation( const std::map<wxString, wxString>& aProperties )
 {
     ASCH_IMPLEMENTATION elem( aProperties );
 
     // Only get footprint, currently assigned only
     if( ( elem.type == "PCBLIB" ) && ( elem.isCurrent ) )
     {
-        const auto& libSymbolIt = m_libSymbols.find( ownerindex );
-
-        if( libSymbolIt == m_libSymbols.end() )
-        {
-            m_reporter->Report( wxString::Format( _( "Footprint's owner (%d) not found." ),
-                                                  ownerindex ),
+        const auto& implementationOwnerindexIt = m_altiumImplementationList.find( elem.ownerindex );
+        if( implementationOwnerindexIt == m_altiumImplementationList.end() ) {
+            m_reporter->Report( wxString::Format( _( "Implementation list's owner (%d) not found." ),
+                                                  elem.ownerindex ),
                                 RPT_SEVERITY_ERROR );
             return;
         }
 
+        const auto& libSymbolIt = m_libSymbols.find( implementationOwnerindexIt->second );
+
+        if( libSymbolIt == m_libSymbols.end() )
+        {
+            m_reporter->Report( wxString::Format( _( "Footprint's owner (%d) not found." ),
+                                                  implementationOwnerindexIt->second ),
+                                RPT_SEVERITY_ERROR );
+            return;
+        }
+
+        LIB_ID        fpLibId = AltiumToKiCadLibID( elem.libname, elem.name );
+        wxArrayString fpFilters;
+        fpFilters.Add( fpLibId.Format() );
+
+        libSymbolIt->second->SetFPFilters( fpFilters ); // TODO: not ideal as we overwrite it
+
         SCH_SYMBOL* symbol = m_symbols.at( libSymbolIt->first );
 
-        if( elem.libname != "" )
-            symbol->SetFootprint( elem.libname + wxT( ":" ) + elem.name );
-        else
-            symbol->SetFootprint( elem.name );
+        symbol->SetFootprint( fpLibId.Format() );
     }
 }
