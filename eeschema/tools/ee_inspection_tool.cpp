@@ -210,13 +210,10 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
     LIB_PINS pinList;
     symbol->GetPins( pinList );
 
+    // Test for duplicates:
     // Sort pins by pin num, so 2 duplicate pins
     // (pins with the same number) will be consecutive in list
     sort( pinList.begin(), pinList.end(), sort_by_pin_number );
-
-    // Test for duplicates:
-    DIALOG_DISPLAY_HTML_TEXT_BASE error_display( m_frame, wxID_ANY, _( "Symbol Warnings" ),
-                                                 wxDefaultPosition, wxSize( 750, 600 ) );
 
     // The minimal grid size allowed to place a pin is 25 mils
     // the best grid size is 50 mils, but 25 mils is still usable
@@ -335,7 +332,7 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
             {
                 if( symbol->GetUnitCount() <= 1 )
                 {
-                    msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
+                    msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
                                    " of converted." ),
                                 pin->GetNumber(),
                                 pinName,
@@ -344,7 +341,7 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 }
                 else
                 {
-                    msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
+                    msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
                                    " in unit %c of converted." ),
                                 pin->GetNumber(),
                                 pinName,
@@ -357,7 +354,7 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
             {
                 if( symbol->GetUnitCount() <= 1 )
                 {
-                    msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>." ),
+                    msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>." ),
                                 pin->GetNumber(),
                                 pinName,
                                 MessageTextFromValue( units, pin->GetPosition().x ),
@@ -365,7 +362,7 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 }
                 else
                 {
-                    msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
+                    msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
                                    " in unit %c." ),
                                 pin->GetNumber(),
                                 pinName,
@@ -450,6 +447,9 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
             outmsg += msgPart;
 
         outmsg += "</body></html>";
+
+        DIALOG_DISPLAY_HTML_TEXT_BASE error_display( m_frame, wxID_ANY, _( "Symbol Warnings" ),
+                                                     wxDefaultPosition, wxSize( 700, 350 ) );
 
         error_display.m_htmlWindow->SetPage( outmsg );
         error_display.ShowModal();
