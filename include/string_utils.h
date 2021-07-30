@@ -21,14 +21,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-/**
- * @file  kicad_string.h
- * @see   common.h, string.cpp
- */
-
-
-#ifndef KICAD_STRING_H_
-#define KICAD_STRING_H_
+#ifndef STRING_UTILS_H
+#define STRING_UTILS_H
 
 #include "config.h"
 
@@ -180,7 +174,7 @@ bool WildCompareString( const wxString& pattern,
  * @return -1 if first string is less than the second, 0 if the strings are equal, or
  *          1 if the first string is greater than the second.
  */
-int ValueStringCompare( wxString strFWord, wxString strSWord );
+int ValueStringCompare( const wxString& strFWord, const wxString& strSWord );
 
 /**
  * Break a string into three parts: he alphabetic preamble, the numeric part, and any
@@ -354,4 +348,4 @@ std::string Double2Str( double aValue );
  */
 wxString AngleToStringDegrees( double aAngle );
 
-#endif  // KICAD_STRING_H_
+#endif  // STRING_UTILS_H

@@ -233,8 +233,8 @@ SGNODE* X3DIFACESET::TranslateToSG( SGNODE* aParent )
                                    ptype ) );
 
     wxLogTrace( traceVrmlPlugin,
-                wxT( " * [INFO] Translating IndexedFaceSet with %ul children, %ul references, "
-                     "%ul back pointers, and %ul coordinate indices." ),
+                wxT( " * [INFO] Translating IndexedFaceSet with %zu children, %zu references, "
+                     "%zu back pointers, and %zu coordinate indices." ),
                 m_Children.size(), m_Refs.size(), m_BackPointers.size(), coordIndex.size() );
 
     if( m_sgNode )

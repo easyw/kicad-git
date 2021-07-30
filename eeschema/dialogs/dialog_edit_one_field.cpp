@@ -26,7 +26,7 @@
 #include <bitmaps.h>
 #include <kiway.h>
 #include <confirm.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_base_frame.h>
 #include <sch_edit_frame.h>
 #include <ee_collectors.h>
@@ -143,6 +143,7 @@ void DIALOG_EDIT_ONE_FIELD::init()
     if( m_StyledTextCtrl->IsShown() )
     {
         wxSize maxSize = m_StyledTextCtrl->GetSize();
+        maxSize.x = -1;     // Do not fix the max width
         maxSize.y = m_xPosCtrl->GetSize().y;
         m_StyledTextCtrl->SetMaxSize( maxSize );
         m_StyledTextCtrl->SetUseVerticalScrollBar( false );

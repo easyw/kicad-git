@@ -47,7 +47,6 @@
 #include <dialogs/dialog_page_settings.h>
 #include <dialogs/dialog_update_pcb.h>
 #include <functional>
-#include <gestfich.h>
 #include <kiface_i.h>
 #include <kiway.h>
 #include <memory>
@@ -375,10 +374,12 @@ int BOARD_EDITOR_CONTROL::ImportSpecctraSession( const TOOL_EVENT& aEvent )
     wxString ext;
 
     wxFileName::SplitPath( fullFileName, &path, &name, &ext );
-    name += wxT( ".ses" );
+    name += wxT( "." ) + SpecctraSessionFileExtension;
 
-    fullFileName = EDA_FILE_SELECTOR( _( "Merge Specctra Session file:" ), path, name,
-                                      wxT( ".ses" ), wxT( "*.ses" ), frame(), wxFD_OPEN, false );
+    fullFileName = wxFileSelector( _( "Specctra Session File" ), path, name,
+                                   wxT( "." ) + SpecctraSessionFileExtension,
+                                   SpecctraSessionFileWildcard(), wxFD_OPEN | wxFD_CHANGE_DIR,
+                                   frame() );
 
     if( !fullFileName.IsEmpty() )
         getEditFrame<PCB_EDIT_FRAME>()->ImportSpecctraSession( fullFileName );
@@ -400,9 +401,9 @@ int BOARD_EDITOR_CONTROL::ExportSpecctraDSN( const TOOL_EVENT& aEvent )
     else
         fn = fullFileName;
 
-    fullFileName = EDA_FILE_SELECTOR( _( "Specctra DSN File" ), fn.GetPath(), fn.GetFullName(),
-                                      SpecctraDsnFileExtension, SpecctraDsnFileWildcard(),
-                                      frame(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, false );
+    fullFileName = wxFileSelector( _( "Specctra DSN File" ), fn.GetPath(), fn.GetFullName(),
+                                   SpecctraDsnFileExtension, SpecctraDsnFileWildcard(),
+                                   wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR, frame() );
 
     if( !fullFileName.IsEmpty() )
     {
@@ -917,8 +918,8 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
 {
     if( m_inPlaceFootprint )
         return 0;
-    else
-        m_inPlaceFootprint = true;
+
+    REENTRANCY_GUARD guard( &m_inPlaceFootprint );
 
     FOOTPRINT*            fp = aEvent.Parameter<FOOTPRINT*>();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
@@ -1085,7 +1086,6 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
     controls->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
 
-    m_inPlaceFootprint = false;
     return 0;
 }
 
@@ -1171,8 +1171,8 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 {
     if( m_inPlaceTarget )
         return 0;
-    else
-        m_inPlaceTarget = true;
+
+    REENTRANCY_GUARD guard( &m_inPlaceTarget );
 
     KIGFX::VIEW* view = getView();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
@@ -1281,7 +1281,6 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
 
-    m_inPlaceTarget = false;
     return 0;
 }
 

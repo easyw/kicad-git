@@ -30,7 +30,7 @@
 #include <ctype.h>
 #include <dialog_board_reannotate.h>
 #include <fstream>
-#include <kicad_string.h>  // StrNumCmp
+#include <string_utils.h>  // StrNumCmp
 #include <kiface_i.h>
 #include <mail_type.h>
 #include <pcbnew_settings.h>
@@ -470,7 +470,7 @@ wxString DIALOG_BOARD_REANNOTATE::CoordTowxString( int aX, int aY )
 }
 
 
-void DIALOG_BOARD_REANNOTATE::ShowReport( wxString aMessage, SEVERITY aSeverity )
+void DIALOG_BOARD_REANNOTATE::ShowReport( const wxString& aMessage, SEVERITY aSeverity )
 {
     size_t pos = 0, prev = 0;
 
@@ -790,7 +790,7 @@ bool DIALOG_BOARD_REANNOTATE::BuildFootprintList( std::vector<RefDesInfo>& aBadR
 
 
 void DIALOG_BOARD_REANNOTATE::BuildChangeArray( std::vector<RefDesInfo>& aFootprints,
-                                                unsigned int aStartRefDes, wxString aPrefix,
+                                                unsigned int aStartRefDes, const wxString& aPrefix,
                                                 bool aRemovePrefix,
                                                 std::vector<RefDesInfo>& aBadRefDes )
 {

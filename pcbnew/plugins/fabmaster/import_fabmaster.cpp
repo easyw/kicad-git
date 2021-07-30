@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 BeagleBoard Foundation
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Seth Hillbrand <hillbrand@kipro-pcb.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -52,7 +52,7 @@
 #include <zone.h>
 #include <common.h>
 #include <geometry/shape_arc.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <widgets/progress_reporter.h>
 #include <math/util.h>
 #include <wx/filename.h>
@@ -78,7 +78,7 @@ void FABMASTER::checkpoint()
 }
 
 
-double FABMASTER::readDouble( const std::string aStr ) const
+double FABMASTER::readDouble( const std::string& aStr ) const
 {
     std::istringstream istr( aStr );
     istr.imbue( std::locale::classic() );
@@ -89,7 +89,7 @@ double FABMASTER::readDouble( const std::string aStr ) const
 }
 
 
-int FABMASTER::readInt( const std::string aStr ) const
+int FABMASTER::readInt( const std::string& aStr ) const
 {
     std::istringstream istr( aStr );
     istr.imbue( std::locale::classic() );

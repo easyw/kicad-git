@@ -106,8 +106,6 @@ PGM_BASE::PGM_BASE()
     m_Printing = false;
     m_ModalDialogCount = 0;
 
-    m_show_env_var_dialog = true;
-
     setLanguageId( wxLANGUAGE_DEFAULT );
 
     ForceSystemPdfBrowser( false );
@@ -195,8 +193,8 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 
     // Show the modal editor and return the file chosen (may be empty if the user cancels
     // the dialog).
-    return EDA_FILE_SELECTOR( _( "Select Preferred Editor" ), path, name, ext, mask, nullptr,
-                              wxFD_OPEN | wxFD_FILE_MUST_EXIST, true );
+    return wxFileSelector( _( "Select Preferred Editor" ), path, name, wxT( "." ) + ext,
+                           mask, wxFD_OPEN | wxFD_FILE_MUST_EXIST, nullptr );
 }
 
 
@@ -338,7 +336,6 @@ bool PGM_BASE::setExecutablePath()
 
 void PGM_BASE::loadCommonSettings()
 {
-    m_show_env_var_dialog = GetCommonSettings()->m_Env.show_warning_dialog;
     m_editor_name = GetCommonSettings()->m_System.editor_name;
 
     for( const std::pair<wxString, ENV_VAR_ITEM> it : GetCommonSettings()->m_Env.vars )
@@ -369,10 +366,7 @@ void PGM_BASE::SaveCommonSettings()
     // GetCommonSettings() is not initialized until fairly late in the
     // process startup: InitPgm(), so test before using:
     if( GetCommonSettings() )
-    {
         GetCommonSettings()->m_System.working_dir = wxGetCwd();
-        GetCommonSettings()->m_Env.show_warning_dialog = m_show_env_var_dialog;
-    }
 }
 
 

@@ -23,7 +23,7 @@
 
 #include <connection_graph.h>
 #include <dialog_global_edit_text_and_graphics_base.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_symbol.h>
 #include <sch_connection.h>
 #include <sch_edit_frame.h>
@@ -315,7 +315,7 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
     {
         if( aItem->Type() == SCH_SYMBOL_T )
         {
-            wxString id = static_cast<SCH_SYMBOL*>( aItem )->GetLibId().Format();
+            wxString id = UnescapeString( static_cast<SCH_SYMBOL*>( aItem )->GetLibId().Format() );
 
             if( !WildCompareString( m_symbolFilter->GetValue(), id, false ) )
                 return;

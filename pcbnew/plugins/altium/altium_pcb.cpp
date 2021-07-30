@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019-2020 Thomas Pointhuber <thomas.pointhuber@gmx.at>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,7 +34,7 @@
 #include <pcb_shape.h>
 #include <pcb_text.h>
 #include <pcb_track.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 
 #include <fp_shape.h>
 #include <fp_text.h>
@@ -1391,7 +1392,7 @@ void ALTIUM_PCB::ParseDimensions6Data( const CFB::CompoundFileReader& aReader,
 
 
 void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
-                                  const CFB::COMPOUND_FILE_ENTRY* aEntry, const wxString aRootDir )
+                                  const CFB::COMPOUND_FILE_ENTRY* aEntry, const wxString& aRootDir )
 {
     if( m_progressReporter )
         m_progressReporter->Report( "Loading 3D models..." );

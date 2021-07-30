@@ -35,7 +35,7 @@
 #include "../3d_cache/3d_cache.h"
 #include "../common_ogl/ogl_attr_list.h"
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pad.h>
 #include <pcb_track.h>
 #include <wx/gdicmn.h>
@@ -568,7 +568,7 @@ private:
                        int aClearanceValue );
 
     void createPadWithClearance( const PAD *aPad, CONTAINER_2D_BASE* aDstContainer,
-                                 PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const;
+                                 PCB_LAYER_ID aLayer, const wxSize& aClearanceValue ) const;
 
     OBJECT_2D* createPadWithDrill( const PAD* aPad, int aInflateValue );
 

@@ -27,12 +27,12 @@
 
 #include <map>
 
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <lib_id.h>
 
 #include <iostream>
 
-LIB_ID AltiumToKiCadLibID( wxString aLibName, wxString aLibReference );
+LIB_ID AltiumToKiCadLibID( const wxString& aLibName, const wxString& aLibReference );
 
 wxString AltiumPropertyToKiCadString( const wxString& aString );
 

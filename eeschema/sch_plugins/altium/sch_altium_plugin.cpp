@@ -54,7 +54,7 @@
 
 #include <bezier_curves.h>
 #include <compoundfilereader.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_edit_frame.h>
 #include <trigo.h>
 #include <wildcards_and_files_ext.h>
@@ -742,7 +742,7 @@ void SCH_ALTIUM_PLUGIN::ParsePin( const std::map<wxString, wxString>& aPropertie
 void SetTextPositioning( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justification, ASCH_RECORD_ORIENTATION orientation )
 {
     int    vjustify, hjustify;
-    double angle;
+    double angle = TEXT_ANGLE_HORIZ;
 
     switch( justification )
     {

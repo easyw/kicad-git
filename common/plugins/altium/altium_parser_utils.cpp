@@ -24,15 +24,15 @@
 
 #include "altium_parser_utils.h"
 
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <lib_id.h>
 
 
-LIB_ID AltiumToKiCadLibID( wxString aLibName, wxString aLibReference )
+LIB_ID AltiumToKiCadLibID( const wxString& aLibName, const wxString& aLibReference )
 {
-    aLibReference = EscapeString( aLibReference, CTX_LIBID );
+    wxString libReference = EscapeString( aLibReference, CTX_LIBID );
 
-    wxString key = !aLibName.empty() ? ( aLibName + ":" + aLibReference ) : aLibReference;
+    wxString key = !aLibName.empty() ? ( aLibName + ":" + libReference ) : libReference;
 
     LIB_ID libId;
     libId.Parse( key, true );

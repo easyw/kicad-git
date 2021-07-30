@@ -18,7 +18,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pgm_base.h>
 #include <settings/color_settings.h>
 #include <settings/json_settings_internals.h>
@@ -33,7 +33,7 @@
 const int colorsSchemaVersion = 2;
 
 
-COLOR_SETTINGS::COLOR_SETTINGS( wxString aFilename ) :
+COLOR_SETTINGS::COLOR_SETTINGS( const wxString& aFilename ) :
         JSON_SETTINGS( std::move( aFilename ), SETTINGS_LOC::COLORS, colorsSchemaVersion ),
         m_overrideSchItemColors( false )
 {
@@ -211,7 +211,8 @@ COLOR_SETTINGS::COLOR_SETTINGS( wxString aFilename ) :
     CLR( "3d_viewer.copper",            LAYER_3D_COPPER            );
     CLR( "3d_viewer.silkscreen_bottom", LAYER_3D_SILKSCREEN_BOTTOM );
     CLR( "3d_viewer.silkscreen_top",    LAYER_3D_SILKSCREEN_TOP    );
-    CLR( "3d_viewer.soldermask",        LAYER_3D_SOLDERMASK        );
+    CLR( "3d_viewer.soldermask_bottom", LAYER_3D_SOLDERMASK_BOTTOM );
+    CLR( "3d_viewer.soldermask_top",    LAYER_3D_SOLDERMASK_TOP    );
     CLR( "3d_viewer.solderpaste",       LAYER_3D_SOLDERPASTE       );
 
     registerMigration( 0, 1, std::bind( &COLOR_SETTINGS::migrateSchema0to1, this ) );

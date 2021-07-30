@@ -72,7 +72,7 @@
 #include <wildcards_and_files_ext.h>
 #include <panel_sym_lib_table.h>
 #include <wx/choicdlg.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 
 
 bool SYMBOL_EDIT_FRAME::m_showDeMorgan = false;
@@ -1194,7 +1194,7 @@ void SYMBOL_EDIT_FRAME::KiwayMailIn( KIWAY_EXPRESS& mail )
             {
                 msg.Printf( _( "The library '%s' is not enabled in the current configuration.\n"
                                "Use Manage Symbol Libraries to edit the configuration." ),
-                            libNickname );
+                            UnescapeString( libNickname ) );
                 DisplayErrorMessage( this, _( "Symbol library not enabled." ), msg );
                 break;
             }

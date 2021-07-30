@@ -29,7 +29,7 @@
 #include <trigo.h>
 #include <sch_edit_frame.h>
 #include <plotter.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <widgets/msgpanel.h>
 #include <math/util.h>      // for KiROUND
 #include <sch_sheet.h>
@@ -1148,7 +1148,7 @@ void SCH_SHEET::SetPageNumber( const SCH_SHEET_PATH& aInstance, const wxString& 
 }
 
 
-int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString aPageNumberB )
+int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString& aPageNumberB )
 {
     if( aPageNumberA == aPageNumberB )
         return 0; // A == B

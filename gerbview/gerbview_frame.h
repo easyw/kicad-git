@@ -25,7 +25,7 @@
 #include <filehistory.h>
 #include <config_params.h>
 #include <eda_draw_frame.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <gerbview.h>
 #include <convert_to_biu.h>
 #include <gbr_layout.h>
@@ -448,7 +448,7 @@ public:
      * @return new layer value (NB_PCB_LAYERS when "(Deselect)" radiobutton selected),
      *                         or -1 if canceled
      */
-    int SelectPCBLayer( int aDefaultLayer, int aCopperLayerCount, wxString aGerberName );
+    int SelectPCBLayer( int aDefaultLayer, int aCopperLayerCount, const wxString& aGerberName );
 
     /**
      * @return the color of the grid

@@ -55,7 +55,7 @@
 #include <wx/listbox.h>
 
 #include <default_values.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 
 // Save previous symbol library viewer state.
 wxString SYMBOL_VIEWER_FRAME::m_libraryName;
@@ -392,14 +392,14 @@ bool SYMBOL_VIEWER_FRAME::ShowModal( wxString* aSymbol, wxWindow* aParent )
             {
                 msg.Printf( _( "The current configuration does not include the library '%s'.\n"
                                "Use Manage Symbol Libraries to edit the configuration." ),
-                             libName );
+                             UnescapeString( libName ) );
                 DisplayErrorMessage( this, _( "Library not found in symbol library table." ), msg );
             }
             else if ( !libTable->HasLibrary( libid.GetLibNickname(), true ) )
             {
                 msg.Printf( _( "The library '%s' is not enabled in the current configuration.\n"
                                "Use Manage Symbol Libraries to edit the configuration." ),
-                             libName );
+                             UnescapeString( libName ) );
                 DisplayErrorMessage( aParent, _( "Symbol library not enabled." ), msg );
             }
             else

@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Jon Evans <jon@craftyjon.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -58,7 +58,7 @@ public:
      */
     std::vector<COLOR4D> m_Palette;
 
-    explicit COLOR_SETTINGS( wxString aFilename = "user" );
+    explicit COLOR_SETTINGS( const wxString& aFilename = wxT( "user" ) );
 
     virtual ~COLOR_SETTINGS() {}
 
@@ -104,7 +104,7 @@ private:
 
     /**
      * Map of all layer colors.
-     * The key needs to be a valid layer ID, see layers_id_colors_and_visibility.h
+     * The key needs to be a valid layer ID, see layer_ids.h
      */
     std::unordered_map<int, COLOR4D> m_colors;
 

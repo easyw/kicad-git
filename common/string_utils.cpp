@@ -30,7 +30,7 @@
 #include <cmath>
 #include <macros.h>
 #include <richio.h>                        // StrPrintf
-#include <kicad_string.h>
+#include <string_utils.h>
 
 
 /**
@@ -703,19 +703,19 @@ bool ApplyModifier( double& value, const wxString& aString )
 }
 
 
-int ValueStringCompare( wxString strFWord, wxString strSWord )
+int ValueStringCompare( const wxString& strFWord, const wxString& strSWord )
 {
     // Compare unescaped text
-    strFWord = UnescapeString( strFWord );
-    strSWord = UnescapeString( strSWord );
+    wxString fWord = UnescapeString( strFWord );
+    wxString sWord = UnescapeString( strSWord );
 
     // The different sections of the two strings
     wxString strFWordBeg, strFWordMid, strFWordEnd;
     wxString strSWordBeg, strSWordMid, strSWordEnd;
 
     // Split the two strings into separate parts
-    SplitString( strFWord, &strFWordBeg, &strFWordMid, &strFWordEnd );
-    SplitString( strSWord, &strSWordBeg, &strSWordMid, &strSWordEnd );
+    SplitString( fWord, &strFWordBeg, &strFWordMid, &strFWordEnd );
+    SplitString( sWord, &strSWordBeg, &strSWordMid, &strSWordEnd );
 
     // Compare the Beginning section of the strings
     int isEqual = strFWordBeg.CmpNoCase( strSWordBeg );

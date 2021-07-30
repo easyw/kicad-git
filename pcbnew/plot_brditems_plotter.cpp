@@ -32,7 +32,7 @@
 #include <geometry/shape_line_chain.h>        // for SHAPE_LINE_CHAIN
 #include <geometry/shape_poly_set.h>          // for SHAPE_POLY_SET, SHAPE_P...
 #include <geometry/shape_segment.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <macros.h>
 #include <math/util.h>                        // for KiROUND, Clamp
 #include <math/vector2d.h>                    // for VECTOR2I
@@ -46,7 +46,7 @@
 #include <gal/color4d.h>                      // for COLOR4D, operator!=
 #include <gbr_metadata.h>
 #include <gbr_netlist_metadata.h>             // for GBR_NETLIST_METADATA
-#include <layers_id_colors_and_visibility.h>  // for LSET, IsCopperLayer
+#include <layer_ids.h>  // for LSET, IsCopperLayer
 #include <pad_shapes.h>                       // for PAD_ATTRIB::NPTH
 #include <pcbplot.h>
 #include <pcb_plot_params.h>                  // for PCB_PLOT_PARAMS, PCB_PL...
@@ -986,26 +986,28 @@ void BRDITEMS_PLOTTER::PlotPcbShape( const PCB_SHAPE* aShape )
 
 
 void BRDITEMS_PLOTTER::plotOneDrillMark( PAD_DRILL_SHAPE_T aDrillShape, const wxPoint &aDrillPos,
-                                         wxSize aDrillSize, const wxSize &aPadSize,
+                                         const wxSize& aDrillSize, const wxSize &aPadSize,
                                          double aOrientation, int aSmallDrill )
 {
+    wxSize drillSize = aDrillSize;
+
     // Small drill marks have no significance when applied to slots
     if( aSmallDrill && aDrillShape == PAD_DRILL_SHAPE_CIRCLE )
-        aDrillSize.x = std::min( aSmallDrill, aDrillSize.x );
+        drillSize.x = std::min( aSmallDrill, drillSize.x );
 
     // Round holes only have x diameter, slots have both
-    aDrillSize.x -= getFineWidthAdj();
-    aDrillSize.x = Clamp( 1, aDrillSize.x, aPadSize.x - 1 );
+    drillSize.x -= getFineWidthAdj();
+    drillSize.x = Clamp( 1, drillSize.x, aPadSize.x - 1 );
 
     if( aDrillShape == PAD_DRILL_SHAPE_OBLONG )
     {
-        aDrillSize.y -= getFineWidthAdj();
-        aDrillSize.y = Clamp( 1, aDrillSize.y, aPadSize.y - 1 );
-        m_plotter->FlashPadOval( aDrillPos, aDrillSize, aOrientation, GetPlotMode(), nullptr );
+        drillSize.y -= getFineWidthAdj();
+        drillSize.y = Clamp( 1, drillSize.y, aPadSize.y - 1 );
+        m_plotter->FlashPadOval( aDrillPos, drillSize, aOrientation, GetPlotMode(), nullptr );
     }
     else
     {
-        m_plotter->FlashPadCircle( aDrillPos, aDrillSize.x, GetPlotMode(), nullptr );
+        m_plotter->FlashPadCircle( aDrillPos, drillSize.x, GetPlotMode(), nullptr );
     }
 }
 

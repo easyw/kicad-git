@@ -70,7 +70,7 @@ static const wxString pageFmts[] =
 };
 
 DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aIuPerMils,
-                                              wxSize aMaxUserSizeMils ) :
+                                              const wxSize& aMaxUserSizeMils ) :
         DIALOG_PAGES_SETTINGS_BASE( aParent ),
         m_parent( aParent ),
         m_screen( m_parent->GetScreen() ),
@@ -202,11 +202,17 @@ bool DIALOG_PAGES_SETTINGS::TransferDataToWindow()
 
 bool DIALOG_PAGES_SETTINGS::TransferDataFromWindow()
 {
-    if( !m_customSizeX.Validate( MIN_PAGE_SIZE_MILS, m_maxPageSizeMils.x, EDA_UNITS::MILS ) )
-        return false;
+    int idx = std::max( m_paperSizeComboBox->GetSelection(), 0 );
+    const wxString paperType = m_pageFmt[idx];
 
-    if( !m_customSizeY.Validate( MIN_PAGE_SIZE_MILS, m_maxPageSizeMils.y, EDA_UNITS::MILS ) )
-        return false;
+    if( paperType.Contains( PAGE_INFO::Custom ) )
+    {
+        if( !m_customSizeX.Validate( MIN_PAGE_SIZE_MILS, m_maxPageSizeMils.x, EDA_UNITS::MILS ) )
+            return false;
+
+        if( !m_customSizeY.Validate( MIN_PAGE_SIZE_MILS, m_maxPageSizeMils.y, EDA_UNITS::MILS ) )
+            return false;
+    }
 
     if( SavePageSettings() )
     {

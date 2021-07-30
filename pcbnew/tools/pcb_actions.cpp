@@ -27,7 +27,7 @@
 #include "tool/tool_event.h"
 #include <pcbnew_id.h>
 #include <bitmaps.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <microwave/microwave_tool.h>
 #include <tool/tool_manager.h>
 #include <router/pns_router.h>
@@ -272,7 +272,7 @@ TOOL_ACTION PCB_ACTIONS::duplicateIncrement( "pcbnew.InteractiveEdit.duplicateIn
 
 TOOL_ACTION PCB_ACTIONS::moveExact( "pcbnew.InteractiveEdit.moveExact",
         AS_GLOBAL,
-        MD_CTRL + 'M', LEGACY_HK_NAME( "Move Item Exactly" ),
+        MD_SHIFT + 'M', LEGACY_HK_NAME( "Move Item Exactly" ),
         _( "Move Exactly..." ), _( "Moves the selected item(s) by an exact amount" ),
         BITMAPS::move_exactly );
 
