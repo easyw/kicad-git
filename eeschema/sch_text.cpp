@@ -46,7 +46,6 @@
 #include <project/project_file.h>
 #include <project/net_settings.h>
 #include <core/mirror.h>
-#include <dialog_helpers.h>
 #include <trigo.h>
 
 using KIGFX::SCH_RENDER_SETTINGS;
@@ -401,6 +400,23 @@ int SCH_TEXT::GetTextOffset( const RENDER_SETTINGS* aSettings ) const
         ratio = Schematic()->Settings().m_TextOffsetRatio;
     else
         ratio = DEFAULT_TEXT_OFFSET_RATIO;   // For previews (such as in Preferences), etc.
+
+    return KiROUND( ratio * GetTextSize().y );
+
+    return 0;
+}
+
+
+int SCH_TEXT::GetLabelBoxExpansion( const RENDER_SETTINGS* aSettings ) const
+{
+    double ratio;
+
+    if( aSettings )
+        ratio = static_cast<const SCH_RENDER_SETTINGS*>( aSettings )->m_LabelSizeRatio;
+    else if( Schematic() )
+        ratio = Schematic()->Settings().m_LabelSizeRatio;
+    else
+        ratio = DEFAULT_LABEL_SIZE_RATIO; // For previews (such as in Preferences), etc.
 
     return KiROUND( ratio * GetTextSize().y );
 
@@ -994,15 +1010,17 @@ void SCH_GLOBALLABEL::RunOnChildren( const std::function<void( SCH_ITEM* )>& aFu
 
 wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const
 {
-    wxPoint text_offset;
-    int     dist = GetTextOffset( aSettings );
+    int horiz = GetLabelBoxExpansion( aSettings );
+
+    // Center the text on the center line of "E" instead of "R" to make room for an overbar
+    int vert = GetTextHeight() * 0.0715;
 
     switch( m_shape )
     {
     case PINSHEETLABEL_SHAPE::PS_INPUT:
     case PINSHEETLABEL_SHAPE::PS_BIDI:
     case PINSHEETLABEL_SHAPE::PS_TRISTATE:
-        dist += GetTextHeight() * 3 / 4;  // Use three-quarters-height as proxy for triangle size
+        horiz += GetTextHeight() * 3 / 4;  // Use three-quarters-height as proxy for triangle size
         break;
 
     case PINSHEETLABEL_SHAPE::PS_OUTPUT:
@@ -1014,13 +1032,11 @@ wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSetting
     switch( GetLabelSpinStyle() )
     {
     default:
-    case LABEL_SPIN_STYLE::LEFT:   text_offset.x -= dist; break;
-    case LABEL_SPIN_STYLE::UP:     text_offset.y -= dist; break;
-    case LABEL_SPIN_STYLE::RIGHT:  text_offset.x += dist; break;
-    case LABEL_SPIN_STYLE::BOTTOM: text_offset.y += dist; break;
+    case LABEL_SPIN_STYLE::LEFT:   return wxPoint( -horiz, vert );
+    case LABEL_SPIN_STYLE::UP:     return wxPoint( vert, -horiz );
+    case LABEL_SPIN_STYLE::RIGHT:  return wxPoint( horiz, vert );
+    case LABEL_SPIN_STYLE::BOTTOM: return wxPoint( vert, horiz );
     }
-
-    return text_offset;
 }
 
 
@@ -1310,7 +1326,7 @@ void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter ) const
 void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
                                           std::vector<wxPoint>& aPoints, const wxPoint& Pos ) const
 {
-    int margin    = GetTextOffset( aRenderSettings );
+    int margin    = GetLabelBoxExpansion( aRenderSettings );
     int halfSize  = ( GetTextHeight() / 2 ) + margin;
     int linewidth = GetPenWidth();
     int symb_len  = LenSize( GetShownText(), linewidth ) + 2 * margin;

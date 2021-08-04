@@ -60,7 +60,7 @@
 #include <tools/sch_editor_control.h>
 #include <drawing_sheet/ds_proxy_undo_item.h>
 #include <dialog_update_from_pcb.h>
-#include <dialog_helpers.h>
+#include <eda_list_dialog.h>
 
 
 int SCH_EDITOR_CONTROL::New( const TOOL_EVENT& aEvent )
@@ -933,8 +933,8 @@ int SCH_EDITOR_CONTROL::AssignNetclass( const TOOL_EVENT& aEvent )
         }
         else if( conn->IsBus() && conn->Members().size() == 0 )
         {
-            m_frame->ShowInfoBarError(
-                    _( "Bus must have at least one member to assign a netclass to members." ) );
+            m_frame->ShowInfoBarError( _( "Bus must have at least one member to assign a netclass "
+                                          "to members." ) );
             highlightNet( m_toolMgr, CLEAR );
             return 0;
         }

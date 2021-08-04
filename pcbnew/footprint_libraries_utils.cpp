@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
 #include <string_utils.h>
 #include <macros.h>
 #include <pcb_edit_frame.h>
-#include <dialog_helpers.h>
+#include <eda_list_dialog.h>
 #include <filter_reader.h>
 #include <fp_lib_table.h>
 #include <validators.h>
