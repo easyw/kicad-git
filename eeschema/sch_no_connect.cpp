@@ -28,7 +28,7 @@
  */
 
 #include <sch_draw_panel.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <bitmaps.h>
 #include <schematic.h>
 #include <sch_no_connect.h>
@@ -176,7 +176,7 @@ void SCH_NO_CONNECT::Plot( PLOTTER* aPlotter ) const
     int delta = GetSize() / 2;
     int pX = m_pos.x;
     int pY = m_pos.y;
-    int penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
+    int penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetDefaultPenWidth() );
 
     aPlotter->SetCurrentLineWidth( penWidth );
     aPlotter->SetColor( aPlotter->RenderSettings()->GetLayerColor( LAYER_NOCONNECT ) );

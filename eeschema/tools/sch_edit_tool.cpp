@@ -57,14 +57,14 @@
 #include <dialogs/dialog_line_wire_bus_properties.h>
 #include <dialogs/dialog_symbol_properties.h>
 #include <dialogs/dialog_sheet_pin_properties.h>
-#include <dialogs/dialog_edit_one_field.h>
+#include <dialogs/dialog_field_properties.h>
 #include <dialogs/dialog_junction_props.h>
 #include "sch_drawing_tools.h"
 #include <math/util.h>      // for KiROUND
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <symbol_editor_settings.h>
-#include <dialogs/dialog_edit_label.h>
+#include <dialogs/dialog_text_and_label_properties.h>
 #include <core/kicad_algo.h>
 //#include <wx/filedlg.h>
 #include <wx/textdlg.h>
@@ -155,10 +155,24 @@ bool SCH_EDIT_TOOL::Init()
                 return !m_frame->GetScreen()->Items().empty();
             };
 
-    auto sheetTool =
+    auto sheetHasUndefinedPins =
             [ this ] ( const SELECTION& aSel )
             {
-                return ( m_frame->IsCurrentTool( EE_ACTIONS::drawSheet ) );
+                if( aSel.Size() != 1 )
+                    return false;
+
+                if( !aSel.HasType( SCH_SHEET_T ) )
+                    return false;
+
+                SCH_ITEM* item = dynamic_cast<SCH_ITEM*>( aSel.Front() );
+
+                wxCHECK( item, false );
+
+                SCH_SHEET* sheet = dynamic_cast<SCH_SHEET*>( item );
+
+                wxCHECK( sheet, false );
+
+                return sheet->HasUndefinedPins();
             };
 
     auto anyTextTool =
@@ -346,7 +360,6 @@ bool SCH_EDIT_TOOL::Init()
     drawMenu.AddItem( EE_ACTIONS::toHLabel,            anyTextTool && E_C::Idle, 200 );
     drawMenu.AddItem( EE_ACTIONS::toGLabel,            anyTextTool && E_C::Idle, 200 );
     drawMenu.AddItem( EE_ACTIONS::toText,              anyTextTool && E_C::Idle, 200 );
-    drawMenu.AddItem( EE_ACTIONS::cleanupSheetPins,    sheetTool && E_C::Idle, 250 );
 
     //
     // Add editing actions to the selection tool menu
@@ -378,7 +391,7 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( EE_ACTIONS::toHLabel,         toHLabelCondition, 200 );
     selToolMenu.AddItem( EE_ACTIONS::toGLabel,         toGLabelCondition, 200 );
     selToolMenu.AddItem( EE_ACTIONS::toText,           toTextlCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::cleanupSheetPins, singleSheetCondition, 250 );
+    selToolMenu.AddItem( EE_ACTIONS::cleanupSheetPins, sheetHasUndefinedPins, 250 );
 
     selToolMenu.AddSeparator( 300 );
     selToolMenu.AddItem( ACTIONS::cut,                 E_C::IdleSelection, 300 );
@@ -1093,7 +1106,7 @@ void SCH_EDIT_TOOL::editFieldText( SCH_FIELD* aField )
     else
         caption.Printf( _( "Edit '%s' Field" ), aField->GetName() );
 
-    DIALOG_SCH_EDIT_ONE_FIELD dlg( m_frame, caption, aField );
+    DIALOG_SCH_FIELD_PROPERTIES dlg( m_frame, caption, aField );
 
     // The footprint field dialog can invoke a KIWAY_PLAYER so we must use a quasi-modal
     if( dlg.ShowQuasiModal() != wxID_OK )
@@ -1398,7 +1411,7 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     case SCH_GLOBAL_LABEL_T:
     case SCH_HIER_LABEL_T:
     {
-        DIALOG_LABEL_EDITOR dlg( m_frame, (SCH_TEXT*) item );
+        DIALOG_TEXT_AND_LABEL_PROPERTIES dlg( m_frame, (SCH_TEXT*) item );
 
         // Must be quasi modal for syntax help
         if( dlg.ShowQuasiModal() == wxID_OK )
@@ -1644,14 +1657,8 @@ int SCH_EDIT_TOOL::CleanupSheetPins( const TOOL_EVENT& aEvent )
     EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::SheetsOnly );
     SCH_SHEET*    sheet = (SCH_SHEET*) selection.Front();
 
-    if( !sheet )
+    if( !sheet || !sheet->HasUndefinedPins() )
         return 0;
-
-    if( !sheet->HasUndefinedPins() )
-    {
-        DisplayInfoMessage( m_frame, _( "There are no unreferenced pins in this sheet to remove." ) );
-        return 0;
-    }
 
     if( !IsOK( m_frame, _( "Do you wish to delete the unreferenced pins from this sheet?" ) ) )
         return 0;

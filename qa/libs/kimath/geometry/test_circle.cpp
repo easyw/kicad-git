@@ -271,7 +271,7 @@ static const std::vector<CIR_CIR_VECPT_CASE> intersect_circle_cases = {
         },
     },
     {
-        "tangent aligned",
+        "tangent aligned, external",
         { { 10, 10 }, 20 },
         { { 10, 50 }, 20 },
         {
@@ -279,9 +279,57 @@ static const std::vector<CIR_CIR_VECPT_CASE> intersect_circle_cases = {
         },
     },
     {
+        "tangent aligned, internal",
+        { { 10, 10 }, 40 },
+        { { 10, 30 }, 20 },
+        {
+            { 10, 50 },
+        },
+    },
+    {
         "no intersection",
         { { 10, 10 }, 20 },
         { { 10, 51 }, 20 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 1",
+        { { 44798001, -94001999 }, 200001 },
+        { { 44797999, -94001999 }, 650001 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 2",
+        { { 50747999, -92402001 }, 650001 },
+        { { 50748001, -92402001 }, 200001 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 3",
+        { { 43947999, -92402001 }, 650001 },
+        { { 43948001, -92402001 }, 200001 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 4",
+        { { 46497999, -94001999 }, 200001 },
+        { { 46498001, -94001999 }, 650001 },
+        {
+            //no points
+        },
+    },
+    {
+        "Co-centered, same radius", // Exercise d=0
+        { { 205999999, 136367974 }, 3742026 },
+        { { 205999999, 136367974 }, 3742026 },
         {
             //no points
         },

@@ -480,14 +480,15 @@ public:
     void SetProperty( const wxString& aKey, const wxString& aVal ) { m_properties[ aKey ] = aVal; }
 
     /**
-     * Return a #PAD with a matching name.
+     * Return a #PAD with a matching number.
      *
-     * @note Names may not be unique depending on how the footprint was created.
+     * @note Numbers may not be unique depending on how the footprint was created.
      *
-     * @param aPadName the pad name to find.
-     * @return the first matching named #PAD is returned or NULL if not found.
+     * @param aPadNumber the pad number to find.
+     * @param aSearchAfterMe = not nullptr to find a pad living after aAfterMe
+     * @return the first matching numbered #PAD is returned or NULL if not found.
      */
-    PAD* FindPadByName( const wxString& aPadName ) const;
+    PAD* FindPadByNumber( const wxString& aPadNumber, PAD* aSearchAfterMe = nullptr ) const;
 
     /**
      * Get a pad at \a aPosition on \a aLayerMask in the footprint.
@@ -522,13 +523,13 @@ public:
     unsigned GetUniquePadCount( INCLUDE_NPTH_T aIncludeNPTH = INCLUDE_NPTH_T(INCLUDE_NPTH) ) const;
 
     /**
-     * Return the next available pad name in the footprint.
+     * Return the next available pad number in the footprint.
      *
      * @param aFillSequenceGaps true if the numbering should "fill in" gaps in the sequence,
      *                          else return the highest value + 1
-     * @return the next available pad name
+     * @return the next available pad number
      */
-    wxString GetNextPadName( const wxString& aLastPadName ) const;
+    wxString GetNextPadNumber( const wxString& aLastPadName ) const;
 
     double GetArea( int aPadding = 0 ) const;
 
@@ -652,8 +653,13 @@ public:
      *
      * @return the courtyard polygon.
      */
-    const SHAPE_POLY_SET& GetPolyCourtyardFront() const { return m_poly_courtyard_front; }
-    const SHAPE_POLY_SET& GetPolyCourtyardBack() const { return m_poly_courtyard_back; }
+    const SHAPE_POLY_SET& GetPolyCourtyard( PCB_LAYER_ID aLayer ) const
+    {
+        if( IsBackLayer( aLayer ) )
+            return m_poly_courtyard_back;
+        else
+            return m_poly_courtyard_front;
+    }
 
     /**
      * Build complex polygons of the courtyard areas from graphic items on the courtyard layers.

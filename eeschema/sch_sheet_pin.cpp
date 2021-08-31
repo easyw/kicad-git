@@ -27,14 +27,14 @@
 #include <bitmaps.h>
 #include <general.h>
 #include <geometry/shape_line_chain.h>
-#include <gr_text.h>
 #include <string_utils.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <sch_draw_panel.h>
 #include <sch_edit_frame.h>
 #include <sch_sheet.h>
 #include <sch_sheet_pin.h>
 #include <sch_painter.h>
+#include <schematic.h>
 #include <trigo.h>
 
 
@@ -97,7 +97,10 @@ bool SCH_SHEET_PIN::operator==( const SCH_SHEET_PIN* aPin ) const
 
 int SCH_SHEET_PIN::GetPenWidth() const
 {
-    return 1;
+    if( Schematic() )
+        return Schematic()->Settings().m_DefaultLineWidth;
+
+    return Mils2iu( DEFAULT_LINE_WIDTH_MILS );
 }
 
 

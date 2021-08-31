@@ -49,7 +49,10 @@
 #include <pcb_dimension.h>
 
 #include <pcbplot.h>
-#include <plotters_specific.h>
+#include <plotters/plotter_dxf.h>
+#include <plotters/plotter_hpgl.h>
+#include <plotters/plotter_gerber.h>
+#include <plotters/plotters_pslike.h>
 #include <pcb_painter.h>
 #include <gbr_metadata.h>
 #include <advanced_config.h>
@@ -446,7 +449,7 @@ void PlotStandardLayer( BOARD* aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                 // so build a similar pad shape, and inflate/deflate the polygonal shape
                 PAD dummy( *pad );
                 SHAPE_POLY_SET shape;
-                pad->MergePrimitivesAsPolygon( &shape, UNDEFINED_LAYER );
+                pad->MergePrimitivesAsPolygon( &shape );
 
                 // Shape polygon can have holes so use InflateWithLinkedHoles(), not Inflate()
                 // which can create bad shapes if margin.x is < 0
@@ -835,10 +838,10 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
     for( FOOTPRINT* footprint : aBoard->Footprints() )
     {
+        itemplotter.PlotFootprintTextItems( footprint );
+
         for( BOARD_ITEM* item : footprint->GraphicalItems() )
         {
-            itemplotter.PlotFootprintTextItems( footprint );
-
             if( item->Type() == PCB_FP_SHAPE_T && item->GetLayer() == layer )
                 itemplotter.PlotFootprintGraphicItem( (FP_SHAPE*) item );
         }
@@ -918,7 +921,7 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
         for( ZONE* zone : aBoard->Zones() )
         {
-            if( zone->GetLayer() != layer )
+            if( !zone->IsOnLayer( layer ) )
                 continue;
 
             // add shapes inflated by aMinThickness/2 in areas
@@ -927,14 +930,14 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
             // add shapes with their exact mask layer size in initialPolys
             zone->TransformSmoothedOutlineToPolygon( initialPolys, zone_margin, boardOutline );
         }
-
-        int numSegs = GetArcToSegmentCount( inflate, maxError, 360.0 );
-
-        // Merge all polygons: After deflating, not merged (not overlapping) polygons
-        // will have the initial shape (with perhaps small changes due to deflating transform)
-        areas.Simplify( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
-        areas.Deflate( inflate, numSegs );
     }
+
+    int numSegs = GetArcToSegmentCount( inflate, maxError, 360.0 );
+
+    // Merge all polygons: After deflating, not merged (not overlapping) polygons
+    // will have the initial shape (with perhaps small changes due to deflating transform)
+    areas.Simplify( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+    areas.Deflate( inflate, numSegs );
 
 #if !NEW_ALGO
     // To avoid a lot of code, use a ZONE to handle and plot polygons, because our polygons look
@@ -964,7 +967,7 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
     // Slightly inflate polygons to avoid any gap between them and other shapes,
     // These gaps are created by arc to segments approximations
-    areas.Inflate( Millimeter2iu( 0.002 ),6 );
+    areas.Inflate( Millimeter2iu( 0.002 ), 6 );
 
     // Now, only polygons with a too small thickness are stored in areas.
     areas.Fracture( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );

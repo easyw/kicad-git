@@ -609,7 +609,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
                 fprintf( aFile, " POLYGON %g\n", pad->GetDrillSize().x / SCALE_FACTOR );
 
                 SHAPE_POLY_SET outline;
-                pad->MergePrimitivesAsPolygon( &outline, UNDEFINED_LAYER );
+                pad->MergePrimitivesAsPolygon( &outline );
 
                 for( int jj = 0; jj < outline.OutlineCount(); ++jj )
                 {
@@ -793,7 +793,7 @@ static void CreateShapesSection( FILE* aFile, BOARD* aPcb )
              * all pads need to be marked as TOP to use the padstack information correctly.
              */
             layer = "TOP";
-            pinname = pad->GetName();
+            pinname = pad->GetNumber();
 
             if( pinname.IsEmpty() )
                 pinname = wxT( "none" );
@@ -944,7 +944,7 @@ static void CreateSignalsSection( FILE* aFile, BOARD* aPcb )
 
                 msg.Printf( wxT( "NODE \"%s\" \"%s\"" ),
                             escapeString( footprint->GetReference() ),
-                            escapeString( pad->GetName() ) );
+                            escapeString( pad->GetNumber() ) );
 
                 fputs( TO_UTF8( msg ), aFile );
                 fputs( "\n", aFile );

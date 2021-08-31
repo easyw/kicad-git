@@ -526,7 +526,7 @@ bool PCB_VIA::FlashLayer( int aLayer ) const
     if( aLayer == UNDEFINED_LAYER )
         return true;
 
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( !board )
         return false;
@@ -540,8 +540,7 @@ bool PCB_VIA::FlashLayer( int aLayer ) const
     if( m_keepTopBottomLayer && ( aLayer == m_layer || aLayer == m_bottomLayer ) )
         return true;
 
-    return board->GetConnectivity()->IsConnectedOnLayer( this, static_cast<int>( aLayer ),
-            types );
+    return board->GetConnectivity()->IsConnectedOnLayer( this, static_cast<int>( aLayer ), types );
 }
 
 
@@ -584,9 +583,8 @@ double PCB_TRACK::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
 
 const BOX2I PCB_TRACK::ViewBBox() const
 {
-    BOX2I bbox = GetBoundingBox();
-
-    BOARD* board = GetBoard();
+    BOX2I        bbox = GetBoundingBox();
+    const BOARD* board = GetBoard();
 
     if( board )
         bbox.Inflate( 2 * board->GetDesignSettings().GetBiggestClearanceValue() );
@@ -620,7 +618,7 @@ double PCB_VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
 
     PCB_PAINTER*         painter = static_cast<PCB_PAINTER*>( aView->GetPainter() );
     PCB_RENDER_SETTINGS* renderSettings = painter->GetSettings();
-    BOARD*               board = GetBoard();
+    const BOARD*         board = GetBoard();
     LSET                 visible = LSET::AllLayersMask();
 
     // Meta control for hiding all vias
@@ -814,7 +812,7 @@ void PCB_TRACK::GetMsgPanelInfoBase_Common( EDA_DRAW_FRAME* aFrame,
 
 wxString PCB_VIA::layerMaskDescribe() const
 {
-    BOARD*       board = GetBoard();
+    const BOARD* board = GetBoard();
     PCB_LAYER_ID top_layer;
     PCB_LAYER_ID bottom_layer;
 
@@ -1031,9 +1029,18 @@ std::shared_ptr<SHAPE> PCB_TRACK::GetEffectiveShape( PCB_LAYER_ID aLayer ) const
 std::shared_ptr<SHAPE> PCB_VIA::GetEffectiveShape( PCB_LAYER_ID aLayer ) const
 {
     if( FlashLayer( aLayer ) )
+    {
         return std::make_shared<SHAPE_CIRCLE>( m_Start, m_Width / 2 );
+    }
     else
-        return std::make_shared<SHAPE_CIRCLE>( m_Start, GetDrillValue() / 2 );
+    {
+        int radius = GetDrillValue() / 2;
+
+        if( GetBoard() )
+            radius += GetBoard()->GetDesignSettings().GetHolePlatingThickness();
+
+        return std::make_shared<SHAPE_CIRCLE>( m_Start, radius );
+    }
 }
 
 

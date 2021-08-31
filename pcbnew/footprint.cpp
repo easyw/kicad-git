@@ -168,7 +168,10 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
         newGroup->GetItems().clear();
 
         for( BOARD_ITEM* member : group->GetItems() )
-            newGroup->AddItem( ptrMap[ member ] );
+        {
+            if( ptrMap.count( member ) )
+                newGroup->AddItem( ptrMap[ member ] );
+        }
     }
 
     // Copy auxiliary data: 3D_Drawings info
@@ -513,7 +516,7 @@ void FOOTPRINT::Add( BOARD_ITEM* aBoardItem, ADD_MODE aMode )
     {
     case PCB_FP_TEXT_T:
         // Only user text can be added this way.
-        assert( static_cast<FP_TEXT*>( aBoardItem )->GetType() == FP_TEXT::TEXT_is_DIVERS );
+        wxASSERT( static_cast<FP_TEXT*>( aBoardItem )->GetType() == FP_TEXT::TEXT_is_DIVERS );
         KI_FALLTHROUGH;
 
     case PCB_FP_SHAPE_T:
@@ -678,7 +681,7 @@ const EDA_RECT FOOTPRINT::GetBoundingBox() const
 
 const EDA_RECT FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisibleText ) const
 {
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( board )
     {
@@ -783,7 +786,7 @@ const EDA_RECT FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisi
 
 SHAPE_POLY_SET FOOTPRINT::GetBoundingHull() const
 {
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( board )
     {
@@ -1006,11 +1009,19 @@ bool FOOTPRINT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy )
 }
 
 
-PAD* FOOTPRINT::FindPadByName( const wxString& aPadName ) const
+PAD* FOOTPRINT::FindPadByNumber( const wxString& aPadNumber, PAD* aSearchAfterMe ) const
 {
+    bool can_select = aSearchAfterMe ? false : true;
+
     for( PAD* pad : m_pads )
     {
-        if( pad->GetName() == aPadName )
+        if( !can_select && pad == aSearchAfterMe )
+        {
+            can_select = true;
+            continue;
+        }
+
+        if( can_select && pad->GetNumber() == aPadNumber )
             return pad;
     }
 
@@ -1074,7 +1085,7 @@ unsigned FOOTPRINT::GetPadCount( INCLUDE_NPTH_T aIncludeNPTH ) const
 
 unsigned FOOTPRINT::GetUniquePadCount( INCLUDE_NPTH_T aIncludeNPTH ) const
 {
-    std::set<wxString> usedNames;
+    std::set<wxString> usedNumbers;
 
     // Create a set of used pad numbers
     for( PAD* pad : m_pads )
@@ -1086,22 +1097,20 @@ unsigned FOOTPRINT::GetUniquePadCount( INCLUDE_NPTH_T aIncludeNPTH ) const
 
         // Skip pads with no name, because they are usually "mechanical"
         // pads, not "electrical" pads
-        if( pad->GetName().IsEmpty() )
+        if( pad->GetNumber().IsEmpty() )
             continue;
 
         if( !aIncludeNPTH )
         {
             // skip NPTH
             if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
-            {
                 continue;
-            }
         }
 
-        usedNames.insert( pad->GetName() );
+        usedNumbers.insert( pad->GetNumber() );
     }
 
-    return usedNames.size();
+    return usedNumbers.size();
 }
 
 
@@ -1346,7 +1355,7 @@ const BOX2I FOOTPRINT::ViewBBox() const
 
     // Add the Clearance shape size: (shape around the pads when the clearance is shown.  Not
     // optimized, but the draw cost is small (perhaps smaller than optimization).
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( board )
     {
@@ -1749,20 +1758,20 @@ BOARD_ITEM* FOOTPRINT::DuplicateItem( const BOARD_ITEM* aItem, bool aAddToFootpr
 }
 
 
-wxString FOOTPRINT::GetNextPadName( const wxString& aLastPadName ) const
+wxString FOOTPRINT::GetNextPadNumber( const wxString& aLastPadNumber ) const
 {
-    std::set<wxString> usedNames;
+    std::set<wxString> usedNumbers;
 
     // Create a set of used pad numbers
     for( PAD* pad : m_pads )
-        usedNames.insert( pad->GetName() );
+        usedNumbers.insert( pad->GetNumber() );
 
-    // Pad names aren't technically reference designators, but the formatting is close enough
+    // Pad numbers aren't technically reference designators, but the formatting is close enough
     // for these to give us what we need.
-    wxString prefix = UTIL::GetRefDesPrefix( aLastPadName );
-    int      num = GetTrailingInt( aLastPadName );
+    wxString prefix = UTIL::GetRefDesPrefix( aLastPadNumber );
+    int      num = GetTrailingInt( aLastPadNumber );
 
-    while( usedNames.count( wxString::Format( "%s%d", prefix, num ) ) )
+    while( usedNumbers.count( wxString::Format( "%s%d", prefix, num ) ) )
         num++;
 
     return wxString::Format( "%s%d", prefix, num );
@@ -2037,7 +2046,7 @@ void FOOTPRINT::BuildPolyCourtyards( OUTLINE_ERROR_HANDLER* aErrorHandler )
 
 void FOOTPRINT::SwapData( BOARD_ITEM* aImage )
 {
-    assert( aImage->Type() == PCB_FOOTPRINT_T );
+    wxASSERT( aImage->Type() == PCB_FOOTPRINT_T );
 
     std::swap( *((FOOTPRINT*) this), *((FOOTPRINT*) aImage) );
 }
@@ -2082,8 +2091,8 @@ bool FOOTPRINT::cmp_drawings::operator()( const BOARD_ITEM* aFirst,
 
 bool FOOTPRINT::cmp_pads::operator()( const PAD* aFirst, const PAD* aSecond ) const
 {
-    if( aFirst->GetName() != aSecond->GetName() )
-        return StrNumCmp( aFirst->GetName(), aSecond->GetName() ) < 0;
+    if( aFirst->GetNumber() != aSecond->GetNumber() )
+        return StrNumCmp( aFirst->GetNumber(), aSecond->GetNumber() ) < 0;
 
     if( aFirst->m_Uuid != aSecond->m_Uuid ) // shopuld be always the case foer valid boards
         return aFirst->m_Uuid < aSecond->m_Uuid;

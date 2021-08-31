@@ -228,7 +228,10 @@ void SHAPE_LINE_CHAIN::splitArc( ssize_t aPtIndex, bool aCoincident )
         m_arcs.insert( m_arcs.begin() + currArcIdx + 1, newArc2 );
 
         if( aCoincident )
+        {
             m_shapes[aPtIndex].second = currArcIdx + 1;
+            aPtIndex++;
+        }
 
         // Only change the arc indices for the second half of the point range
         for( int i = aPtIndex; i < PointCount(); i++ )
@@ -475,11 +478,25 @@ void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const SHAPE_LINE
 
     SHAPE_LINE_CHAIN newLine = aLine;
 
+    // Zero points to add?
+    if( newLine.PointCount() == 0 )
+    {
+        Remove( aStartIndex, aEndIndex );
+        return;
+    }
+
     // Remove coincident points in the new line
     if( newLine.m_points.front() == m_points[aStartIndex] )
     {
         aStartIndex++;
         newLine.Remove( 0 );
+
+        // Zero points to add?
+        if( newLine.PointCount() == 0 )
+        {
+            Remove( aStartIndex, aEndIndex );
+            return;
+        }
     }
 
     if( newLine.m_points.back() == m_points[aEndIndex] && aEndIndex > 0 )
@@ -490,7 +507,8 @@ void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const SHAPE_LINE
 
     Remove( aStartIndex, aEndIndex );
 
-    if( !newLine.PointCount() )
+    // Zero points to add?
+    if( newLine.PointCount() == 0 )
         return;
 
     // The total new arcs index is added to the new arc indices
@@ -736,11 +754,13 @@ int SHAPE_LINE_CHAIN::NextShape( int aPointIndex, bool aForwards ) const
     if( aPointIndex < 0 )
         aPointIndex += PointCount();
 
+    int lastIndex = PointCount() - 1;
+
     // First or last point?
-    if( ( aForwards && aPointIndex == PointCount() - 1 ) ||
+    if( ( aForwards && aPointIndex == lastIndex ) ||
         ( !aForwards && aPointIndex == 0 ) )
     {
-        return -1;
+            return -1; // we don't want to wrap around
     }
 
     int delta = aForwards ? 1 : -1;
@@ -755,18 +775,29 @@ int SHAPE_LINE_CHAIN::NextShape( int aPointIndex, bool aForwards ) const
     assert( m_shapes[aPointIndex].first != SHAPE_IS_PT );
 
     // Start with the assumption the point is shared
-    int arcIndex = m_shapes[aPointIndex].second;
+    auto arcIndex = [&]( int aIndex ) -> ssize_t
+                    {
+                        if( aForwards )
+                            return ArcIndex( aIndex );
+                        else
+                            return reversedArcIndex( aIndex );
+                    };
 
-    if( arcIndex == SHAPE_IS_PT || !aForwards )
-        arcIndex = m_shapes[aPointIndex].first; // Not a shared point or we are going backwards
-
-    int numPoints = static_cast<int>( m_shapes.size() );
+    ssize_t currentArcIdx = arcIndex( aPointIndex );
 
     // Now skip the rest of the arc
-    while( aPointIndex < numPoints && aPointIndex >= 0 && m_shapes[aPointIndex].first == arcIndex )
+    while( aPointIndex < lastIndex && aPointIndex >= 0 && arcIndex( aPointIndex ) == currentArcIdx )
         aPointIndex += delta;
 
-    bool indexStillOnArc = alg::pair_contains( m_shapes[aPointIndex], arcIndex );
+    if( aPointIndex == lastIndex )
+    {
+        if( !m_closed )
+            return -1;
+        else
+            return lastIndex; // Segment between last point and the start
+    }
+
+    bool indexStillOnArc = alg::pair_contains( m_shapes[aPointIndex], currentArcIdx );
 
     // We want the last vertex of the arc if the initial point was the start of one
     // Well-formed arcs should generate more than one point to travel above
@@ -843,39 +874,99 @@ const SHAPE_LINE_CHAIN SHAPE_LINE_CHAIN::Slice( int aStartIndex, int aEndIndex )
 
     int numPoints = static_cast<int>( m_points.size() );
 
-    for( int i = aStartIndex; i <= aEndIndex && i < numPoints; i++ )
+
+    if( IsArcSegment( aStartIndex ) && !IsArcStart( aStartIndex ) )
     {
-        if( m_shapes[i] != SHAPES_ARE_PT )
+        // Cutting in middle of an arc, lets split it
+        ssize_t          arcIndex = ArcIndex( aStartIndex );
+        const SHAPE_ARC& currentArc = Arc( arcIndex );
+
+        // Copy the points as arc points
+        for( size_t i = aStartIndex; arcIndex == ArcIndex( i ); i++ )
         {
-            int  arcIdx = ArcIndex( i );
-            bool wholeArc = true;
-            int  arcStart = i;
-            size_t prevIdx = static_cast<size_t>( i ) - 1;
+            rv.m_points.push_back( m_points[i] );
+            rv.m_shapes.push_back( { rv.m_arcs.size(), SHAPE_IS_PT } );
+            rv.m_bbox.Merge( m_points[i] );
+        }
 
-            if( i > 0 && IsArcSegment( prevIdx ) && ArcIndex( prevIdx ) != arcIdx )
-                wholeArc = false;
+        // Create a new arc from the existing one, with different start point.
+        SHAPE_ARC newArc;
 
-            while( i < numPoints && ArcIndex( i ) == arcIdx )
-                i++;
+        VECTOR2I newArcStart = m_points[aStartIndex];
 
-            i--;
+        newArc.ConstructFromStartEndCenter( newArcStart, currentArc.GetP1(),
+                                             currentArc.GetCenter(),
+                                             currentArc.IsClockwise() );
 
-            if( i > aEndIndex )
-                wholeArc = false;
 
-            if( wholeArc )
+        rv.m_arcs.push_back( newArc );
+
+        aStartIndex += rv.PointCount();
+    }
+
+    for( int i = aStartIndex; i <= aEndIndex && i < numPoints; i = NextShape( i ) )
+    {
+        if( i == -1 )
+            return rv; // NextShape reached the end
+
+        if( IsArcStart( i ) )
+        {
+            const SHAPE_ARC &currentArc = Arc( ArcIndex( i ) );
+            int  nextShape = NextShape( i );
+            bool isLastShape = nextShape < 0;
+
+            if(  ( isLastShape && aEndIndex != ( numPoints - 1 ) )
+                     || ( nextShape > aEndIndex ) )
             {
-                rv.Append( m_arcs[arcIdx] );
+                if( i == aEndIndex )
+                {
+                    // Single point on an arc, just append the single point
+                    rv.Append( m_points[i] );
+                    return rv;
+                }
+
+                // Cutting in middle of an arc, lets split it
+                ssize_t          arcIndex = ArcIndex( i );
+                const SHAPE_ARC& currentArc = Arc( arcIndex );
+
+                // Copy the points as arc points
+                for( ; i <= aEndIndex && i < numPoints; i++ )
+                {
+                    if( arcIndex != ArcIndex( i ) )
+                        break;
+
+                    rv.m_points.push_back( m_points[i] );
+                    rv.m_shapes.push_back( { rv.m_arcs.size(), SHAPE_IS_PT } );
+                    rv.m_bbox.Merge( m_points[i] );
+                }
+
+                // Create a new arc from the existing one, with different end point.
+                SHAPE_ARC newArc;
+
+                VECTOR2I newArcEnd = m_points[aEndIndex];
+
+                newArc.ConstructFromStartEndCenter( currentArc.GetP0(), newArcEnd,
+                                                    currentArc.GetCenter(),
+                                                    currentArc.IsClockwise() );
+
+
+                rv.m_arcs.push_back( newArc );
+
+                return rv;
             }
             else
             {
-                //@todo need to split up the arc
-                rv.Append( m_points[arcStart] );
-                i = arcStart;
+                // append the whole arc
+                rv.Append( currentArc );
             }
+
+            if( isLastShape )
+                return rv;
         }
         else
         {
+            wxASSERT_MSG( !IsArcSegment( i ), "Still on an arc segment, we missed something..." );
+
             rv.Append( m_points[i] );
         }
     }
@@ -966,6 +1057,12 @@ void SHAPE_LINE_CHAIN::Append( const SHAPE_ARC& aArc )
 
 void SHAPE_LINE_CHAIN::Insert( size_t aVertex, const VECTOR2I& aP )
 {
+    if( aVertex == m_points.size() )
+    {
+        Append( aP );
+        return;
+    }
+
     wxCHECK( aVertex < m_points.size(), /* void */ );
 
     if( aVertex > 0 && IsPtOnArc( aVertex ) )
@@ -1488,29 +1585,42 @@ const VECTOR2I SHAPE_LINE_CHAIN::NearestPoint( const VECTOR2I& aP,
     {
         int d = CSegment( i ).Distance( aP );
 
-        bool isInternalShapePoint = false;
-
-        // An internal shape point here is everything after the start of an arc and before the
-        // second-to-last vertex of the arc, because we are looking at segments here!
-        if( i > 0 && i < SegmentCount() - 1 && m_shapes[i] != SHAPES_ARE_PT
-            && ( ( m_shapes[i - 1] != SHAPES_ARE_PT && m_shapes[i - 1] == m_shapes[i] )
-                 && ( m_shapes[i + 2] != SHAPES_ARE_PT && m_shapes[i + 2] == m_shapes[i] ) ) )
-        {
-            isInternalShapePoint = true;
-        }
-
-        if( ( d < min_d ) && ( aAllowInternalShapePoints || !isInternalShapePoint ) )
+        if( d < min_d )
         {
             min_d = d;
             nearest = i;
         }
     }
 
-    // Is this the start or end of an arc?  If so, return it directly
-    if( !aAllowInternalShapePoints && ( IsArcStart( nearest ) || IsArcEnd( nearest ) ) )
+    if( !aAllowInternalShapePoints )
     {
-        //@todo should we calculate the nearest point to the "true" arc?
-        return m_points[nearest];
+        //Snap to arc end points if the closest found segment is part of an arc segment
+        if( nearest > 0 && nearest < PointCount() && IsArcSegment( nearest ) )
+        {
+            VECTOR2I ptToSegStart = CSegment( nearest ).A - aP;
+            VECTOR2I ptToSegEnd = CSegment( nearest ).B - aP;
+
+            if( ptToSegStart.EuclideanNorm() > ptToSegEnd.EuclideanNorm() )
+                nearest++;
+
+            // Is this the start or end of an arc?  If so, return it directly
+            if( IsArcStart( nearest ) || IsArcEnd( nearest ) )
+            {
+                return m_points[nearest];
+            }
+            else
+            {
+                const SHAPE_ARC& nearestArc = Arc( ArcIndex( nearest ) );
+                VECTOR2I         ptToArcStart = nearestArc.GetP0() - aP;
+                VECTOR2I         ptToArcEnd = nearestArc.GetP1() - aP;
+
+                if( ptToArcStart.EuclideanNorm() > ptToArcEnd.EuclideanNorm() )
+                    return nearestArc.GetP1();
+                else
+                    return nearestArc.GetP0();
+            }
+
+        }
     }
 
     return CSegment( nearest ).NearestPoint( aP );

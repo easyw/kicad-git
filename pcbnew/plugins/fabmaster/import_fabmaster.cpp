@@ -53,7 +53,7 @@
 #include <common.h>
 #include <geometry/shape_arc.h>
 #include <string_utils.h>
-#include <widgets/progress_reporter.h>
+#include <progress_reporter.h>
 #include <math/util.h>
 #include <wx/filename.h>
 
@@ -2240,7 +2240,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                     else
                         newpad->SetY( pin->pin_y );
 
-                    newpad->SetName( pin->pin_number );
+                    newpad->SetNumber( pin->pin_number );
 
                     if( padstack == pads.end() )
                     {
@@ -2340,7 +2340,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                                 }
 
                                 SHAPE_POLY_SET mergedPolygon;
-                                newpad->MergePrimitivesAsPolygon( &mergedPolygon, UNDEFINED_LAYER );
+                                newpad->MergePrimitivesAsPolygon( &mergedPolygon );
 
                                 if( mergedPolygon.OutlineCount() > 1 )
                                 {

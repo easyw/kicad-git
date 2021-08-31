@@ -55,7 +55,7 @@
 #include <tool/tool_manager.h>
 #include <footprint_viewer_frame.h>
 #include <footprint_edit_frame.h>
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 #include <widgets/infobar.h>
 #include <wx/hyperlink.h>
 
@@ -659,7 +659,7 @@ static void pasteFootprintItemsToFootprintEditor( FOOTPRINT* aClipFootprint, BOA
             if( text->GetType() != FP_TEXT::TEXT_is_DIVERS )
                 continue;
 
-            text->SetTextAngle( aClipFootprint->GetOrientation() );
+            text->SetTextAngle( text->GetTextAngle() + aClipFootprint->GetOrientation() );
 
             text->SetParent( nullptr );
             text->SetLocalCoord();
@@ -992,8 +992,8 @@ int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
     // Select the items that should be selected
     m_toolMgr->RunAction( PCB_ACTIONS::selectItems, true, &itemsToSel );
 
-    // Reannotate duplicate footprints
-    if( aReannotateDuplicates )
+    // Reannotate duplicate footprints (make sense only in board editor )
+    if( aReannotateDuplicates && m_frame->IsType( FRAME_PCB_EDITOR ) )
         m_toolMgr->GetTool<BOARD_REANNOTATE_TOOL>()->ReannotateDuplicatesInSelection();
 
     for( BOARD_ITEM* item : aItems )

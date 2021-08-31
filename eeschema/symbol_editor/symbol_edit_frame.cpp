@@ -67,7 +67,7 @@
 #include <widgets/app_progress_dialog.h>
 #include <widgets/infobar.h>
 #include <widgets/lib_tree.h>
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 #include <widgets/symbol_tree_pane.h>
 #include <wildcards_and_files_ext.h>
 #include <panel_sym_lib_table.h>
@@ -158,7 +158,7 @@ SYMBOL_EDIT_FRAME::SYMBOL_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     ReCreateOptToolbar();
 
     updateTitle();
-    DisplaySymbolDatasheet();
+    UpdateSymbolMsgPanelInfo();
     RebuildSymbolUnitsList();
 
     m_auimgr.SetManagedWindow( this );
@@ -629,6 +629,7 @@ void SYMBOL_EDIT_FRAME::OnSelectUnit( wxCommandEvent& event )
 
     m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
     RebuildView();
+    UpdateSymbolMsgPanelInfo();
 }
 
 
@@ -1330,7 +1331,7 @@ void SYMBOL_EDIT_FRAME::LoadSymbolFromSchematic( SCH_SYMBOL* aSymbol )
     updateTitle();
     RebuildSymbolUnitsList();
     SetShowDeMorgan( GetCurSymbol()->HasConversion() );
-    DisplaySymbolDatasheet();
+    UpdateSymbolMsgPanelInfo();
     Refresh();
 }
 

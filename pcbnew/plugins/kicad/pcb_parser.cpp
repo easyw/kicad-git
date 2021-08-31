@@ -57,7 +57,8 @@
 #include <math/util.h>                           // KiROUND, Clamp
 #include <string_utils.h>
 #include <wx/log.h>
-#include <widgets/progress_reporter.h>
+#include <progress_reporter.h>
+#include <board_stackup_manager/stackup_predefined_prms.h>
 
 using namespace PCB_KEYS_T;
 
@@ -635,6 +636,9 @@ BOARD_ITEM* PCB_PARSER::Parse()
     std::unique_ptr<wxArrayString> initial_comments( ReadCommentLines() );
 
     token = CurTok();
+
+    if( token == -1 )   // EOF
+        Unexpected( token );
 
     if( token != T_LEFT )
         Expecting( T_LEFT );
@@ -1474,7 +1478,29 @@ void PCB_PARSER::parseBoardStackup()
 
                     case T_color:
                         NeedSYMBOL();
-                        item->SetColor( FromUTF8() );
+                        name = FromUTF8();
+
+                        // Older versions didn't store opacity with custom colors
+                        if( name.StartsWith( "#" ) && m_requiredVersion < 20210824 )
+                        {
+                            KIGFX::COLOR4D color( name );
+
+                            if( item->GetType() == BS_ITEM_TYPE_SOLDERMASK )
+                                color = color.WithAlpha( DEFAULT_SOLDERMASK_OPACITY );
+                            else
+                                color = color.WithAlpha( 1.0 );
+
+                            wxColour wx_color = color.ToColour();
+
+                            // Open-code wxColour::GetAsString() because 3.0 doesn't handle rgba
+                            name.Printf( wxT("#%02X%02X%02X%02X" ),
+                                         wx_color.Red(),
+                                         wx_color.Green(),
+                                         wx_color.Blue(),
+                                         wx_color.Alpha() );
+                        }
+
+                        item->SetColor( name );
                         NeedRIGHT();
                         break;
 
@@ -3916,7 +3942,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
     pad->SetKeepTopBottom( false );
 
     NeedSYMBOLorNUMBER();
-    pad->SetName( FromUTF8() );
+    pad->SetNumber( FromUTF8() );
 
     T token = NextTok();
 
@@ -4384,6 +4410,13 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                        "clearance, tstamp, primitives, remove_unused_layers, keep_end_layers, "
                        "pinfunction, pintype, zone_connect, thermal_width, or thermal_gap" );
         }
+    }
+
+    if( !pad->CanHaveNumber() )
+    {
+        // At some point it was possible to assign a number to aperture pads so we need to clean
+        // those out here.
+        pad->SetNumber( wxEmptyString );
     }
 
     return pad.release();

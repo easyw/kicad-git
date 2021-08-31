@@ -25,10 +25,9 @@
 #include <bitmaps.h>
 #include <core/mirror.h>
 #include <sch_draw_panel.h>
-#include <gr_text.h>
 #include <trigo.h>
 #include <sch_edit_frame.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <string_utils.h>
 #include <widgets/msgpanel.h>
 #include <math/util.h>      // for KiROUND
@@ -509,7 +508,13 @@ SCH_SHEET_PIN* SCH_SHEET::GetPin( const wxPoint& aPosition )
 
 int SCH_SHEET::GetPenWidth() const
 {
-    return std::max( GetBorderWidth(), 1 );
+    if( GetBorderWidth() > 0 )
+        return GetBorderWidth();
+
+    if( Schematic() )
+        return Schematic()->Settings().m_DefaultLineWidth;
+
+    return Mils2iu( DEFAULT_LINE_WIDTH_MILS );
 }
 
 
@@ -987,9 +992,13 @@ void SCH_SHEET::Plot( PLOTTER* aPlotter ) const
     int penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
     aPlotter->Rect( m_pos, m_pos + m_size, FILL_TYPE::NO_FILL, penWidth );
 
-    /* Draw texts : SheetLabel */
+    // Plot sheet pins
     for( SCH_SHEET_PIN* sheetPin : m_pins )
         sheetPin->Plot( aPlotter );
+
+    // Plot the fields
+    for( const SCH_FIELD& field : m_fields )
+        field.Plot( aPlotter );
 }
 
 
@@ -1023,7 +1032,6 @@ void SCH_SHEET::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
     for( SCH_FIELD& field : m_fields )
         field.Print( aSettings, aOffset );
 
-    /* Draw text : SheetLabel */
     for( SCH_SHEET_PIN* sheetPin : m_pins )
         sheetPin->Print( aSettings, aOffset );
 }
@@ -1157,8 +1165,8 @@ int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString& aPa
     else if( isIntegerPageB )
         return 1; // A > B
 
-    // If not numeric, then sort as strings
-    int result = aPageNumberA.Cmp( aPageNumberB );
+    // If not numeric, then sort as strings using natural sort
+    int result = StrNumCmp( aPageNumberA, aPageNumberB );
 
     if( result > 0 )
         return 1; // A > B

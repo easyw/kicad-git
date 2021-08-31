@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Jon Evans <jon@craftyjon.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -34,6 +34,7 @@
 #include <kiway.h>
 #include <lockfile.h>
 #include <macros.h>
+#include <pgm_base.h>
 #include <paths.h>
 #include <project.h>
 #include <project/project_archiver.h>
@@ -70,8 +71,6 @@ SETTINGS_MANAGER::SETTINGS_MANAGER( bool aHeadless ) :
 
     // create the common settings shared by all applications.  Not loaded immediately
     m_common_settings = RegisterSettings( new COMMON_SETTINGS, false );
-
-    loadAllColorSettings();
 }
 
 SETTINGS_MANAGER::~SETTINGS_MANAGER()
@@ -226,13 +225,13 @@ COLOR_SETTINGS* SETTINGS_MANAGER::loadColorSettingsByName( const wxString& aName
 }
 
 
-class COLOR_SETTINGS_LOADER : public wxDirTraverser
+class JSON_DIR_TRAVERSER : public wxDirTraverser
 {
 private:
-    std::function<void( const wxString& )> m_action;
+    std::function<void( const wxFileName& )> m_action;
 
 public:
-    explicit COLOR_SETTINGS_LOADER( std::function<void( const wxString& )> aAction )
+    explicit JSON_DIR_TRAVERSER( std::function<void( const wxFileName& )> aAction )
             : m_action( std::move( aAction ) )
     {
     }
@@ -241,17 +240,15 @@ public:
     {
         wxFileName file( aFilePath );
 
-        if( file.GetExt() != "json" )
-            return wxDIR_CONTINUE;
-
-        m_action( file.GetName() );
+        if( file.GetExt() == "json" )
+            m_action( file );
 
         return wxDIR_CONTINUE;
     }
 
     wxDirTraverseResult OnDir( const wxString& dirPath ) override
     {
-        return wxDIR_IGNORE;
+        return wxDIR_CONTINUE;
     }
 };
 
@@ -296,16 +293,44 @@ void SETTINGS_MANAGER::loadAllColorSettings()
     for( COLOR_SETTINGS* settings : COLOR_SETTINGS::CreateBuiltinColorSettings() )
         m_color_settings[settings->GetFilename()] = RegisterSettings( settings, false );
 
-    // Search for and load any other settings
-    COLOR_SETTINGS_LOADER loader( [&]( const wxString& aFilename )
-                                  {
-                                      registerColorSettings( aFilename );
-                                  } );
+    wxFileName third_party_path;
+    const ENV_VAR_MAP& env = Pgm().GetLocalEnvVariables();
+    auto               it = env.find( "KICAD6_3RD_PARTY" );
 
-    wxDir colors_dir( GetColorSettingsPath() );
+    if( it != env.end() && !it->second.GetValue().IsEmpty() )
+        third_party_path.SetPath( it->second.GetValue() );
+    else
+        third_party_path.SetPath( PATHS::GetDefault3rdPartyPath() );
+
+    third_party_path.AppendDir( "colors" );
+
+    wxDir third_party_colors_dir( third_party_path.GetFullPath() );
+    wxString color_settings_path = GetColorSettingsPath();
+
+    JSON_DIR_TRAVERSER copier(
+            [&]( const wxFileName& aFilename )
+            {
+                wxFileName new_file( color_settings_path, aFilename.GetFullName() );
+
+                if( !new_file.Exists() )
+                    wxCopyFile( aFilename.GetFullPath(), new_file.GetFullPath());
+            } );
+
+    // Search for and load any other settings
+    JSON_DIR_TRAVERSER loader( [&]( const wxFileName& aFilename )
+                               {
+                                   registerColorSettings( aFilename.GetName() );
+                               } );
+
+    wxDir colors_dir( color_settings_path );
 
     if( colors_dir.IsOpened() )
+    {
+        if( third_party_colors_dir.IsOpened() )
+           third_party_colors_dir.Traverse( copier );
+
         colors_dir.Traverse( loader );
+    }
 }
 
 
@@ -779,6 +804,15 @@ bool SETTINGS_MANAGER::LoadProject( const wxString& aFullPath, bool aSetActive )
         PROJECT* oldProject = m_projects.begin()->second;
         unloadProjectFile( oldProject, false );
         m_projects.erase( m_projects.begin() );
+
+        auto it = std::find_if( m_projects_list.begin(), m_projects_list.end(),
+                                [&]( const std::unique_ptr<PROJECT>& ptr )
+                                {
+                                    return ptr.get() == oldProject;
+                                } );
+
+        wxASSERT( it != m_projects_list.end() );
+        m_projects_list.erase( it );
     }
 
     wxLogTrace( traceSettings, "Load project %s", fullPath );
@@ -859,7 +893,8 @@ bool SETTINGS_MANAGER::UnloadProject( PROJECT* aProject, bool aSave )
 PROJECT& SETTINGS_MANAGER::Prj() const
 {
     // No MDI yet:  First project in the list is the active project
-    return *m_projects.begin()->second;
+    wxASSERT_MSG( m_projects_list.size(), "no project in list" );
+    return *m_projects_list.begin()->get();
 }
 
 
@@ -929,6 +964,12 @@ void SETTINGS_MANAGER::SaveProjectAs( const wxString& aFullPath )
     wxFileName fn( aFullPath );
 
     PROJECT_FILE* project = m_project_files.at( oldName );
+
+    // Ensure read-only flags are copied; this allows doing a "Save As" on a standalong board/sch
+    // without creating project files if the checkbox is turned off
+    project->SetReadOnly( Prj().IsReadOnly() );
+    Prj().GetLocalSettings().SetReadOnly( Prj().IsReadOnly() );
+
     project->SetFilename( fn.GetName() );
     project->SaveToFile( fn.GetPath() );
 

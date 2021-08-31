@@ -86,7 +86,7 @@ int SCH_EDITOR_CONTROL::Save( const TOOL_EVENT& aEvent )
 
 int SCH_EDITOR_CONTROL::SaveAs( const TOOL_EVENT& aEvent )
 {
-    m_frame->Save_File( true );
+    m_frame->SaveProject( true );
     return 0;
 }
 
@@ -245,12 +245,12 @@ int SCH_EDITOR_CONTROL::NavigateHierarchy( const TOOL_EVENT& aEvent )
 
 int SCH_EDITOR_CONTROL::UpdateFind( const TOOL_EVENT& aEvent )
 {
-    wxFindReplaceData* data = m_frame->GetFindReplaceData();
+    wxFindReplaceData& data = m_frame->GetFindReplaceData();
 
     auto visit =
             [&]( EDA_ITEM* aItem, SCH_SHEET_PATH* aSheet )
             {
-                if( data && aItem->Matches( *data, aSheet ) )
+                if( aItem->Matches( data, aSheet ) )
                 {
                     aItem->SetForceVisible( true );
                     m_selectionTool->BrightenItem( aItem );
@@ -293,7 +293,7 @@ int SCH_EDITOR_CONTROL::UpdateFind( const TOOL_EVENT& aEvent )
 
 
 SCH_ITEM* SCH_EDITOR_CONTROL::nextMatch( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aSheet,
-                                         SCH_ITEM* aAfter, wxFindReplaceData* aData )
+                                         SCH_ITEM* aAfter, wxFindReplaceData& aData )
 {
     bool past_item = true;
 
@@ -305,8 +305,30 @@ SCH_ITEM* SCH_EDITOR_CONTROL::nextMatch( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aS
             aAfter = static_cast<SCH_ITEM*>( aAfter->GetParent() );
     }
 
+    std::vector<SCH_ITEM*> sorted_items;
 
     for( SCH_ITEM* item : aScreen->Items() )
+    {
+        sorted_items.push_back( item );
+    }
+
+    std::sort( sorted_items.begin(), sorted_items.end(),
+            [&]( SCH_ITEM* a, SCH_ITEM* b )
+            {
+                if( a->GetPosition().x == b->GetPosition().x )
+                {
+                    // Ensure deterministic sort
+                    if( a->GetPosition().y == b->GetPosition().y )
+                        return a->m_Uuid < b->m_Uuid;
+
+                    return a->GetPosition().y < b->GetPosition().y;
+                }
+                else
+                    return a->GetPosition().x < b->GetPosition().x;
+            }
+        );
+
+    for( SCH_ITEM* item : sorted_items )
     {
         if( item == aAfter )
         {
@@ -314,10 +336,10 @@ SCH_ITEM* SCH_EDITOR_CONTROL::nextMatch( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aS
         }
         else if( past_item )
         {
-            if( aData == &g_markersOnly && item->Type() == SCH_MARKER_T )
+            if( &aData == &g_markersOnly && item->Type() == SCH_MARKER_T )
                 return item;
 
-            if( item->Matches( *aData, aSheet ) )
+            if( item->Matches( aData, aSheet ) )
                 return item;
 
             if( item->Type() == SCH_SYMBOL_T )
@@ -326,13 +348,13 @@ SCH_ITEM* SCH_EDITOR_CONTROL::nextMatch( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aS
 
                 for( SCH_FIELD& field : cmp->GetFields() )
                 {
-                    if( field.Matches( *aData, aSheet ) )
+                    if( field.Matches( aData, aSheet ) )
                         return &field;
                 }
 
                 for( SCH_PIN* pin : cmp->GetPins() )
                 {
-                    if( pin->Matches( *aData, aSheet ) )
+                    if( pin->Matches( aData, aSheet ) )
                         return pin;
                 }
             }
@@ -343,13 +365,13 @@ SCH_ITEM* SCH_EDITOR_CONTROL::nextMatch( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aS
 
                 for( SCH_FIELD& field : sheet->GetFields() )
                 {
-                    if( field.Matches( *aData, aSheet ) )
+                    if( field.Matches( aData, aSheet ) )
                         return &field;
                 }
 
                 for( SCH_SHEET_PIN* pin : sheet->GetPins() )
                 {
-                    if( pin->Matches( *aData, aSheet ) )
+                    if( pin->Matches( aData, aSheet ) )
                         return pin;
                 }
             }
@@ -365,29 +387,29 @@ int SCH_EDITOR_CONTROL::FindNext( const TOOL_EVENT& aEvent )
     // A timer during which a subsequent FindNext will result in a wrap-around
     static wxTimer wrapAroundTimer;
 
-    wxFindReplaceData* data = m_frame->GetFindReplaceData();
+    wxFindReplaceData& data = m_frame->GetFindReplaceData();
 
     if( aEvent.IsAction( &ACTIONS::findNextMarker ) )
     {
-        if( data )
-            g_markersOnly.SetFlags( data->GetFlags() );
+        g_markersOnly.SetFlags( data.GetFlags() );
 
-        data = &g_markersOnly;
+        data = g_markersOnly;
     }
-    else if( !data )
+    else if( data.GetFindString().IsEmpty() )
     {
         return FindAndReplace( ACTIONS::find.MakeEvent() );
     }
 
-    bool          searchAllSheets = !( data->GetFlags() & FR_CURRENT_SHEET_ONLY );
+    bool          searchAllSheets = !( data.GetFlags() & FR_CURRENT_SHEET_ONLY );
     EE_SELECTION& selection       = m_selectionTool->GetSelection();
-    SCH_SCREEN*   afterScreen     = m_frame->GetScreen();
     SCH_ITEM*     afterItem       = dynamic_cast<SCH_ITEM*>( selection.Front() );
     SCH_ITEM*     item            = nullptr;
 
+    SCH_SHEET_PATH* afterSheet    = &m_frame->GetCurrentSheet();
+
     if( wrapAroundTimer.IsRunning() )
     {
-        afterScreen = nullptr;
+        afterSheet = nullptr;
         afterItem = nullptr;
         wrapAroundTimer.Stop();
         m_frame->ClearFindReplaceStatus();
@@ -395,32 +417,53 @@ int SCH_EDITOR_CONTROL::FindNext( const TOOL_EVENT& aEvent )
 
     m_selectionTool->ClearSelection();
 
-    if( afterScreen || !searchAllSheets )
+    if( afterSheet || !searchAllSheets )
         item = nextMatch( m_frame->GetScreen(), &m_frame->GetCurrentSheet(), afterItem, data );
 
     if( !item && searchAllSheets )
     {
-        SCH_SHEET_LIST schematic = m_frame->Schematic().GetSheets();
-        SCH_SCREENS    screens( m_frame->Schematic().Root() );
+        SCH_SCREENS                  screens( m_frame->Schematic().Root() );
+        std::vector<SCH_SHEET_PATH*> paths;
+
+        screens.BuildClientSheetPathList();
 
         for( SCH_SCREEN* screen = screens.GetFirst(); screen; screen = screens.GetNext() )
         {
-            if( afterScreen )
+
+            for( SCH_SHEET_PATH& sheet : screen->GetClientSheetPaths() )
             {
-                if( afterScreen == screen )
-                    afterScreen = nullptr;
+                paths.push_back( &sheet );
+            }
+        }
+
+        std::sort( paths.begin(), paths.end(), [] ( const SCH_SHEET_PATH* lhs, const SCH_SHEET_PATH* rhs ) -> bool
+                {
+                    int retval = lhs->ComparePageNumAndName( *rhs );
+
+                    if( retval < 0 )
+                        return true;
+                    else if( retval > 0 )
+                        return false;
+                    else /// Enforce strict ordering.  If the name and number are the same, we use UUIDs
+                        return lhs->GetCurrentHash() < rhs->GetCurrentHash();
+                } );
+
+        for( SCH_SHEET_PATH* sheet : paths )
+        {
+            if( afterSheet )
+            {
+                if( afterSheet->GetPageNumber() == sheet->GetPageNumber() )
+                    afterSheet = nullptr;
 
                 continue;
             }
 
-            SCH_SHEET_PATH* sheet = schematic.FindSheetForScreen( screen );
+            SCH_SCREEN* screen = sheet->LastScreen();
 
             item = nextMatch( screen, sheet, nullptr, data );
 
             if( item )
             {
-                wxCHECK_MSG( sheet, 0, "Sheet not found for " + screen->GetFileName() );
-
                 m_frame->Schematic().SetCurrentSheet( *sheet );
                 m_frame->GetCurrentSheet().UpdateAllScreenReferences();
 
@@ -431,6 +474,9 @@ int SCH_EDITOR_CONTROL::FindNext( const TOOL_EVENT& aEvent )
 
                 break;
             }
+
+            if( item )
+                break;
         }
     }
 
@@ -457,25 +503,25 @@ int SCH_EDITOR_CONTROL::FindNext( const TOOL_EVENT& aEvent )
 
 bool SCH_EDITOR_CONTROL::HasMatch()
 {
-    wxFindReplaceData* data = m_frame->GetFindReplaceData();
+    wxFindReplaceData& data = m_frame->GetFindReplaceData();
     EDA_ITEM*          item = m_selectionTool->GetSelection().Front();
 
-    return data && item && item->Matches( *data, &m_frame->GetCurrentSheet() );
+    return item && item->Matches( data, &m_frame->GetCurrentSheet() );
 }
 
 
 int SCH_EDITOR_CONTROL::ReplaceAndFindNext( const TOOL_EVENT& aEvent )
 {
-    wxFindReplaceData* data = m_frame->GetFindReplaceData();
+    wxFindReplaceData& data = m_frame->GetFindReplaceData();
     EDA_ITEM*          item = m_selectionTool->GetSelection().Front();
     SCH_SHEET_PATH*    sheet = &m_frame->GetCurrentSheet();
 
-    if( !data )
+    if( data.GetFindString().IsEmpty() )
         return FindAndReplace( ACTIONS::find.MakeEvent() );
 
-    if( item && item->Matches( *data, sheet ) )
+    if( item && item->Matches( data, sheet ) )
     {
-        if( item->Replace( *data, sheet ) )
+        if( item->Replace( data, sheet ) )
         {
             m_frame->UpdateItem( item );
             m_frame->GetCurrentSheet().UpdateAllScreenReferences();
@@ -491,10 +537,10 @@ int SCH_EDITOR_CONTROL::ReplaceAndFindNext( const TOOL_EVENT& aEvent )
 
 int SCH_EDITOR_CONTROL::ReplaceAll( const TOOL_EVENT& aEvent )
 {
-    wxFindReplaceData* data = m_frame->GetFindReplaceData();
+    wxFindReplaceData& data = m_frame->GetFindReplaceData();
     bool               modified = false;
 
-    if( !data )
+    if( data.GetFindString().IsEmpty() )
         return FindAndReplace( ACTIONS::find.MakeEvent() );
 
     SCH_SHEET_LIST schematic = m_frame->Schematic().GetSheets();
@@ -506,7 +552,7 @@ int SCH_EDITOR_CONTROL::ReplaceAll( const TOOL_EVENT& aEvent )
 
         for( EDA_ITEM* item = nextMatch( screen, sheet, nullptr, data ); item;  )
         {
-            if( item->Replace( *data, sheet ) )
+            if( item->Replace( data, sheet ) )
             {
                 m_frame->UpdateItem( item );
                 modified = true;
@@ -2007,6 +2053,7 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::Open,                  ACTIONS::open.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Save,                  ACTIONS::save.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::SaveAs,                ACTIONS::saveAs.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::SaveAs,                ACTIONS::saveCopyAs.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ShowSchematicSetup,    EE_ACTIONS::schematicSetup.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::PageSetup,             ACTIONS::pageSettings.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Print,                 ACTIONS::print.MakeEvent() );

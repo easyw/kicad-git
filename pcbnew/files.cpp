@@ -47,7 +47,7 @@
 #include <kiplatform/app.h>
 #include <widgets/appearance_controls.h>
 #include <widgets/infobar.h>
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 #include <settings/settings_manager.h>
 #include <paths.h>
 #include <project/project_file.h>
@@ -212,7 +212,7 @@ public:
     {
         m_cbCreateProject = new wxCheckBox( this, wxID_ANY,
                                             _( "Create a new project for this board" ) );
-        m_cbCreateProject->SetValue( false );
+        m_cbCreateProject->SetValue( true );
         m_cbCreateProject->SetToolTip( _( "Creating a project will enable features such as "
                                           "design rules, net classes, and layer presets" ) );
 

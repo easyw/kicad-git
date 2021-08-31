@@ -38,6 +38,7 @@
 #include <wx/log.h>
 #include <string_utils.h>
 
+
 /**
  * Convert a wxString to UTF8 and replace any control characters with a ~,
  * where a control character is one of the first ASCII values up to ' ' 32d.
@@ -128,7 +129,15 @@ SCH_SYMBOL::SCH_SYMBOL( const LIB_SYMBOL& aSymbol, const LIB_ID& aLibId,
     m_prefix = UTIL::GetRefDesPrefix( m_part->GetReferenceField().GetText() );
 
     if( aSheet )
+    {
         SetRef( aSheet, UTIL::GetRefDesUnannotated( m_prefix ) );
+
+        // Value and footprint name are stored in the SCH_SHEET_PATH path manager,
+        // if aSheet != nullptr, not in the symbol itself.
+        // Copy them to the currently displayed field texts
+        SetValue( GetValue( aSheet, false ) );
+        SetFootprint( GetFootprint( aSheet, false ) );
+    }
 
     // Inherit the include in bill of materials and board netlist settings from library symbol.
     m_inBom = aSymbol.GetIncludeInBom();
@@ -784,7 +793,7 @@ void SCH_SYMBOL::UpdateFields( const SCH_SHEET_PATH* aPath, bool aUpdateStyle, b
 
             if( id == REFERENCE_FIELD && aPath )
             {
-                if( aResetOtherFields )
+                if( aResetRef )
                     SetRef( aPath, m_part->GetReferenceField().GetText() );
                 else if( aUpdateRef )
                     SetRef( aPath, libField->GetText() );
@@ -792,14 +801,14 @@ void SCH_SYMBOL::UpdateFields( const SCH_SHEET_PATH* aPath, bool aUpdateStyle, b
             else if( id == VALUE_FIELD )
             {
                 if( aResetOtherFields )
-                    SetValue( UnescapeString( m_lib_id.GetLibItemName() ) ); // alias-specific value
+                    SetValue( aPath, UnescapeString( m_lib_id.GetLibItemName() ) ); // alias-specific value
                 else
-                    SetValue( UnescapeString( libField->GetText() ) );
+                    SetValue( aPath, UnescapeString( libField->GetText() ) );
             }
             else if( id == FOOTPRINT_FIELD )
             {
                 if( aResetOtherFields || aUpdateOtherFields )
-                    SetFootprint( libField->GetText() );
+                    SetFootprint( aPath, libField->GetText() );
             }
             else if( id == DATASHEET_FIELD )
             {

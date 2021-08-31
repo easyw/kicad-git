@@ -52,7 +52,7 @@
 #include <wx/mstream.h>
 #include <wx/wfstream.h>
 #include <wx/zstream.h>
-#include <widgets/progress_reporter.h>
+#include <progress_reporter.h>
 
 
 void ParseAltiumPcb( BOARD* aBoard, const wxString& aFileName, PROGRESS_REPORTER* aProgressReporter,
@@ -2103,7 +2103,7 @@ void ALTIUM_PCB::ParsePads6Data( const CFB::CompoundFileReader& aReader,
         PAD* pad = new PAD( footprint );
         footprint->Add( pad, ADD_MODE::APPEND );
 
-        pad->SetName( elem.name );
+        pad->SetNumber( elem.name );
         pad->SetNetCode( GetNetCode( elem.net ) );
         pad->SetLocked( elem.is_locked );
 

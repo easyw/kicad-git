@@ -372,6 +372,8 @@ void OPENGL_GAL::PostPaint( wxPaintEvent& aEvent )
 
 bool OPENGL_GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 {
+    GAL_CONTEXT_LOCKER lock( this );
+
     bool refresh = false;
 
     if( m_options.gl_antialiasing_mode != m_compositor->GetAntialiasingMode() )
@@ -2062,7 +2064,6 @@ void OPENGL_GAL::drawBitmapOverbar( double aLength, double aHeight )
 std::pair<VECTOR2D, float> OPENGL_GAL::computeBitmapTextSize( const UTF8& aText ) const
 {
     static const FONT_GLYPH_TYPE* defaultGlyph = LookupGlyph( '(' ); // for strange chars
-    static const FONT_GLYPH_TYPE* lineGlyph = LookupGlyph( '_' );    // for overbar thickness
 
     VECTOR2D textSize( 0, 0 );
     float    commonOffset = std::numeric_limits<float>::max();

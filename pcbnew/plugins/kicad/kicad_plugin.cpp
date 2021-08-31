@@ -47,7 +47,7 @@
 #include <plugins/kicad/pcb_parser.h>
 #include <trace_helpers.h>
 #include <pcb_track.h>
-#include <widgets/progress_reporter.h>
+#include <progress_reporter.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/dir.h>
 #include <wx/log.h>
@@ -265,6 +265,8 @@ void FP_CACHE::Load()
                 FILE_LINE_READER    reader( fn.GetFullPath() );
 
                 m_owner->m_parser->SetLineReader( &reader );
+                // Ensure a previous parsing does not interacts with the new parsing:
+                m_owner->m_parser->InitParserState();
 
                 FOOTPRINT* footprint = (FOOTPRINT*) m_owner->m_parser->Parse();
                 wxString   fpName = fn.GetName();
@@ -1415,7 +1417,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
     }
 
     m_out->Print( aNestLevel, "(pad %s %s %s",
-                  m_out->Quotew( aPad->GetName() ).c_str(),
+                  m_out->Quotew( aPad->GetNumber() ).c_str(),
                   type,
                   shape );
 
@@ -1562,10 +1564,10 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
                    FormatInternalUnits( aPad->GetLocalClearance() ).c_str() );
     }
 
-    if( aPad->GetEffectiveZoneConnection() != ZONE_CONNECTION::INHERITED )
+    if( aPad->GetZoneConnection() != ZONE_CONNECTION::INHERITED )
     {
         StrPrintf( &output, " (zone_connect %d)",
-                   static_cast<int>( aPad->GetEffectiveZoneConnection() ) );
+                   static_cast<int>( aPad->GetZoneConnection() ) );
     }
 
     if( aPad->GetThermalSpokeWidth() != 0 )

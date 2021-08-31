@@ -181,9 +181,9 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 {
     // Create a mask representing the executable files in the current platform
 #ifdef __WINDOWS__
-    wxString mask( _( "Executable file (*.exe)|*.exe" ) );
+    wxString mask( _( "Executable file" ) + wxT( " (*.exe)|*.exe" ) );
 #else
-    wxString mask( _( "Executable file (*)|*" ) );
+    wxString mask( _( "Executable file" ) + wxT( " (*)|*" ) );
 #endif
 
     // Extract the path, name and extension from the default editor (even if the editor's
@@ -198,7 +198,7 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 }
 
 
-bool PGM_BASE::InitPgm( bool aHeadless )
+bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
 {
     wxString pgm_name = wxFileName( App().argv[0] ).GetName().Lower();
 
@@ -257,6 +257,9 @@ bool PGM_BASE::InitPgm( bool aHeadless )
     // Set up built-in environment variables (and override them from the system environment if set)
     GetCommonSettings()->InitializeEnvironment();
 
+    // Load color settings after env is initialized
+    m_settings_manager->ReloadColorSettings();
+
     // Load common settings from disk after setting up env vars
     GetSettingsManager().Load( GetCommonSettings() );
 
@@ -272,7 +275,10 @@ bool PGM_BASE::InitPgm( bool aHeadless )
 
     ReadPdfBrowserInfos();      // needs GetCommonSettings()
 
-    m_python_scripting = std::make_unique<SCRIPTING>();
+    // Create the python scripting stuff
+    // Skip it fot applications that do not use it
+    if( !aSkipPyInit )
+        m_python_scripting = std::make_unique<SCRIPTING>();
 
 #ifdef __WXMAC__
     // Always show filters on Open dialog to be able to choose plugin

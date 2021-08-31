@@ -35,6 +35,7 @@
 #include <pcb_layer_box_selector.h>
 #include <footprint_edit_frame.h>
 #include <dialog_plot.h>
+#include <dialog_find.h>
 #include <dialog_footprint_properties.h>
 #include <dialogs/dialog_exchange_footprints.h>
 #include <dialog_board_setup.h>
@@ -99,6 +100,7 @@
 #include <widgets/appearance_controls.h>
 #include <widgets/infobar.h>
 #include <widgets/panel_selection_filter.h>
+#include <widgets/wx_aui_utils.h>
 #include <kiplatform/app.h>
 
 #include <action_plugin.h>
@@ -172,7 +174,7 @@ END_EVENT_TABLE()
 PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB_EDITOR, wxT( "PCB Editor" ), wxDefaultPosition,
                          wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE, PCB_EDIT_FRAME_NAME ),
-    m_exportNetlistAction( nullptr )
+    m_exportNetlistAction( nullptr ), m_findDialog( nullptr )
 {
     m_maximizeByDefault = true;
     m_showBorderAndTitleBlock = true;   // true to display sheet references
@@ -292,17 +294,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
         if( settings->m_AuiPanels.right_panel_width > 0 )
         {
             wxAuiPaneInfo& layersManager = m_auimgr.GetPane( "LayersManager" );
-
-            // wxAUI hack: force width by setting MinSize() and then Fixed()
-            // thanks to ZenJu http://trac.wxwidgets.org/ticket/13180
-            layersManager.MinSize( settings->m_AuiPanels.right_panel_width, -1 );
-            layersManager.Fixed();
-            m_auimgr.Update();
-
-            // now make it resizable again
-            layersManager.MinSize( 180, -1 );
-            layersManager.Resizable();
-            m_auimgr.Update();
+            SetAuiPaneSize( m_auimgr, layersManager, settings->m_AuiPanels.right_panel_width, -1 );
         }
 
         m_appearancePanel->SetTabIndex( settings->m_AuiPanels.appearance_panel_tab );
@@ -1070,6 +1062,21 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
 
 void PCB_EDIT_FRAME::onBoardLoaded()
 {
+    // JEY TODO: move this global to the board
+    ENUM_MAP<PCB_LAYER_ID>& layerEnum = ENUM_MAP<PCB_LAYER_ID>::Instance();
+
+    layerEnum.Choices().Clear();
+    layerEnum.Undefined( UNDEFINED_LAYER );
+
+    for( LSEQ seq = LSET::AllLayersMask().Seq(); seq; ++seq )
+    {
+        // Canonical name
+        layerEnum.Map( *seq, LSET::Name( *seq ) );
+
+        // User name
+        layerEnum.Map( *seq, GetBoard()->GetLayerName( *seq ) );
+    }
+
     DRC_TOOL* drcTool = m_toolManager->GetTool<DRC_TOOL>();
 
     try
@@ -1302,6 +1309,32 @@ void PCB_EDIT_FRAME::SwitchCanvas( EDA_DRAW_PANEL_GAL::GAL_TYPE aCanvasType )
 {
     // switches currently used canvas (Cairo / OpenGL).
     PCB_BASE_FRAME::SwitchCanvas( aCanvasType );
+}
+
+
+void PCB_EDIT_FRAME::ShowFindDialog()
+{
+    if( !m_findDialog )
+    {
+        m_findDialog = new DIALOG_FIND( this );
+        m_findDialog->SetCallback( std::bind( &PCB_SELECTION_TOOL::FindItem,
+                                              m_toolManager->GetTool<PCB_SELECTION_TOOL>(), _1 ) );
+    }
+
+    m_findDialog->Show( true );
+}
+
+
+void PCB_EDIT_FRAME::FindNext()
+{
+    if( !m_findDialog )
+    {
+        m_findDialog = new DIALOG_FIND( this );
+        m_findDialog->SetCallback( std::bind( &PCB_SELECTION_TOOL::FindItem,
+                                              m_toolManager->GetTool<PCB_SELECTION_TOOL>(), _1 ) );
+    }
+
+    m_findDialog->FindNext();
 }
 
 
@@ -1538,11 +1571,21 @@ void PCB_EDIT_FRAME::ShowFootprintPropertiesDialog( FOOTPRINT* aFootprint )
     if( aFootprint == nullptr )
         return;
 
-    DIALOG_FOOTPRINT_PROPERTIES dlg( this, aFootprint );
+    DIALOG_FOOTPRINT_PROPERTIES::FP_PROPS_RETVALUE retvalue;
 
-    // We use quasi modal to allow displaying help dialogs.
-    dlg.ShowQuasiModal();
-    DIALOG_FOOTPRINT_PROPERTIES::FP_PROPS_RETVALUE retvalue = dlg.GetReturnValue();
+    /*
+     * Make sure dlg is destroyed before GetCanvas->Refresh is called
+     * later or the refresh will try to modify its properties since
+     * they share a GL context.
+     */
+    {
+        DIALOG_FOOTPRINT_PROPERTIES dlg( this, aFootprint );
+
+        // We use quasi modal to allow displaying help dialogs.
+        dlg.ShowQuasiModal();
+        retvalue = dlg.GetReturnValue();
+    }
+
     /*
      * retvalue =
      *   FP_PROPS_UPDATE_FP to show Update Footprints dialog

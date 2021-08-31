@@ -250,13 +250,14 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent &aEvent )
                      "disallow "
                      "edge_clearance "
                      "length "
-                     "hole "
                      "hole_clearance "
+                     "hole_size "
                      "hole_to_hole "
                      "silk_clearance "
                      "skew "
                      "track_width "
-                     "via_count ";
+                     "via_count "
+                     "via_diameter";
         }
         else if( sexprs.top() == "disallow"
               || sexprs.top() == "buried_via"

@@ -23,11 +23,10 @@
  */
 
 #include <eda_item.h>
-#include <gr_text.h>
 #include <string_utils.h>
 #include <sch_draw_panel.h>
 #include <eda_draw_frame.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <trigo.h>
 #include <base_units.h>
 #include <widgets/msgpanel.h>
@@ -108,7 +107,7 @@ void LIB_FIELD::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsVisible() ? GetDefaultLayer() : LAYER_HIDDEN );
-    int      penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
+    int      penWidth = GetEffectivePenWidth( aSettings );
     wxPoint  text_pos = aTransform.TransformCoordinate( GetTextPos() ) + aOffset;
     wxString text = aData ? *static_cast<wxString*>( aData ) : GetText();
 
@@ -285,7 +284,7 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
     else
         color = COLOR4D::BLACK;
 
-    int penWidth = std::max( GetPenWidth(),aPlotter->RenderSettings()->GetMinPenWidth() );
+    int penWidth = GetEffectivePenWidth( aPlotter->RenderSettings() );
 
     aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(), hjustify, vjustify,
                     penWidth, IsItalic(), IsBold() );

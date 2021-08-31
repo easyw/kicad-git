@@ -28,9 +28,9 @@
 
 #include <sch_plugins/cadstar/cadstar_sch_archive_parser.h>
 
-#include <layer_ids.h> // SCH_LAYER_ID
-#include <plotter.h>                         // PLOT_DASH_TYPE
-#include <pin_type.h>                        // ELECTRICAL_PINTYPE
+#include <layer_ids.h>          // SCH_LAYER_ID
+#include <plotters/plotter.h>   // PLOT_DASH_TYPE
+#include <pin_type.h>           // ELECTRICAL_PINTYPE
 #include <sch_io_mgr.h>
 #include <wx/filename.h>
 
@@ -137,7 +137,8 @@ private:
             const GATE_ID& aGateID, LIB_SYMBOL* aSymbol );
 
     void loadLibrarySymbolShapeVertices( const std::vector<VERTEX>& aCadstarVertices,
-            wxPoint aSymbolOrigin, LIB_SYMBOL* aSymbol, int aGateNumber );
+                                         wxPoint aSymbolOrigin, LIB_SYMBOL* aSymbol,
+                                         int aGateNumber, int aLineThickness );
 
     void applyToLibraryFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
             wxPoint aSymbolOrigin, LIB_FIELD* aKiCadField );

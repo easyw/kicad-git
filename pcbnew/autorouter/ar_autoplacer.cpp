@@ -35,7 +35,7 @@
 #include <pad.h>
 #include <board_commit.h>
 #include <connectivity/connectivity_data.h>
-#include <widgets/progress_reporter.h>
+#include <progress_reporter.h>
 
 #include "ar_autoplacer.h"
 #include "ar_matrix.h"
@@ -340,8 +340,8 @@ void AR_AUTOPLACER::buildFpAreas( FOOTPRINT* aFootprint, int aFpClearance )
     m_fpAreaBottom.RemoveAllContours();
 
     aFootprint->BuildPolyCourtyards();
-    m_fpAreaTop = aFootprint->GetPolyCourtyardFront();
-    m_fpAreaBottom = aFootprint->GetPolyCourtyardBack();
+    m_fpAreaTop = aFootprint->GetPolyCourtyard( F_CrtYd );
+    m_fpAreaBottom = aFootprint->GetPolyCourtyard( B_CrtYd );
 
     LSET layerMask;
 

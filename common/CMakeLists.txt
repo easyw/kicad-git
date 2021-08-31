@@ -229,7 +229,7 @@ set( COMMON_WIDGET_SRCS
     widgets/msgpanel.cpp
     widgets/number_badge.cpp
     widgets/paged_dialog.cpp
-    widgets/progress_reporter.cpp
+    widgets/progress_reporter_base.cpp
     widgets/split_button.cpp
     widgets/stepped_slider.cpp
     widgets/text_ctrl_eval.cpp
@@ -238,9 +238,11 @@ set( COMMON_WIDGET_SRCS
     widgets/widget_save_restore.cpp
     widgets/widget_hotkey_list.cpp
     widgets/wx_aui_art_providers.cpp
+    widgets/wx_aui_utils.cpp
     widgets/wx_busy_indicator.cpp
     widgets/wx_ellipsized_static_text.cpp
     widgets/wx_grid.cpp
+    widgets/wx_progress_reporters.cpp
     )
 
 set( COMMON_DRAWING_SHEET_SRCS
@@ -251,7 +253,7 @@ set( COMMON_DRAWING_SHEET_SRCS
     drawing_sheet/ds_draw_item.cpp
     drawing_sheet/ds_proxy_undo_item.cpp
     drawing_sheet/ds_proxy_view_item.cpp
-    drawing_sheet/drawing_sheet_reader.cpp
+    drawing_sheet/drawing_sheet_parser.cpp
     )
 
 set( COMMON_PREVIEW_ITEMS_SRCS
@@ -667,10 +669,10 @@ make_lexer(
 # and title_block_reader_keywords.cpp.
 make_lexer(
     common
-    drawing_sheet/drawing_sheet_reader.keywords
-    drawing_sheet/drawing_sheet_reader_lexer.h
-    drawing_sheet/drawing_sheet_reader_keywords.cpp
-    TB_READER_T
+    drawing_sheet/drawing_sheet.keywords
+    drawing_sheet/drawing_sheet_lexer.h
+    drawing_sheet/drawing_sheet_keywords.cpp
+    DRAWINGSHEET_T
     )
 
 # This one gets made only when testing.

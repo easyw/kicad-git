@@ -351,6 +351,20 @@ int BOARD_EDITOR_CONTROL::Plot( const TOOL_EVENT& aEvent )
 }
 
 
+int BOARD_EDITOR_CONTROL::Find( const TOOL_EVENT& aEvent )
+{
+    m_frame->ShowFindDialog();
+    return 0;
+}
+
+
+int BOARD_EDITOR_CONTROL::FindNext( const TOOL_EVENT& aEvent )
+{
+    m_frame->FindNext();
+    return 0;
+}
+
+
 int BOARD_EDITOR_CONTROL::BoardSetup( const TOOL_EVENT& aEvent )
 {
     getEditFrame<PCB_EDIT_FRAME>()->ShowBoardSetupDialog();
@@ -425,7 +439,7 @@ int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
     fn.SetExt( "pcb_net" );
 
     wxFileDialog dlg( m_frame, _( "Export Board Netlist" ), fn.GetPath(), fn.GetFullName(),
-                      _( "KiCad board netlist files" ) + wxT( " (*.pcb_net)|*.pcb_net" ),
+                      _( "KiCad board netlist files" ) + AddFileExtListToFilter( { "pcb_net" } ),
                       wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     dlg.SetExtraControlCreator( &NETLIST_OPTIONS_HELPER::Create );
@@ -462,7 +476,7 @@ int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
 
             if( !netname.IsEmpty() )
             {
-                component->AddNet( pad->GetName(), netname, pad->GetPinFunction(),
+                component->AddNet( pad->GetNumber(), netname, pad->GetPinFunction(),
                                    pad->GetPinType() );
             }
         }
@@ -1501,6 +1515,9 @@ void BOARD_EDITOR_CONTROL::setTransitions()
     Go( &BOARD_EDITOR_CONTROL::SaveCopyAs,             ACTIONS::saveCopyAs.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::PageSettings,           ACTIONS::pageSettings.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::Plot,                   ACTIONS::plot.MakeEvent() );
+
+    Go( &BOARD_EDITOR_CONTROL::Find,                   ACTIONS::find.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::FindNext,               ACTIONS::findNext.MakeEvent() );
 
     Go( &BOARD_EDITOR_CONTROL::BoardSetup,             PCB_ACTIONS::boardSetup.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::ImportNetlist,          PCB_ACTIONS::importNetlist.MakeEvent() );

@@ -73,12 +73,13 @@ enum SELECT_SIDE
     PCB_BOTH_SIDES
 };
 
-PLACE_FILE_EXPORTER::PLACE_FILE_EXPORTER( BOARD* aBoard, bool aUnitsMM, bool aExcludeAllTH,
-                                          bool aTopSide, bool aBottomSide, bool aFormatCSV,
-                                          bool aUseAuxOrigin )
+PLACE_FILE_EXPORTER::PLACE_FILE_EXPORTER( BOARD* aBoard, bool aUnitsMM, bool aOnlySMD,
+                                          bool aExcludeAllTH, bool aTopSide, bool aBottomSide,
+                                          bool aFormatCSV, bool aUseAuxOrigin )
 {
     m_board        = aBoard;
     m_unitsMM      = aUnitsMM;
+    m_onlySMD      = aOnlySMD;
     m_excludeAllTH = aExcludeAllTH;
     m_fpCount      = 0;
 
@@ -132,6 +133,9 @@ std::string PLACE_FILE_EXPORTER::GenPositionData()
         }
 
         if( footprint->GetAttributes() & FP_EXCLUDE_FROM_POS_FILES )
+            continue;
+
+        if( m_onlySMD && !( footprint->GetAttributes() & FP_SMD ) )
             continue;
 
         if( m_excludeAllTH && footprint->HasThroughHolePads() )
@@ -371,12 +375,12 @@ std::string PLACE_FILE_EXPORTER::GenReportData()
         std::sort( sortedPads.begin(), sortedPads.end(),
                    []( PAD* a, PAD* b ) -> bool
                    {
-                       return StrNumCmp( a->GetName(), b->GetName(), true ) < 0;
+                       return StrNumCmp( a->GetNumber(), b->GetNumber(), true ) < 0;
                    });
 
         for( PAD* pad : sortedPads )
         {
-            sprintf( line, "$PAD \"%s\"\n", TO_UTF8( pad->GetName() ) );
+            sprintf( line, "$PAD \"%s\"\n", TO_UTF8( pad->GetNumber() ) );
             buffer += line;
 
             int layer = 0;

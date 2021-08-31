@@ -79,17 +79,30 @@ private:
     void OnOutputDirectoryBrowseClicked( wxCommandEvent& event ) override;
     void OnGenerate( wxCommandEvent& event ) override;
 
-	void onUpdateUIUnits( wxUpdateUIEvent& event ) override
+    void onUpdateUIUnits( wxUpdateUIEvent& event ) override
     {
         m_radioBoxUnits->Enable( m_rbFormat->GetSelection() != 2 );
     }
 
-	void onUpdateUIFileOpt( wxUpdateUIEvent& event ) override
+    void onUpdateUIFileOpt( wxUpdateUIEvent& event ) override
     {
         m_radioBoxFilesCount->Enable( m_rbFormat->GetSelection() != 2 );
     }
 
-	void onUpdateUIExcludeTH( wxUpdateUIEvent& event ) override
+    void onUpdateUIOnlySMD( wxUpdateUIEvent& event ) override
+    {
+        if( m_rbFormat->GetSelection() == 2 )
+        {
+            m_onlySMD->SetValue( false );
+            m_onlySMD->Enable( false );
+        }
+        else
+        {
+            m_onlySMD->Enable( true );
+        }
+    }
+
+    void onUpdateUIExcludeTH( wxUpdateUIEvent& event ) override
     {
         if( m_rbFormat->GetSelection() == 2 )
         {
@@ -102,7 +115,7 @@ private:
         }
     }
 
-	void onUpdateUIincludeBoardEdge( wxUpdateUIEvent& event ) override
+    void onUpdateUIincludeBoardEdge( wxUpdateUIEvent& event ) override
     {
         m_cbIncludeBoardEdge->Enable( m_rbFormat->GetSelection() == 2 );
     }
@@ -128,6 +141,11 @@ private:
         return m_radioBoxFilesCount->GetSelection() == 1;
     }
 
+    bool OnlySMD()
+    {
+        return m_onlySMD->GetValue();
+    }
+
     bool ExcludeAllTH()
     {
         return m_excludeTH->GetValue();
@@ -141,6 +159,8 @@ private:
     static int m_fileOpt;
     static int m_fileFormat;
     static bool m_includeBoardEdge;
+    static bool m_excludeTHOpt;
+    static bool m_onlySMDOpt;
 };
 
 
@@ -148,6 +168,8 @@ private:
 int DIALOG_GEN_FOOTPRINT_POSITION::m_fileOpt = 0;
 int DIALOG_GEN_FOOTPRINT_POSITION::m_fileFormat = 0;
 bool DIALOG_GEN_FOOTPRINT_POSITION::m_includeBoardEdge = false;
+bool DIALOG_GEN_FOOTPRINT_POSITION::m_excludeTHOpt = false;
+bool DIALOG_GEN_FOOTPRINT_POSITION::m_onlySMDOpt = false;
 
 
 void DIALOG_GEN_FOOTPRINT_POSITION::initDialog()
@@ -170,6 +192,8 @@ void DIALOG_GEN_FOOTPRINT_POSITION::initDialog()
     m_rbFormat->SetSelection( m_fileFormat );
     m_cbIncludeBoardEdge->SetValue( m_includeBoardEdge );
     m_useDrillPlaceOrigin->SetValue( cfg->m_PlaceFile.use_aux_origin );
+    m_onlySMD->SetValue( m_onlySMDOpt );
+    m_excludeTH->SetValue( m_excludeTHOpt );
 
     // Update sizes and sizers:
     m_messagesPanel->MsgPanelSetMinSize( wxSize( -1, 160 ) );
@@ -212,6 +236,8 @@ void DIALOG_GEN_FOOTPRINT_POSITION::OnGenerate( wxCommandEvent& event )
     m_fileOpt = m_radioBoxFilesCount->GetSelection();
     m_fileFormat = m_rbFormat->GetSelection();
     m_includeBoardEdge = m_cbIncludeBoardEdge->GetValue();
+    m_onlySMDOpt = m_onlySMD->GetValue();
+    m_excludeTHOpt = m_excludeTH->GetValue();
 
     auto cfg = m_parent->GetPcbNewSettings();
     m_units  = m_radioBoxUnits->GetSelection() == 0 ? EDA_UNITS::INCHES : EDA_UNITS::MILLIMETRES;
@@ -331,8 +357,8 @@ bool DIALOG_GEN_FOOTPRINT_POSITION::CreateAsciiFiles()
 
     // Test for any footprint candidate in list.
     {
-        PLACE_FILE_EXPORTER exporter( brd, UnitsMM(), ExcludeAllTH(), topSide, bottomSide,
-                                      useCSVfmt, useAuxOrigin );
+        PLACE_FILE_EXPORTER exporter( brd, UnitsMM(), OnlySMD(), ExcludeAllTH(), topSide,
+                                      bottomSide, useCSVfmt, useAuxOrigin );
         exporter.GenPositionData();
 
         if( exporter.GetFootprintCount() == 0 )
@@ -386,7 +412,7 @@ bool DIALOG_GEN_FOOTPRINT_POSITION::CreateAsciiFiles()
         fn.SetExt( FootprintPlaceFileExtension );
     }
 
-    int fpcount = m_parent->DoGenFootprintsPositionFile( fn.GetFullPath(), UnitsMM(),
+    int fpcount = m_parent->DoGenFootprintsPositionFile( fn.GetFullPath(), UnitsMM(), OnlySMD(),
                                                          ExcludeAllTH(), topSide, bottomSide,
                                                          useCSVfmt, useAuxOrigin );
     if( fpcount < 0 )
@@ -431,8 +457,9 @@ bool DIALOG_GEN_FOOTPRINT_POSITION::CreateAsciiFiles()
         fn.SetExt( FootprintPlaceFileExtension );
     }
 
-    fpcount = m_parent->DoGenFootprintsPositionFile( fn.GetFullPath(), UnitsMM(), ExcludeAllTH(),
-                                                     topSide, bottomSide, useCSVfmt, useAuxOrigin );
+    fpcount = m_parent->DoGenFootprintsPositionFile( fn.GetFullPath(), UnitsMM(), OnlySMD(),
+                                                     ExcludeAllTH(), topSide, bottomSide, useCSVfmt,
+                                                     useAuxOrigin );
 
     if( fpcount < 0 )
     {
@@ -476,7 +503,7 @@ int BOARD_EDITOR_CONTROL::GeneratePosFile( const TOOL_EVENT& aEvent )
 
 
 int PCB_EDIT_FRAME::DoGenFootprintsPositionFile( const wxString& aFullFileName, bool aUnitsMM,
-                                                 bool aForceSmdItems, bool aTopSide,
+                                                 bool aOnlySMD, bool aNoTHItems, bool aTopSide,
                                                  bool aBottomSide, bool aFormatCSV,
                                                  bool aUseAuxOrigin )
 {
@@ -491,7 +518,7 @@ int PCB_EDIT_FRAME::DoGenFootprintsPositionFile( const wxString& aFullFileName, 
     }
 
     std::string data;
-    PLACE_FILE_EXPORTER exporter( GetBoard(), aUnitsMM, aForceSmdItems, aTopSide, aBottomSide,
+    PLACE_FILE_EXPORTER exporter( GetBoard(), aUnitsMM, aOnlySMD, aNoTHItems, aTopSide, aBottomSide,
                                   aFormatCSV, aUseAuxOrigin );
     data = exporter.GenPositionData();
 
@@ -552,7 +579,7 @@ bool PCB_EDIT_FRAME::DoGenFootprintsReport( const wxString& aFullFilename, bool 
         return false;
 
     std::string data;
-    PLACE_FILE_EXPORTER exporter( GetBoard(), aUnitsMM, false, true, true, false, true );
+    PLACE_FILE_EXPORTER exporter( GetBoard(), aUnitsMM, false, false, true, true, false, true );
     data = exporter.GenReportData();
 
     fputs( data.c_str(), rptfile );

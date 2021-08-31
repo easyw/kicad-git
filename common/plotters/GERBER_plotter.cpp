@@ -23,20 +23,17 @@
  * @brief specialized plotter for GERBER files format
  */
 
-#include <eda_base_frame.h>
-#include <fill_type.h>
 #include <string_utils.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <macros.h>
 #include <math/util.h>      // for KiROUND
-#include <render_settings.h>
 #include <trigo.h>
 #include <wx/log.h>
 
 #include <build_version.h>
 
-#include "plotter_gerber.h"
-#include "gbr_plotter_aperture_macros.h"
+#include <plotters/plotter_gerber.h>
+#include <plotters/gbr_plotter_aperture_macros.h>
 
 #include <gbr_metadata.h>
 
@@ -855,6 +852,8 @@ void GERBER_PLOTTER::plotArc( const SHAPE_ARC& aArc, bool aPlotInRegion )
 
     DPOINT devEnd = userToDeviceCoordinates( end );
     DPOINT devCenter = userToDeviceCoordinates( center ) - userToDeviceCoordinates( start );
+
+    fprintf( m_outputFile, "G75*\n" );        // Multiquadrant (360 degrees) mode
 
     if( start_angle < end_angle )
         fprintf( m_outputFile, "G03*\n" );    // Active circular interpolation, CCW

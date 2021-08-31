@@ -36,7 +36,7 @@
 #include <id.h>
 #include <string_utils.h>
 #include <kiway.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <project.h>
 #include <reporter.h>
 #include <sch_draw_panel.h>
@@ -726,16 +726,6 @@ void SCH_SCREEN::UpdateLocalLibSymbolLinks()
 }
 
 
-void SCH_SCREEN::SwapSymbolLinks( const SCH_SYMBOL* aOriginalSymbol, const SCH_SYMBOL* aNewSymbol )
-{
-    wxCHECK( aOriginalSymbol && aNewSymbol /* && m_rtree.contains( aOriginalSymbol, true ) */,
-             /* void */ );
-
-    if( aOriginalSymbol->GetSchSymbolLibraryName() == aNewSymbol->GetSchSymbolLibraryName() )
-        return;
-}
-
-
 void SCH_SCREEN::Print( const RENDER_SETTINGS* aSettings )
 {
     // Ensure links are up to date, even if a library was reloaded for some reason:
@@ -972,7 +962,13 @@ void SCH_SCREEN::GetSheets( std::vector<SCH_ITEM*>* aItems ) const
             []( EDA_ITEM* a, EDA_ITEM* b ) -> bool
             {
                 if( a->GetPosition().x == b->GetPosition().x )
+                {
+                    // Ensure deterministic sort
+                    if( a->GetPosition().y == b->GetPosition().y )
+                        return a->m_Uuid < b->m_Uuid;
+
                     return a->GetPosition().y < b->GetPosition().y;
+                }
                 else
                     return a->GetPosition().x < b->GetPosition().x;
             } );

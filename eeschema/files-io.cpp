@@ -61,189 +61,41 @@
 #include <tools/ee_inspection_tool.h>
 #include <paths.h>
 #include <wx_filename.h>  // For ::ResolvePossibleSymlinks
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 
-bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
+
+///< Helper widget to select whether a new project should be created for a file when saving
+class CREATE_PROJECT_CHECKBOX : public wxPanel
 {
-    wxString msg;
-    wxFileName schematicFileName;
-    wxFileName oldFileName;
-    bool success;
-
-    if( aSheet == nullptr )
-        aSheet = GetCurrentSheet().Last();
-
-    SCH_SCREEN* screen = aSheet->GetScreen();
-
-    wxCHECK( screen, false );
-
-    // If no name exists in the window yet - save as new.
-    if( screen->GetFileName().IsEmpty() )
-        aSaveUnderNewName = true;
-
-    // Construct the name of the file to be saved
-    schematicFileName = Prj().AbsolutePath( screen->GetFileName() );
-    oldFileName = schematicFileName;
-
-    if( aSaveUnderNewName )
+public:
+    CREATE_PROJECT_CHECKBOX( wxWindow* aParent )
+            : wxPanel( aParent )
     {
-        wxFileName savePath( Prj().GetProjectFullName() );
+        m_cbCreateProject = new wxCheckBox( this, wxID_ANY,
+                                            _( "Create a new project for this schematic" ) );
+        m_cbCreateProject->SetValue( true );
+        m_cbCreateProject->SetToolTip( _( "Creating a project will enable features such as "
+                                          "text variables, net classes, and ERC exclusions" ) );
 
-        if( !savePath.IsOk() || !savePath.IsDirWritable() )
-        {
-            savePath = GetMruPath();
+        wxBoxSizer* sizer = new wxBoxSizer( wxHORIZONTAL );
+        sizer->Add( m_cbCreateProject, 0, wxALL, 8 );
 
-            if( !savePath.IsOk() || !savePath.IsDirWritable() )
-                savePath = PATHS::GetDefaultUserProjectsPath();
-        }
-
-        wxFileDialog dlg( this, _( "Schematic Files" ), savePath.GetPath(),
-                          schematicFileName.GetFullName(), KiCadSchematicFileWildcard(),
-                          wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
-
-        if( dlg.ShowModal() == wxID_CANCEL )
-            return false;
-
-        schematicFileName = dlg.GetPath();
-
-        if( schematicFileName.GetExt().IsEmpty() )
-            schematicFileName.SetExt( KiCadSchematicFileExtension );
+        SetSizerAndFit( sizer );
     }
 
-    // Write through symlinks, don't replace them
-    WX_FILENAME::ResolvePossibleSymlinks( schematicFileName );
-
-    if( !IsWritable( schematicFileName ) )
-        return false;
-
-    // This is a new schematic file so make sure it has a unique ID.
-    if( aSaveUnderNewName && schematicFileName != oldFileName )
-        screen->AssignNewUuid();
-
-    wxFileName tempFile( schematicFileName );
-    tempFile.SetName( wxT( "." ) + tempFile.GetName() );
-    tempFile.SetExt( tempFile.GetExt() + wxT( "$" ) );
-
-    // Save
-    wxLogTrace( traceAutoSave, "Saving file " + schematicFileName.GetFullPath() );
-
-    SCH_IO_MGR::SCH_FILE_T pluginType = SCH_IO_MGR::GuessPluginTypeFromSchPath(
-            schematicFileName.GetFullPath() );
-    SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( pluginType ) );
-
-    try
+    bool GetValue() const
     {
-        pi->Save( tempFile.GetFullPath(), aSheet, &Schematic() );
-        success = true;
-    }
-    catch( const IO_ERROR& ioe )
-    {
-        msg.Printf( _( "Error saving schematic file '%s'.\n%s" ),
-                    schematicFileName.GetFullPath(),
-                    ioe.What() );
-        DisplayError( this, msg );
-
-        msg.Printf( _( "Failed to create temporary file '%s'." ),
-                    tempFile.GetFullPath() );
-        SetMsgPanel( wxEmptyString, msg );
-
-        // In case we started a file but didn't fully write it, clean up
-        wxRemoveFile( tempFile.GetFullPath() );
-
-        success = false;
+        return m_cbCreateProject->GetValue();
     }
 
-    if( success )
+    static wxWindow* Create( wxWindow* aParent )
     {
-        // Replace the original with the temporary file we just wrote
-        success = wxRenameFile( tempFile.GetFullPath(), schematicFileName.GetFullPath() );
-
-        if( !success )
-        {
-            msg.Printf( _( "Error saving schematic file '%s'.\n"
-                           "Failed to rename temporary file '%s'." ),
-                        schematicFileName.GetFullPath(),
-                        tempFile.GetFullPath() );
-            DisplayError( this, msg );
-
-            msg.Printf( _( "Failed to rename temporary file '%s'." ),
-                        tempFile.GetFullPath() );
-            SetMsgPanel( wxEmptyString, msg );
-        }
+        return new CREATE_PROJECT_CHECKBOX( aParent );
     }
 
-    if( success )
-    {
-        // Delete auto save file.
-        wxFileName autoSaveFileName = schematicFileName;
-        autoSaveFileName.SetName( GetAutoSaveFilePrefix() + schematicFileName.GetName() );
-
-        if( autoSaveFileName.FileExists() )
-        {
-            wxLogTrace( traceAutoSave,
-                        wxT( "Removing auto save file <" ) + autoSaveFileName.GetFullPath() +
-                        wxT( ">" ) );
-
-            wxRemoveFile( autoSaveFileName.GetFullPath() );
-        }
-
-        // Update the screen and frame info and reset the lock file.
-        if( aSaveUnderNewName )
-        {
-            screen->SetFileName( schematicFileName.GetFullPath() );
-            aSheet->SetFileName( schematicFileName.GetFullPath() );
-            LockFile( schematicFileName.GetFullPath() );
-
-            UpdateFileHistory( schematicFileName.GetFullPath() );
-        }
-
-        screen->SetContentModified( false );
-        UpdateTitle();
-
-        msg.Printf( _( "File '%s' saved." ),  screen->GetFileName() );
-        SetStatusText( msg, 0 );
-    }
-    else
-    {
-        DisplayError( this, _( "File write operation failed." ) );
-    }
-
-    return success;
-}
-
-
-void SCH_EDIT_FRAME::Save_File( bool doSaveAs )
-{
-    if( doSaveAs )
-    {
-        if( SaveEEFile( nullptr, true ) )
-        {
-            SCH_SCREEN* screen = GetScreen();
-
-            wxCHECK( screen, /* void */ );
-
-            wxFileName fn = screen->GetFileName();
-
-            if( fn.GetExt() == LegacySchematicFileExtension )
-                CreateArchiveLibraryCacheFile( true );
-
-            // If we are saving under a new name, and don't have a real project yet, create one
-            fn.SetExt( ProjectFileExtension );
-
-            if( fn.IsDirWritable() && !fn.FileExists() )
-            {
-                Prj().SetReadOnly( false );
-                GetSettingsManager()->SaveProjectAs( fn.GetFullPath() );
-            }
-        }
-    }
-    else
-    {
-        SaveEEFile( nullptr );
-    }
-
-    UpdateTitle();
-}
+protected:
+    wxCheckBox* m_cbCreateProject;
+};
 
 
 bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, int aCtl )
@@ -778,38 +630,166 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
 }
 
 
-bool SCH_EDIT_FRAME::SaveProject()
+bool SCH_EDIT_FRAME::saveSchematicFile( SCH_SHEET* aSheet, const wxString& aSavePath )
+{
+    wxString msg;
+    wxFileName schematicFileName;
+    wxFileName oldFileName;
+    bool success;
+
+    SCH_SCREEN* screen = aSheet->GetScreen();
+
+    wxCHECK( screen, false );
+
+    // Construct the name of the file to be saved
+    schematicFileName = Prj().AbsolutePath( aSavePath );
+    oldFileName = schematicFileName;
+
+    // Write through symlinks, don't replace them
+    WX_FILENAME::ResolvePossibleSymlinks( schematicFileName );
+
+    if( !IsWritable( schematicFileName ) )
+        return false;
+
+    wxFileName tempFile( schematicFileName );
+    tempFile.SetName( wxT( "." ) + tempFile.GetName() );
+    tempFile.SetExt( tempFile.GetExt() + wxT( "$" ) );
+
+    // Save
+    wxLogTrace( traceAutoSave, "Saving file " + schematicFileName.GetFullPath() );
+
+    SCH_IO_MGR::SCH_FILE_T pluginType = SCH_IO_MGR::GuessPluginTypeFromSchPath(
+            schematicFileName.GetFullPath() );
+    SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( pluginType ) );
+
+    try
+    {
+        pi->Save( tempFile.GetFullPath(), aSheet, &Schematic() );
+        success = true;
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        msg.Printf( _( "Error saving schematic file '%s'.\n%s" ),
+                    schematicFileName.GetFullPath(),
+                    ioe.What() );
+        DisplayError( this, msg );
+
+        msg.Printf( _( "Failed to create temporary file '%s'." ),
+                    tempFile.GetFullPath() );
+        SetMsgPanel( wxEmptyString, msg );
+
+        // In case we started a file but didn't fully write it, clean up
+        wxRemoveFile( tempFile.GetFullPath() );
+
+        success = false;
+    }
+
+    if( success )
+    {
+        // Replace the original with the temporary file we just wrote
+        success = wxRenameFile( tempFile.GetFullPath(), schematicFileName.GetFullPath() );
+
+        if( !success )
+        {
+            msg.Printf( _( "Error saving schematic file '%s'.\n"
+                           "Failed to rename temporary file '%s'." ),
+                        schematicFileName.GetFullPath(),
+                        tempFile.GetFullPath() );
+            DisplayError( this, msg );
+
+            msg.Printf( _( "Failed to rename temporary file '%s'." ),
+                        tempFile.GetFullPath() );
+            SetMsgPanel( wxEmptyString, msg );
+        }
+    }
+
+    if( success )
+    {
+        // Delete auto save file.
+        wxFileName autoSaveFileName = schematicFileName;
+        autoSaveFileName.SetName( GetAutoSaveFilePrefix() + schematicFileName.GetName() );
+
+        if( autoSaveFileName.FileExists() )
+        {
+            wxLogTrace( traceAutoSave,
+                        wxT( "Removing auto save file <" ) + autoSaveFileName.GetFullPath() +
+                        wxT( ">" ) );
+
+            wxRemoveFile( autoSaveFileName.GetFullPath() );
+        }
+
+        screen->SetContentModified( false );
+
+        msg.Printf( _( "File '%s' saved." ),  screen->GetFileName() );
+        SetStatusText( msg, 0 );
+    }
+    else
+    {
+        DisplayError( this, _( "File write operation failed." ) );
+    }
+
+    return success;
+}
+
+
+bool SCH_EDIT_FRAME::SaveProject( bool aSaveAs )
 {
     wxString msg;
     SCH_SCREEN* screen;
     SCH_SCREENS screens( Schematic().Root() );
-    bool success = true;
-    bool updateFileType = false;
+    bool        saveCopyAs       = aSaveAs && !Kiface().IsSingle();
+    bool        success          = true;
+    bool        updateFileType   = false;
+    bool        createNewProject = false;
 
     // I want to see it in the debugger, show me the string!  Can't do that with wxFileName.
     wxString    fileName = Prj().AbsolutePath( Schematic().Root().GetFileName() );
     wxFileName  fn = fileName;
 
-    // If this a new schematic without a project and we are in the stand alone mode.  All new
-    // sheets that are not loaded from an existing file will have to be saved to a new path
-    // along with the root sheet.
-    if( Prj().GetProjectFullName().IsEmpty() )
-    {
-        // This should only be possible in stand alone mode.
-        wxCHECK( Kiface().IsSingle(), false );
+    // Path to save each screen to: will be the stored filename by default, but is overwritten by
+    // a Save As Copy operation.
+    std::unordered_map<SCH_SCREEN*, wxString> filenameMap;
 
-        wxFileDialog dlg( this, _( "Schematic Files" ), fn.GetPath(), fn.GetFullName(),
-                          KiCadSchematicFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+    // Handle "Save As" and saving a new project/schematic for the first time in standalone
+    if( Prj().IsNullProject() || aSaveAs )
+    {
+        // Null project should only be possible in standalone mode.
+        wxCHECK( Kiface().IsSingle() || aSaveAs, false );
+
+        wxFileName newFileName;
+        wxFileName savePath( Prj().GetProjectFullName() );
+
+        if( !savePath.IsOk() || !savePath.IsDirWritable() )
+        {
+            savePath = GetMruPath();
+
+            if( !savePath.IsOk() || !savePath.IsDirWritable() )
+                savePath = PATHS::GetDefaultUserProjectsPath();
+        }
+
+        if( savePath.HasExt() )
+            savePath.SetExt( KiCadSchematicFileExtension );
+        else
+            savePath.SetName( wxEmptyString );
+
+        wxFileDialog dlg( this, _( "Schematic Files" ), savePath.GetPath(),
+                          savePath.GetFullName(), KiCadSchematicFileWildcard(),
+                          wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+
+        if( Kiface().IsSingle() || aSaveAs )
+        {
+            // Add a "Create a project" checkbox in standalone mode and one isn't loaded
+            dlg.SetExtraControlCreator( &CREATE_PROJECT_CHECKBOX::Create );
+        }
 
         if( dlg.ShowModal() == wxID_CANCEL )
             return false;
 
-        wxFileName newFileName = dlg.GetPath();
+        newFileName = dlg.GetPath();
+        newFileName.SetExt( KiCadSchematicFileExtension );
 
-        if( newFileName.GetExt().IsEmpty() )
-            newFileName.SetExt( KiCadSchematicFileExtension );
-
-        if( ( !newFileName.DirExists() && !newFileName.Mkdir() ) || !newFileName.IsDirWritable() )
+        if( ( !newFileName.DirExists() && !newFileName.Mkdir() ) ||
+            !newFileName.IsDirWritable() )
         {
             msg.Printf( _( "Folder '%s' could not be created.\n\n"
                            "Make sure you have write permissions and try again." ),
@@ -822,8 +802,18 @@ bool SCH_EDIT_FRAME::SaveProject()
             return false;
         }
 
-        Schematic().Root().SetFileName( newFileName.GetFullName() );
-        Schematic().RootScreen()->SetFileName( newFileName.GetFullPath() );
+        if( wxWindow* ec = dlg.GetExtraControl() )
+            createNewProject = static_cast<CREATE_PROJECT_CHECKBOX*>( ec )->GetValue();
+
+        if( !saveCopyAs )
+        {
+            Schematic().Root().SetFileName( newFileName.GetFullName() );
+            Schematic().RootScreen()->SetFileName( newFileName.GetFullPath() );
+        }
+        else
+        {
+            filenameMap[Schematic().RootScreen()] = newFileName.GetFullPath();
+        }
 
         // Set the base path to all new sheets.
         for( size_t i = 0; i < screens.GetCount(); i++ )
@@ -879,7 +869,10 @@ bool SCH_EDIT_FRAME::SaveProject()
                 return false;
             }
 
-            screen->SetFileName( tmp.GetFullPath() );
+            if( saveCopyAs )
+                filenameMap[screen] = tmp.GetFullPath();
+            else
+                screen->SetFileName( tmp.GetFullPath() );
         }
 
         // Attempt to make sheet file name paths relative to the new root schematic path.
@@ -894,6 +887,12 @@ bool SCH_EDIT_FRAME::SaveProject()
         }
     }
 
+    if( filenameMap.empty() || !saveCopyAs )
+    {
+        for( size_t i = 0; i < screens.GetCount(); i++ )
+            filenameMap[screens.GetScreen( i )] = screens.GetScreen( i )->GetFileName();
+    }
+
     // Warn user on potential file overwrite.  This can happen on shared sheets.
     wxArrayString overwrittenFiles;
 
@@ -904,7 +903,7 @@ bool SCH_EDIT_FRAME::SaveProject()
         wxCHECK2( screen, continue );
 
         // Convert legacy schematics file name extensions for the new format.
-        wxFileName tmpFn = screen->GetFileName();
+        wxFileName tmpFn = filenameMap[screen];
 
         if( !tmpFn.IsOk() )
             continue;
@@ -949,7 +948,7 @@ bool SCH_EDIT_FRAME::SaveProject()
         wxCHECK2( screen, continue );
 
         // Convert legacy schematics file name extensions for the new format.
-        wxFileName tmpFn = screen->GetFileName();
+        wxFileName tmpFn = filenameMap[screen];
 
         if( tmpFn.IsOk() && tmpFn.GetExt() != KiCadSchematicFileExtension )
         {
@@ -969,7 +968,10 @@ bool SCH_EDIT_FRAME::SaveProject()
                 UpdateItem( sheet );
             }
 
-            screen->SetFileName( tmpFn.GetFullPath() );
+            filenameMap[screen] = tmpFn.GetFullPath();
+
+            if( !saveCopyAs )
+                screen->SetFileName( tmpFn.GetFullPath() );
         }
 
         std::vector<SCH_SHEET_PATH>& sheets = screen->GetClientSheetPaths();
@@ -979,8 +981,15 @@ bool SCH_EDIT_FRAME::SaveProject()
         else
             screen->SetVirtualPageNumber( 0 );  // multiple uses; no way to store the real sheet #
 
-        success &= SaveEEFile( screens.GetSheet( i ) );
+        // This is a new schematic file so make sure it has a unique ID.
+        if( !saveCopyAs && tmpFn.GetFullPath() != screen->GetFileName() )
+            screen->AssignNewUuid();
+
+        success &= saveSchematicFile( screens.GetSheet( i ), tmpFn.GetFullPath() );
     }
+
+    if( aSaveAs && success )
+        LockFile( Schematic().RootScreen()->GetFileName() );
 
     if( updateFileType )
         UpdateFileHistory( Schematic().RootScreen()->GetFileName() );
@@ -1010,8 +1019,23 @@ bool SCH_EDIT_FRAME::SaveProject()
         }
     }
 
-    if( !Prj().IsNullProject() )
-        Pgm().GetSettingsManager().SaveProject();
+    wxASSERT( filenameMap.count( Schematic().RootScreen() ) );
+    wxFileName projectPath( filenameMap.at( Schematic().RootScreen() ) );
+    projectPath.SetExt( ProjectFileExtension );
+
+    if( Prj().IsNullProject() || ( aSaveAs && !saveCopyAs ) )
+    {
+        Prj().SetReadOnly( !createNewProject );
+        GetSettingsManager()->SaveProjectAs( projectPath.GetFullPath() );
+    }
+    else if( saveCopyAs && createNewProject )
+    {
+        GetSettingsManager()->SaveProjectCopy( projectPath.GetFullPath() );
+    }
+    else
+    {
+        GetSettingsManager()->SaveProject();
+    }
 
     if( !Kiface().IsSingle() )
     {
@@ -1067,14 +1091,10 @@ bool SCH_EDIT_FRAME::doAutoSave()
         // Auto save file name is the normal file name prefixed with GetAutoSavePrefix().
         fn.SetName( GetAutoSaveFilePrefix() + fn.GetName() );
 
-        screens.GetScreen( i )->SetFileName( fn.GetFullPath() );
-
-        if( SaveEEFile( screens.GetSheet( i ), false ) )
+        if( saveSchematicFile( screens.GetSheet( i ), fn.GetFullPath() ) )
             screens.GetScreen( i )->SetContentModified();
         else
             autoSaveOk = false;
-
-        screens.GetScreen( i )->SetFileName( tmpFileName.GetFullPath() );
     }
 
     if( autoSaveOk )

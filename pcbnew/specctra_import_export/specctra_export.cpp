@@ -551,7 +551,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
     {
         std::vector<wxPoint> polygonal_shape;
         SHAPE_POLY_SET       pad_shape;
-        aPad->MergePrimitivesAsPolygon( &pad_shape, UNDEFINED_LAYER );
+        aPad->MergePrimitivesAsPolygon( &pad_shape );
 
 #ifdef EXPORT_CUSTOM_PADS_CONVEX_HULL
         BuildConvexHull( polygonal_shape, pad_shape );
@@ -612,7 +612,7 @@ typedef std::map<wxString, int> PINMAP;
 IMAGE* SPECCTRA_DB::makeIMAGE( BOARD* aBoard, FOOTPRINT* aFootprint )
 {
     PINMAP      pinmap;
-    wxString    padName;
+    wxString    padNumber;
 
     PCB_TYPE_COLLECTOR  fpItems;
 
@@ -676,17 +676,17 @@ IMAGE* SPECCTRA_DB::makeIMAGE( BOARD* aBoard, FOOTPRINT* aFootprint )
 
             PIN* pin = new PIN( image );
 
-            padName     = pad->GetName();
-            pin->pin_id = TO_UTF8( padName );
+            padNumber   = pad->GetNumber();
+            pin->pin_id = TO_UTF8( padNumber );
 
-            if( padName != wxEmptyString && pinmap.find( padName ) == pinmap.end() )
+            if( padNumber != wxEmptyString && pinmap.find( padNumber ) == pinmap.end() )
             {
-                pinmap[ padName ] = 0;
+                pinmap[ padNumber ] = 0;
             }
             else    // pad name is a duplicate within this footprint
             {
                 char    buf[32];
-                int     duplicates = ++pinmap[ padName ];
+                int     duplicates = ++pinmap[ padNumber ];
 
                 sprintf( buf, "@%d", duplicates );
 

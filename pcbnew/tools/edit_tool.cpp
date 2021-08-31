@@ -46,7 +46,6 @@
 #include <tools/tool_event_utils.h>
 #include <tools/pcb_grid_helper.h>
 #include <tools/pad_tool.h>
-#include <pad_naming.h>
 #include <view/view_controls.h>
 #include <connectivity/connectivity_algo.h>
 #include <connectivity/connectivity_items.h>
@@ -199,7 +198,7 @@ bool EDIT_TOOL::Init()
     // Selection tool handles the context menu for some other tools, such as the Picker.
     // Don't add things like Paste when another tool is active.
     menu.AddItem( ACTIONS::paste,                 noActiveToolCondition, 150 );
-    menu.AddItem( ACTIONS::pasteSpecial,          noActiveToolCondition, 150 );
+    menu.AddItem( ACTIONS::pasteSpecial,          noActiveToolCondition && !inFootprintEditor, 150 );
     menu.AddItem( ACTIONS::duplicate,             SELECTION_CONDITIONS::NotEmpty, 150 );
     menu.AddItem( ACTIONS::doDelete,              SELECTION_CONDITIONS::NotEmpty, 150 );
 
@@ -2129,14 +2128,14 @@ int EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
             FOOTPRINT* parentFootprint = editFrame->GetBoard()->GetFirstFootprint();
             dupe_item = parentFootprint->DuplicateItem( orig_item );
 
-            if( increment && item->Type() == PCB_PAD_T
-                    && PAD_NAMING::PadCanHaveName( *static_cast<PAD*>( dupe_item ) ) )
+            if( increment && dupe_item->Type() == PCB_PAD_T
+                && static_cast<PAD*>( dupe_item )->CanHaveNumber() )
             {
                 PAD_TOOL* padTool = m_toolMgr->GetTool<PAD_TOOL>();
-                wxString padName = padTool->GetLastPadName();
-                padName = parentFootprint->GetNextPadName( padName );
-                padTool->SetLastPadName( padName );
-                static_cast<PAD*>( dupe_item )->SetName( padName );
+                wxString padNumber = padTool->GetLastPadNumber();
+                padNumber = parentFootprint->GetNextPadNumber( padNumber );
+                padTool->SetLastPadNumber( padNumber );
+                static_cast<PAD*>( dupe_item )->SetNumber( padNumber );
             }
         }
         else if( orig_item->GetParent() && orig_item->GetParent()->Type() == PCB_FOOTPRINT_T )
