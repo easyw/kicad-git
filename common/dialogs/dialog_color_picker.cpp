@@ -253,10 +253,15 @@ void DIALOG_COLOR_PICKER::createRGBBitmap()
     // clear background (set the window bg color)
     wxColor bg = GetBackgroundColour();
 
+    // Don't do standard-color lookups on OSX each time through the loop
+    wxColourBase::ChannelType bgR = bg.Red();
+    wxColourBase::ChannelType bgG = bg.Green();
+    wxColourBase::ChannelType bgB = bg.Blue();
+
     for( int xx = 0; xx < bmsize.x; xx++ ) // blue axis
     {
         for( int yy = 0; yy < bmsize.y; yy++ )  // Red axis
-            img.SetRGB( xx, yy, bg.Red(), bg.Green(), bg.Blue() );
+            img.SetRGB( xx, yy, bgR, bgG, bgB );
     }
 
     // Build the palette
@@ -328,10 +333,15 @@ void DIALOG_COLOR_PICKER::createHSVBitmap()
     // clear background (set the window bg color)
     wxColor bg = GetBackgroundColour();
 
+    // Don't do standard-color lookups on OSX each time through the loop
+    wxColourBase::ChannelType bgR = bg.Red();
+    wxColourBase::ChannelType bgG = bg.Green();
+    wxColourBase::ChannelType bgB = bg.Blue();
+
     for( int xx = 0; xx < bmsize.x; xx++ ) // blue axis
     {
         for( int yy = 0; yy < bmsize.y; yy++ )  // Red axis
-            img.SetRGB( xx, yy, bg.Red(), bg.Green(), bg.Blue() );
+            img.SetRGB( xx, yy, bgR, bgG, bgB );
     }
 
     // Reserve room to draw cursors inside the bitmap
@@ -511,8 +521,10 @@ void DIALOG_COLOR_PICKER::SetEditVals( CHANGED_COLOR aChanged, bool aCheckTransp
     if( aChanged != VAL_CHANGED )
         m_sliderBrightness->SetValue(normalizeToInt( m_val ) );
 
-    if( aChanged != HEX_CHANGED )
-        m_colorValue->ChangeValue( m_newColor4D.ToWxString( wxC2S_CSS_SYNTAX ) );
+    if( aChanged == HEX_CHANGED )
+        m_sliderTransparency->SetValue( normalizeToInt( m_newColor4D.a, ALPHA_MAX ) );
+    else
+        m_colorValue->ChangeValue( m_newColor4D.ToHexString() );
 }
 
 
@@ -676,7 +688,7 @@ void DIALOG_COLOR_PICKER::onHSVMouseDrag( wxMouseEvent& event )
 
 void DIALOG_COLOR_PICKER::OnColorValueText( wxCommandEvent& event )
 {
-    m_newColor4D.SetFromWxString( m_colorValue->GetValue() );
+    m_newColor4D.SetFromHexString( m_colorValue->GetValue() );
     m_newColor4D.ToHSV( m_hue, m_sat, m_val, true );
 
     SetEditVals( HEX_CHANGED, true );
@@ -731,6 +743,7 @@ void DIALOG_COLOR_PICKER::OnChangeAlpha( wxScrollEvent& event )
     updatePreview( m_NewColorRect, m_newColor4D );
     m_NewColorRect->Thaw();
     m_NewColorRect->Refresh();
+    SetEditVals( ALPHA_CHANGED, false );
 }
 
 
