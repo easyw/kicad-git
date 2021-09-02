@@ -274,6 +274,13 @@ bool BOARD_ADAPTER::Is3dLayerEnabled( PCB_LAYER_ID aLayer ) const
         return true;
 
     case Margin:
+        if( !GetFlag( FL_COMMENTS ) )   // maui 3dviewer
+            return false;
+        if( !GetFlag( FL_USE_REALISTIC_MODE ) )   // maui 3dviewer
+            return true;
+        
+        return true;   // maui 3dviewer
+
     case F_CrtYd: // maui 3dviewer
     case B_CrtYd: // maui 3dviewer
         // maui if( GetFlag( FL_USE_REALISTIC_MODE ) )
