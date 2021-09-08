@@ -414,13 +414,15 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
     else if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
         color.a *= m_zoneOpacity;
 
-    // No special modificators enabled
+    // No special modifiers enabled
     return color;
 }
 
 
 PCB_PAINTER::PCB_PAINTER( GAL* aGal ) :
-    PAINTER( aGal )
+    PAINTER( aGal ),
+    m_maxError( ARC_HIGH_DEF ),
+    m_holePlatingThickness( 0 )
 {
 }
 
@@ -462,9 +464,17 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     if( !item )
         return false;
 
-    BOARD_DESIGN_SETTINGS& bds = item->GetBoard()->GetDesignSettings();
-    m_maxError = bds.m_MaxError;
-    m_holePlatingThickness = bds.GetHolePlatingThickness();
+    if( const BOARD* board = item->GetBoard() )
+    {
+        BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
+        m_maxError = bds.m_MaxError;
+        m_holePlatingThickness = bds.GetHolePlatingThickness();
+    }
+    else
+    {
+        m_maxError = ARC_HIGH_DEF;
+        m_holePlatingThickness = 0;
+    }
 
     // the "cast" applied in here clarifies which overloaded draw() is called
     switch( item->Type() )
@@ -775,7 +785,7 @@ void PCB_PAINTER::draw( const PCB_VIA* aVia, int aLayer )
         wxString netname = UnescapeString( aVia->GetShortNetname() );
 
         // approximate the size of net name text:
-        double tsize = 1.5 * size / PrintableCharCount( netname );
+        double tsize = 1.5 * size / std::max( PrintableCharCount( netname ), 1 );
         tsize = std::min( tsize, size );
 
         // Use a smaller text size to handle interline, pen size..
@@ -967,7 +977,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                     netname = "*";
 
                 // approximate the size of net name text:
-                double tsize = 1.5 * padsize.x / PrintableCharCount( netname );
+                double tsize = 1.5 * padsize.x / std::max( PrintableCharCount( netname ), 1 );
                 tsize = std::min( tsize, size );
 
                 // Use a smaller text size to handle interline, pen size...
