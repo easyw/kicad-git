@@ -109,20 +109,19 @@ DIALOG_FOOTPRINT_PROPERTIES::DIALOG_FOOTPRINT_PROPERTIES( PCB_EDIT_FRAME* aParen
     m_orientValidator.SetWindow( m_OrientValueCtrl );
 
     // Set font size for items showing long strings:
-    wxFont infoFont = KIUI::GetInfoFont();
+    wxFont infoFont = KIUI::GetInfoFont( this );
 #if __WXMAC__
     m_allow90Label->SetFont( infoFont );
     m_allow180Label->SetFont( infoFont );
 #endif
-    m_staticTextInfoCopper->SetFont( infoFont );
-    m_staticTextInfoPaste->SetFont( infoFont );
-
     m_libraryIDLabel->SetFont( infoFont );
     m_tcLibraryID->SetFont( infoFont );
 
     infoFont.SetStyle( wxFONTSTYLE_ITALIC );
     m_staticTextInfoValNeg->SetFont( infoFont );
     m_staticTextInfoValPos->SetFont( infoFont );
+    m_staticTextInfoCopper->SetFont( infoFont );
+    m_staticTextInfoPaste->SetFont( infoFont );
 
     m_NoteBook->SetSelection( m_page );
 

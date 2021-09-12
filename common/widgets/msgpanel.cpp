@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
- * Copyright (C) 1992-2011 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,11 +21,6 @@
  * or you may search the http://www.gnu.org website for the version 2 license,
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
- */
-
-/**
- * @file msgpanel.cpp
- * @brief Message panel implementation file.
  */
 
 #include <widgets/msgpanel.h>
@@ -48,7 +43,7 @@ EDA_MSG_PANEL::EDA_MSG_PANEL( wxWindow* aParent, int aId,
                               long style, const wxString &name ) :
     wxPanel( aParent, aId, aPosition, aSize, style, name )
 {
-    SetFont( KIUI::GetStatusFont() );
+    SetFont( KIUI::GetStatusFont( this ) );
     SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
 
     // informs wx not to paint the background itself as we will paint it later in erase()
@@ -65,16 +60,24 @@ EDA_MSG_PANEL::~EDA_MSG_PANEL()
 }
 
 
-int EDA_MSG_PANEL::GetRequiredHeight()
+wxSize computeFontSize()
 {
+    // Get size of the wxSYS_DEFAULT_GUI_FONT
     wxSize     fontSizeInPixels;
+
     wxScreenDC dc;
 
-    dc.SetFont( KIUI::GetStatusFont() );
+    dc.SetFont( wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT ) );
     dc.GetTextExtent( wxT( "W" ), &fontSizeInPixels.x, &fontSizeInPixels.y );
 
+    return fontSizeInPixels;
+}
+
+
+int EDA_MSG_PANEL::GetRequiredHeight()
+{
     // make space for two rows of text plus a number of pixels between them.
-    return 2 * fontSizeInPixels.y + 0;
+    return 2 * computeFontSize().y + 0;
 }
 
 
@@ -87,7 +90,7 @@ void EDA_MSG_PANEL::OnPaint( wxPaintEvent& aEvent )
     dc.SetBackground( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
     dc.SetBackgroundMode( wxSOLID );
     dc.SetTextBackground( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
-    dc.SetFont( KIUI::GetStatusFont() );
+    dc.SetFont( KIUI::GetControlFont( this ) );
 
     for( const MSG_PANEL_ITEM& item : m_Items )
         showItem( dc, item );

@@ -33,6 +33,7 @@
 #include <dialog_shim.h>
 #include <pgm_base.h>
 #include <wx/settings.h>
+#include <bitmaps/bitmap_types.h>
 
 int KIUI::GetStdMargin()
 {
@@ -94,31 +95,58 @@ wxFont KIUI::GetMonospacedUIFont()
 }
 
 
-wxFont KIUI::GetInfoFont()
+wxFont getGUIFont( wxWindow* aWindow, int aRelativeSize )
 {
-    wxFont font = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    font.SetSymbolicSize( wxFONTSIZE_SMALL );
+    wxFont font = aWindow->GetFont();
+
+    font.SetPointSize( font.GetPointSize() + aRelativeSize );
+
+    // Both wxFont::SetSymbolicSize() and wxWindow::ConvertDialogToPixels() fail on some GTKs
+    // with HiDPI screens.  These appear to be the same conditions under which automatic icon
+    // scaling fails, so we look for that and apply a patch.
+
+    int requested_scale = Pgm().GetCommonSettings()->m_Appearance.icon_scale;
+
+    if( requested_scale > 0 )
+    {
+        double factor = static_cast<double>( requested_scale ) / 4.0;
+        font.SetPointSize( KiROUND( font.GetPointSize() * factor ) );
+    }
 
 #ifdef __WXMAC__
     // https://trac.wxwidgets.org/ticket/19210
     if( font.GetFaceName().IsEmpty() )
-        font.SetFaceName( "Lucida Grande" );
+        font.SetFaceName( "San Francisco" );
+    // OSX 10.1 .. 10.9: Lucida Grande
+    // OSX 10.10:        Helvetica Neue
+    // OSX 10.11 .. :    San Francisco
 #endif
 
     return font;
 }
 
 
-wxFont KIUI::GetStatusFont()
+wxFont KIUI::GetStatusFont( wxWindow* aWindow )
 {
-    // wxFONTSIZE_X_SMALL is too small, so we take the wxFONTSIZE_SMALL infofont and adjust
-    // it by wxFONTSIZE_SMALL again.
+#ifdef __WXMAC__
+    int scale = -2;
+#else
+    int scale = -1;
+#endif
 
-    wxFont font = GetInfoFont();
+    return getGUIFont( aWindow, scale );
+}
 
-    font.SetPointSize( wxFont::AdjustToSymbolicSize( wxFONTSIZE_SMALL, font.GetPointSize() ) );
 
-    return font;
+wxFont KIUI::GetInfoFont( wxWindow* aWindow )
+{
+    return getGUIFont( aWindow, -1 );
+}
+
+
+wxFont KIUI::GetControlFont( wxWindow* aWindow )
+{
+    return getGUIFont( aWindow, 0 );
 }
 
 

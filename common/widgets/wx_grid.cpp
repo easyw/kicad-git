@@ -25,7 +25,7 @@
 #include <wx/tokenzr.h>
 #include <wx/dc.h>
 #include <widgets/wx_grid.h>
-
+#include <widgets/ui_common.h>
 #include <algorithm>
 
 
@@ -40,9 +40,7 @@ WX_GRID::WX_GRID( wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxS
     SetDefaultCellOverflow( false );
 
     // Make sure the GUI font scales properly on GTK
-    wxFont guiFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    guiFont.SetSymbolicSize( wxFONTSIZE_MEDIUM );
-    SetDefaultCellFont( guiFont );
+    SetDefaultCellFont( KIUI::GetControlFont( this ) );
 }
 
 
@@ -61,10 +59,13 @@ void WX_GRID::SetColLabelSize( int aHeight )
         return;
     }
 
-    // correct wxFormBuilder height for large fonts
-    wxFont guiFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    int minHeight = guiFont.GetPixelSize().y + 2 * MIN_GRIDCELL_MARGIN;
+    // Make sure the GUI font scales properly on GTK
+    wxFont headingFont = KIUI::GetControlFont( this );
+    headingFont.MakeBold();
+    SetLabelFont( headingFont );
 
+    // Correct wxFormBuilder height for large fonts
+    int minHeight = headingFont.GetPixelSize().y + 2 * MIN_GRIDCELL_MARGIN;
     wxGrid::SetColLabelSize( std::max( aHeight, minHeight ) );
 }
 
