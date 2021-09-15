@@ -31,7 +31,7 @@
 #include <dialog_symbol_remap.h>
 #include <eeschema_settings.h>
 #include <id.h>
-#include <kiface_i.h>
+#include <kiface_base.h>
 #include <kiplatform/app.h>
 #include <pgm_base.h>
 #include <profile.h>
@@ -152,6 +152,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
     // unload current project file before loading new
     {
+        ClearUndoRedoList();
         SetScreen( nullptr );
         m_toolManager->GetTool<EE_INSPECTION_TOOL>()->Reset( TOOL_BASE::MODEL_RELOAD );
         CreateScreens();

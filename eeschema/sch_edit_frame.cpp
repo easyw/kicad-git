@@ -32,10 +32,10 @@
 #include <executable_names.h>
 #include <gestfich.h>
 #include <hierarch.h>
-#include <dialogs/html_messagebox.h>
+#include <dialogs/html_message_box.h>
 #include <invoke_sch_dialog.h>
 #include <string_utils.h>
-#include <kiface_i.h>
+#include <kiface_base.h>
 #include <kiplatform/app.h>
 #include <kiway.h>
 #include <symbol_edit_frame.h>
