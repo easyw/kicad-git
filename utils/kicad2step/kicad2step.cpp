@@ -42,6 +42,9 @@ class KICAD2STEP_FRAME : public KICAD2STEP_FRAME_BASE
 {
 public:
     KICAD2STEP_FRAME( const wxString& title );
+
+protected:
+    virtual void OnOKButtonClick( wxCommandEvent& aEvent ) override;
 };
 
 // Horrible hack until we decouple things more
@@ -74,6 +77,13 @@ KICAD2STEP_FRAME::KICAD2STEP_FRAME( const wxString& title ) :
         KICAD2STEP_FRAME_BASE( NULL, wxID_ANY, title )
 {
 }
+
+
+void KICAD2STEP_FRAME::OnOKButtonClick( wxCommandEvent& aEvent )
+{
+    Close();
+}
+
 
 PANEL_KICAD2STEP::PANEL_KICAD2STEP( wxWindow* parent, wxWindowID id, const wxPoint& pos,
                                     const wxSize& size, long style ) :
@@ -209,6 +219,10 @@ int PANEL_KICAD2STEP::RunConverter()
                 ReportMessage( _( "\n** Error writing STEP file. **\n" ) );
                 return -1;
             }
+            else
+            {
+                ReportMessage( wxString::Format( _( "\nSTEP file '%s' created.\n" ), outfile ) );
+            }
         }
         catch( const Standard_Failure& e )
         {
@@ -222,12 +236,15 @@ int PANEL_KICAD2STEP::RunConverter()
             return -1;
         }
     }
+    else
+    {
+        ReportMessage( _( "\n** Error reading kicad_pcb file. **\n" ) );
+        return -1;
+    }
 
     wxString msgs, errs;
     msgs << msgs_from_opencascade.str();
     ReportMessage( msgs );
-
-    ReportMessage( wxString::Format( _( "\nSTEP file '%s' created.\n" ), outfile ) );
 
     errs << errors_from_opencascade.str();
     ReportMessage( errs );

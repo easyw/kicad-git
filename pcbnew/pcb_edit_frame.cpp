@@ -532,10 +532,22 @@ void PCB_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::doDelete, ENABLE( cond.HasItems() ) );
     mgr->SetConditions( ACTIONS::duplicate, ENABLE( cond.HasItems() ) );
 
+    auto haveAtLeastOneGroupCond =
+            []( const SELECTION& aSel )
+            {
+                for( EDA_ITEM* item : aSel )
+                {
+                    if( item->Type() == PCB_GROUP_T )
+                        return true;
+                }
+
+                return false;
+            };
+
     mgr->SetConditions( PCB_ACTIONS::rotateCw, ENABLE( cond.HasItems() ) );
     mgr->SetConditions( PCB_ACTIONS::rotateCcw, ENABLE( cond.HasItems() ) );
     mgr->SetConditions( PCB_ACTIONS::group, ENABLE( SELECTION_CONDITIONS::MoreThan( 1 ) ) );
-    mgr->SetConditions( PCB_ACTIONS::ungroup, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::ungroup, ENABLE( haveAtLeastOneGroupCond ) );
     mgr->SetConditions( PCB_ACTIONS::lock, ENABLE( cond.HasItems() ) );
     mgr->SetConditions( PCB_ACTIONS::unlock, ENABLE( cond.HasItems() ) );
 
@@ -904,7 +916,7 @@ void PCB_EDIT_FRAME::ShowBoardSetupDialog( const wxString& aInitialPage )
 
     if( dlg.ShowQuasiModal() == wxID_OK )
     {
-        Prj().GetProjectFile().NetSettings().ResolveNetClassAssignments( true );
+        Prj().GetProjectFile().NetSettings().RebuildNetClassAssignments();
 
         GetBoard()->SynchronizeNetsAndNetClasses();
         SaveProjectSettings();
@@ -1494,7 +1506,7 @@ void PCB_EDIT_FRAME::RunEeschema()
     if( Kiface().IsSingle() )
     {
         wxString filename = wxT( "\"" ) + schematic.GetFullPath( wxPATH_NATIVE ) + wxT( "\"" );
-        ExecuteFile( this, EESCHEMA_EXE, filename );
+        ExecuteFile( EESCHEMA_EXE, filename );
     }
     else
     {
