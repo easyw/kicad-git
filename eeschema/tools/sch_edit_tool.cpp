@@ -579,10 +579,10 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
 
                 // If we are rotating more than one item, we do not have start/end
                 // points separately selected
-                if( item->HasFlag( STARTPOINT ) || principalItemCount > 1 )
+                if( item->HasFlag( STARTPOINT ) )
                     line->RotateStart( rotPoint );
 
-                if( item->HasFlag( ENDPOINT ) || principalItemCount > 1 )
+                if( item->HasFlag( ENDPOINT ) )
                     line->RotateEnd( rotPoint );
             }
             else if( item->Type() == SCH_SHEET_PIN_T )
@@ -791,6 +791,21 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
                     else
                         pin->MirrorHorizontally( sheet->GetBoundingBox().GetCenter().x );
                 }
+            }
+            else if( item->Type() == SCH_TEXT_T || item->Type() == SCH_LABEL_T )
+            {
+                /// Text and Labels are aligned to their bottom right corners and we don't flip the
+                /// alignment corner, so we need to offset this in the vertical direction
+
+                wxPoint textMirrorPoint = mirrorPoint;
+
+                textMirrorPoint.y += item->GetBoundingBox().GetHeight() / 2;
+                textMirrorPoint = m_frame->GetNearestHalfGridPosition( textMirrorPoint );
+
+                if( vertical )
+                    item->MirrorVertically( textMirrorPoint.y );
+                else
+                    item->MirrorHorizontally( textMirrorPoint.x );
             }
             else
             {
