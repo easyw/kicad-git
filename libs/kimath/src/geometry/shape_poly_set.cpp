@@ -64,6 +64,18 @@ SHAPE_POLY_SET::SHAPE_POLY_SET() :
 }
 
 
+SHAPE_POLY_SET::SHAPE_POLY_SET( const BOX2D& aRect ) :
+    SHAPE( SH_POLY_SET )
+{
+    NewOutline();
+    Append( VECTOR2I( aRect.GetLeft(),  aRect.GetTop() ) );
+    Append( VECTOR2I( aRect.GetRight(), aRect.GetTop() ) );
+    Append( VECTOR2I( aRect.GetRight(), aRect.GetBottom() ) );
+    Append( VECTOR2I( aRect.GetLeft(),  aRect.GetBottom() ) );
+    Outline( 0 ).SetClosed( true );
+}
+
+
 SHAPE_POLY_SET::SHAPE_POLY_SET( const SHAPE_LINE_CHAIN& aOutline ) :
     SHAPE( SH_POLY_SET )
 {
@@ -1466,6 +1478,9 @@ bool SHAPE_POLY_SET::Collide( const SEG& aSeg, int aClearance, int* aActual,
 bool SHAPE_POLY_SET::Collide( const VECTOR2I& aP, int aClearance, int* aActual,
                               VECTOR2I* aLocation ) const
 {
+    if( IsEmpty() || VertexCount() == 0 )
+        return false;
+
     VECTOR2I nearest;
     ecoord dist_sq = SquaredDistance( aP, aLocation ? &nearest : nullptr );
 

@@ -43,9 +43,9 @@ DIALOG_LIB_TEXT_PROPERTIES::DIALOG_LIB_TEXT_PROPERTIES( SYMBOL_EDIT_FRAME* aPare
     // Disable options for fieldedit, not existing in  graphic text
     m_visible->Show( false );
     m_TextValueSelectButton->Hide();
-    m_PowerComponentValues->Show( false );
 
-    m_PowerComponentValues->SetFont( KIUI::GetInfoFont( this ).Italic() );
+    m_note->SetFont( KIUI::GetInfoFont( this ).Italic() );
+    m_note->Show( false );
 
     SetInitialFocus( m_TextCtrl );
     m_StyledTextCtrl->Show( false );

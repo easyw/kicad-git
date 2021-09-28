@@ -55,6 +55,9 @@ DIALOG_FIELD_PROPERTIES::DIALOG_FIELD_PROPERTIES( SCH_BASE_FRAME* aParent, const
 
     SetTitle( aTitle );
 
+    m_note->SetFont( KIUI::GetInfoFont( this ).Italic() );
+    m_note->Show( false );
+
     // The field ID and power status are Initialized in the derived object's ctor.
     m_fieldId = VALUE_FIELD;
     m_isPower = false;
@@ -124,12 +127,13 @@ void DIALOG_FIELD_PROPERTIES::init()
     // the text box and display an explanation.
     if( m_fieldId == VALUE_FIELD && m_isPower )
     {
-        m_PowerComponentValues->Show( true );
+        m_note->SetLabel( wxString::Format( m_note->GetLabel(),
+                                            _( "Power symbol value field text cannot be changed." ) ) );
+        m_note->Show( true );
         m_TextCtrl->Enable( false );
     }
     else
     {
-        m_PowerComponentValues->Show( false );
         m_TextCtrl->Enable( true );
     }
 
@@ -315,6 +319,8 @@ DIALOG_SCH_FIELD_PROPERTIES::DIALOG_SCH_FIELD_PROPERTIES( SCH_BASE_FRAME* aParen
         DIALOG_FIELD_PROPERTIES( aParent, aTitle, aField ),
         m_field( aField )
 {
+    m_isSheetFilename = false;
+
     if( aField->GetParent() && aField->GetParent()->Type() == SCH_SYMBOL_T )
     {
         m_fieldId = aField->GetId();
@@ -323,9 +329,21 @@ DIALOG_SCH_FIELD_PROPERTIES::DIALOG_SCH_FIELD_PROPERTIES( SCH_BASE_FRAME* aParen
     {
         switch( aField->GetId() )
         {
-        case SHEETNAME:     m_fieldId = SHEETNAME_V;      break;
-        case SHEETFILENAME: m_fieldId = SHEETFILENAME_V;  break;
-        default:            m_fieldId = SHEETUSERFIELD_V; break;
+        case SHEETNAME:
+            m_fieldId = SHEETNAME_V;
+            break;
+
+        case SHEETFILENAME:
+            m_isSheetFilename = true;
+            m_fieldId = SHEETFILENAME_V;
+            m_note->SetLabel( wxString::Format( m_note->GetLabel(),
+                              _( "Sheet filename can only be modified in Sheet Properties dialog." ) ) );
+            m_note->Show( true );
+            break;
+
+        default:
+            m_fieldId = SHEETUSERFIELD_V;
+            break;
         }
     }
 
@@ -353,6 +371,12 @@ DIALOG_SCH_FIELD_PROPERTIES::DIALOG_SCH_FIELD_PROPERTIES( SCH_BASE_FRAME* aParen
                             &DIALOG_SCH_FIELD_PROPERTIES::onScintillaCharAdded, this );
 
     init();
+
+    if( m_isSheetFilename )
+    {
+        m_StyledTextCtrl->Enable( false );
+        m_TextCtrl->Enable( false );
+    }
 }
 
 

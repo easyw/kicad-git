@@ -660,7 +660,7 @@ void EDA_DRAW_FRAME::ClearMsgPanel()
 }
 
 
-void EDA_DRAW_FRAME::SetMsgPanel( const MSG_PANEL_ITEMS& aList )
+void EDA_DRAW_FRAME::SetMsgPanel( const std::vector<MSG_PANEL_ITEM>& aList )
 {
     if( m_messagePanel )
     {
@@ -688,7 +688,7 @@ void EDA_DRAW_FRAME::SetMsgPanel( EDA_ITEM* aItem )
 {
     wxCHECK_RET( aItem, wxT( "Invalid EDA_ITEM pointer.  Bad programmer." ) );
 
-    MSG_PANEL_ITEMS items;
+    std::vector<MSG_PANEL_ITEM> items;
     aItem->GetMsgPanelInfo( this, items );
     SetMsgPanel( items );
 }
@@ -836,9 +836,9 @@ void EDA_DRAW_FRAME::Zoom_Automatique( bool aWarpPointer )
 
 
 // Find the first child dialog.
-wxWindow* findDialog( wxWindowList& aList )
+wxWindow* EDA_DRAW_FRAME::findDialog()
 {
-    for( wxWindow* window : aList )
+    for( wxWindow* window : GetChildren() )
     {
         if( dynamic_cast<DIALOG_SHIM*>( window ) )
             return window;
@@ -860,7 +860,7 @@ void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
         centerView = true;
 
     // Center if we're behind an obscuring dialog, or within 10% of its edge
-    wxWindow* dialog = findDialog( GetChildren() );
+    wxWindow* dialog = findDialog();
 
     if( dialog )
     {
@@ -882,7 +882,9 @@ void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
             GetCanvas()->GetView()->SetCenter( aPos, dialogRect );
         }
         else
+        {
             GetCanvas()->GetView()->SetCenter( aPos );
+        }
     }
 
     GetCanvas()->GetViewControls()->SetCrossHairCursorPosition( aPos );
