@@ -46,6 +46,7 @@
 #include <project/project_file.h>
 #include <project/net_settings.h>
 #include <core/mirror.h>
+#include <core/kicad_algo.h>
 #include <trigo.h>
 
 using KIGFX::SCH_RENDER_SETTINGS;
@@ -1191,7 +1192,7 @@ void SCH_GLOBALLABEL::UpdateIntersheetRefProps()
 
 void SCH_GLOBALLABEL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
 {
-    int margin = GetTextOffset();
+    int margin = GetTextOffset() * 2;
     int labelLen = GetBoundingBoxBase().GetSizeMax();
     int penOffset = GetPenWidth() / 2;
 
@@ -1249,14 +1250,16 @@ bool SCH_GLOBALLABEL::ResolveTextVar( wxString* token, int aDepth ) const
             std::vector<wxString> pageListCopy;
 
             pageListCopy.insert( pageListCopy.end(), it->second.begin(), it->second.end() );
-            std::sort( pageListCopy.begin(), pageListCopy.end() );
+            std::sort( pageListCopy.begin(), pageListCopy.end(),
+                       []( const wxString& a, const wxString& b ) -> bool
+                       {
+                           return StrNumCmp( a, b, true ) <= 0;
+                       } );
 
             if( !settings.m_IntersheetRefsListOwnPage )
             {
                 wxString currentPage = Schematic()->CurrentSheet().GetPageNumber();
-                pageListCopy.erase( std::remove( pageListCopy.begin(),
-                                                 pageListCopy.end(),
-                                                 currentPage ), pageListCopy.end() );
+                alg::delete_matching( pageListCopy, currentPage );
             }
 
             if( ( settings.m_IntersheetRefsFormatShort ) && ( pageListCopy.size() > 2 ) )
