@@ -9,18 +9,20 @@ include_directories(
 
 set( PCB_CALCULATOR_SRCS
     eserie.cpp
-    attenuators.cpp
-    board_classes_values.cpp
-    colorcode.cpp
     common_data.cpp
-    electrical_spacing_values.cpp
     params_read_write.cpp
     pcb_calculator_frame.cpp
     pcb_calculator_settings.cpp
     datafile_read_write.cpp
+    panel_attenuators.cpp
+    panel_board_class.cpp
+    panel_color_code.cpp
+    panel_electrical_spacing.cpp
+    panel_eserie.cpp
     panel_regulator.cpp
-    tracks_width_versus_current.cpp
-    via.cpp
+    panel_track_width.cpp
+    panel_transline.cpp
+    panel_via_size.cpp
     transline_ident.cpp
     widgets/unit_selector.cpp
     transline/transline.cpp
@@ -36,7 +38,15 @@ set( PCB_CALCULATOR_SRCS
     dialogs/pcb_calculator_frame_base.cpp
     dialogs/dialog_regulator_form_base.cpp
     dialogs/dialog_regulator_form.cpp
+    dialogs/panel_attenuators_base.cpp
+    dialogs/panel_board_class_base.cpp
     dialogs/panel_regulator_base.cpp
+    dialogs/panel_color_code_base.cpp
+    dialogs/panel_electrical_spacing_base.cpp
+    dialogs/panel_eserie_base.cpp
+    dialogs/panel_via_size_base.cpp
+    dialogs/panel_track_width_base.cpp
+    dialogs/panel_transline_base.cpp
     ../common/env_vars.cpp      # needed on MSW to avoid a link issue (a symbol not found)
     )
 
