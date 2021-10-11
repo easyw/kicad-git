@@ -22,8 +22,8 @@
 #include <wx/settings.h>
 
 #include <bitmaps.h>
-#include "common_data.h"
-#include "panel_transline.h"
+#include <calculator_panels/panel_transline.h>
+#include <common_data.h>
 #include <widgets/unit_selector.h>
 
 
@@ -182,7 +182,7 @@ void PANEL_TRANSLINE::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType )
         m_currTransLineType = DEFAULT_TYPE;
     }
 
-    m_translineBitmap->SetBitmap( *m_transline_list[m_currTransLineType]->m_Icon );
+    m_translineBitmap->SetBitmap( KiBitmap( m_transline_list[m_currTransLineType]->m_BitmapName ) );
 
     // This helper bitmap is shown for coupled microstrip only:
     m_bmCMicrostripZoddZeven->Show( aType == C_MICROSTRIP_TYPE );

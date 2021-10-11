@@ -22,9 +22,9 @@
 #include <wx/colour.h>
 #include <wx/msgdlg.h>
 
-#include "pcb_calculator_frame.h"
-#include "panel_transline.h"
-#include "transline/transline.h"
+#include <calculator_panels/panel_transline.h>
+#include <pcb_calculator_frame.h>
+#include <transline/transline.h>
 
 /*
  * Return the value from a string,
@@ -66,15 +66,12 @@ double DoubleFromString( const wxString& TextValue )
 
     // Check for strings that cannot qualify as a number
     if( brk_point == 0 )
-    {
         return std::nan( "" );
-    }
 
     /* Extract the numeric part */
     if( !buf.Left( brk_point ).ToDouble( &value ) )
-    {
         return std::nan( "" );
-    }
+
     return value;
 }
 
@@ -82,8 +79,10 @@ double DoubleFromString( const wxString& TextValue )
 // A helper function to get a reference to the PANEL_TRANSLINE
 PANEL_TRANSLINE* getTranslinePanel()
 {
-    PCB_CALCULATOR_FRAME* frame = (PCB_CALCULATOR_FRAME*) wxTheApp->GetTopWindow();
-    return frame->GetPanelTransline();
+    PANEL_TRANSLINE* panel = static_cast <PANEL_TRANSLINE*>(
+                                wxFindWindowByName( PANEL_TRANSLINE::GetWindowName() ) );
+    wxASSERT( panel );
+    return panel;
 }
 
 
@@ -142,12 +141,15 @@ bool IsSelectedInDialog( enum PRMS_ID aPrmId )
 double PANEL_TRANSLINE::GetPrmValue( enum PRMS_ID aPrmId ) const
 {
     TRANSLINE_IDENT* tr_ident = m_transline_list[m_currTransLineType];
+
     for( unsigned ii = 0; ii < tr_ident->GetPrmsCount(); ii++ )
     {
         TRANSLINE_PRM* prm = tr_ident->GetPrm( ii );
+
         if( aPrmId == prm->m_Id )
             return prm->m_NormalizedValue;
     }
+
     return 1.0;
 }
 
@@ -160,6 +162,7 @@ double PANEL_TRANSLINE::GetPrmValue( enum PRMS_ID aPrmId ) const
 void PANEL_TRANSLINE::SetPrmValue( enum PRMS_ID aPrmId, double aValue )
 {
     TRANSLINE_IDENT* tr_ident = m_transline_list[m_currTransLineType];
+
     for( unsigned ii = 0; ii < tr_ident->GetPrmsCount(); ii++ )
     {
         TRANSLINE_PRM* prm = tr_ident->GetPrm( ii );
@@ -190,9 +193,7 @@ void PANEL_TRANSLINE::SetPrmBgColor( enum PRMS_ID aPrmId, const KIGFX::COLOR4D* 
             static_cast<unsigned char>( aCol->b * 255 ) );
 
     if( !wxcol.IsOk() )
-    {
         return;
-    }
 
     TRANSLINE_IDENT* tr_ident = m_transline_list[m_currTransLineType];
 
@@ -230,6 +231,7 @@ void PANEL_TRANSLINE::SetResult( int aLineNumber, const wxString& aText )
 
     if( aLineNumber < 0 )
         aLineNumber = 0;
+
     if( aLineNumber >= MSG_CNT_MAX )
         aLineNumber = MSG_CNT_MAX - 1;
 

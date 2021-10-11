@@ -2347,6 +2347,9 @@ bool EDIT_TOOL::pickReferencePoint( const wxString& aTooltip, const wxString& aS
 
     m_statusPopup->SetText( aTooltip );
 
+    /// This allow the option of snapping in the tool
+    picker->SetSnapping( true );
+
     picker->SetClickHandler(
             [&]( const VECTOR2D& aPoint ) -> bool
             {
@@ -2458,7 +2461,10 @@ int EDIT_TOOL::copyToClipboard( const TOOL_EVENT& aEvent )
                                      _( "Selection copied" ),
                                      _( "Copy canceled" ),
                                      refPoint ) )
+            {
+                frame()->PopTool( tool );
                 return 0;
+            }
         }
         else
         {

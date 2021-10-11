@@ -17,28 +17,83 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <wx/menu.h>
 #include <wx/msgdlg.h>
+#include <wx/notebook.h>
+#include <wx/sizer.h>
+
 #include <bitmaps.h>
+#include <bitmap_store.h>
 #include <geometry/shape_poly_set.h>
 #include <kiface_base.h>
-#include "attenuators/attenuator_classes.h"
-#include "pcb_calculator_frame.h"
-#include "pcb_calculator_settings.h"
+
+#include <attenuators/attenuator_classes.h>
+#include <pcb_calculator_frame.h>
+#include <pcb_calculator_settings.h>
+
+#include <calculator_panels/panel_attenuators.h>
+#include <calculator_panels/panel_board_class.h>
+#include <calculator_panels/panel_color_code.h>
+#include <calculator_panels/panel_electrical_spacing.h>
+#include <calculator_panels/panel_eserie.h>
+#include <calculator_panels/panel_regulator.h>
+#include <calculator_panels/panel_track_width.h>
+#include <calculator_panels/panel_transline.h>
+#include <calculator_panels/panel_via_size.h>
 
 
 PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-    PCB_CALCULATOR_FRAME_BASE( aParent ),
+    KIWAY_PLAYER( aParent, wxID_ANY,
+                 _( "PCB Calculator"  ), // Window title
+                 wxDefaultPosition,
+                 wxSize( 646,361 ), // Default size
+                 wxDEFAULT_FRAME_STYLE | wxRESIZE_BORDER | wxFULL_REPAINT_ON_RESIZE | wxTAB_TRAVERSAL,
+                 wxT( "pcb_calculator" ) ), // Window name
     m_lastNotebookPage( -1 ),
     m_macHack( true )
 {
-    SetKiway( this, aKiway );
-
     SHAPE_POLY_SET dummy;   // A ugly trick to force the linker to include
                             // some methods in code and avoid link errors
 
+    SetKiway( this, aKiway );
+
+    SetSizeHints( wxDefaultSize, wxDefaultSize );
+
+    m_menubar = new wxMenuBar( 0 );
+    SetMenuBar( m_menubar );
+
+    m_mainSizer = new wxBoxSizer( wxVERTICAL );
+    m_notebook  = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+
+    m_mainSizer->Add( m_notebook, 1, wxEXPAND, 5 );
+
+    SetSizer( m_mainSizer );
+    Layout();
+    Centre( wxBOTH );
+
+    AddCalculator( new PANEL_REGULATOR( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Regulators" ) );
+    AddCalculator( new PANEL_ATTENUATORS( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "RF Attenuators" ) );
+    AddCalculator( new PANEL_E_SERIE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "E-Series" ) );
+    AddCalculator( new PANEL_COLOR_CODE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Color Code" ) );
+    AddCalculator( new PANEL_TRANSLINE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "TransLine ") );
+    AddCalculator( new PANEL_VIA_SIZE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Via Size" ) );
+    AddCalculator( new PANEL_TRACK_WIDTH( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Track Width" ) );
+    AddCalculator( new PANEL_ELECTRICAL_SPACING( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Electrical Spacing" ) );
+    AddCalculator( new PANEL_BOARD_CLASS( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _("Board Classes") );
+
     LoadSettings( config() );
 
-    m_panelRegulators->ReadDataFile();
+    if( PANEL_REGULATOR* regPanel = GetCalculator<PANEL_REGULATOR>() )
+        regPanel->ReadDataFile();
 
     // Give an icon
     wxIcon icon;
@@ -60,6 +115,13 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     if( m_framePos == wxDefaultPosition )
         Centre();
+
+    // Connect Events
+    Bind( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( PCB_CALCULATOR_FRAME::OnClosePcbCalc ), this );
+    Bind( wxEVT_UPDATE_UI,    wxUpdateUIEventHandler( PCB_CALCULATOR_FRAME::OnUpdateUI ),  this );
+
+    Bind( wxEVT_SYS_COLOUR_CHANGED,
+          wxSysColourChangedEventHandler( PCB_CALCULATOR_FRAME::onThemeChanged ), this );
 }
 
 
@@ -71,59 +133,93 @@ PCB_CALCULATOR_FRAME::~PCB_CALCULATOR_FRAME()
 }
 
 
+void PCB_CALCULATOR_FRAME::AddCalculator( CALCULATOR_PANEL *aPanel, const wxString& panelUIName )
+{
+    // Update internal structures
+    m_panels.push_back( aPanel );
+    m_notebook->AddPage( aPanel, panelUIName, false );
+}
+
+
+void PCB_CALCULATOR_FRAME::onThemeChanged( wxSysColourChangedEvent& aEvent )
+{
+    // Force the bitmaps to refresh
+    GetBitmapStore()->ThemeChanged();
+
+    // Update the panels
+    for( auto& panel : m_panels )
+        panel->ThemeChanged();
+
+    aEvent.Skip();
+}
+
+
 void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
 {
-    if( m_Notebook->GetSelection() != m_lastNotebookPage )
+    if( m_notebook->GetSelection() != m_lastNotebookPage )
     {
         // Kick all the things that wxWidgets can't seem to redraw on its own.
         // This is getting seriously ridiculous....
-
-        wxCommandEvent event2( wxEVT_RADIOBUTTON );
-        event2.SetEventObject( m_panelTransline->GetTranslineSelector() );
-        event2.SetInt( m_panelTransline->GetCurrTransLineType() );
-         m_panelTransline->GetTranslineSelector()->Command( event2 );
-
-        for( int i = 0; i < m_panelAttenuators->m_AttenuatorList.size(); ++i )
+        if( PANEL_TRANSLINE* translinePanel = GetCalculator<PANEL_TRANSLINE>() )
         {
-            if( m_panelAttenuators->m_AttenuatorList[i] == m_panelAttenuators->m_CurrAttenuator )
-            {
-                event2.SetEventObject( m_panelAttenuators->GetAttenuatorsSelector() );
-                event2.SetInt( i );
-                m_panelAttenuators->GetAttenuatorsSelector()->Command( event2 );
-                break;
-            }
+            wxCommandEvent event2( wxEVT_RADIOBUTTON );
+            event2.SetEventObject( translinePanel->GetTranslineSelector() );
+            event2.SetInt( translinePanel->GetCurrTransLineType() );
+
+            translinePanel->GetTranslineSelector()->Command( event2 );
         }
 
-        m_panelAttenuators->UpdateUI();
+        if( PANEL_ATTENUATORS* attenPanel = GetCalculator<PANEL_ATTENUATORS>() )
+        {
+            for( int i = 0; i < attenPanel->m_AttenuatorList.size(); ++i )
+            {
+                if( attenPanel->m_AttenuatorList[i] == attenPanel->m_CurrAttenuator )
+                {
+                    wxCommandEvent event2( wxEVT_RADIOBUTTON );
+                    event2.SetEventObject( attenPanel->GetAttenuatorsSelector() );
+                    event2.SetInt( i );
 
-       	m_panelViaSize->Layout();
+                    attenPanel->GetAttenuatorsSelector()->Command( event2 );
+                    break;
+                }
+            }
 
-       	m_panelRegulators->Layout();
+            attenPanel->UpdateUI();
+        }
+
+        if( PANEL_VIA_SIZE* viaSizePanel = GetCalculator<PANEL_VIA_SIZE>() )
+       	    viaSizePanel->Layout();
+
+        if( PANEL_REGULATOR* regulPanel = GetCalculator<PANEL_REGULATOR>() )
+       	    regulPanel->Layout();
 
         // Until it's shown on screen the above won't work; but doing it anyway at least keeps
         // putting new OnUpdateUI events into the queue until it *is* shown on screen.
-        if( m_Notebook->IsShownOnScreen() )
+        if( m_notebook->IsShownOnScreen() )
         {
             // Work around an OSX bug where the wxGrid children don't get placed correctly until
             // the first resize event.
 #ifdef __WXMAC__
             if( m_macHack )
             {
-                wxSize pageSize = m_panelElectricalSpacing->GetSize();
+                if( PANEL_ELECTRICAL_SPACING* elecSpacingPanel = GetCalculator<PANEL_ELECTRICAL_SPACING>() )
+                {
+                    wxSize pageSize = elecSpacingPanel->GetSize();
 
-                pageSize.x -= 100;
-                m_panelElectricalSpacing->SetSize( pageSize );
-                m_panelElectricalSpacing->Layout();
+                    pageSize.x -= 100;
+                    elecSpacingPanel->SetSize( pageSize );
+                    elecSpacingPanel->Layout();
 
-                pageSize.x += 100;
-                m_panelElectricalSpacing->SetSize( pageSize );
-                m_panelElectricalSpacing->Layout();
+                    pageSize.x += 100;
+                    elecSpacingPanel->SetSize( pageSize );
+                    elecSpacingPanel->Layout();
 
-                m_macHack = false;
+                    m_macHack = false;
+                }
             }
 #endif
 
-            m_lastNotebookPage = m_Notebook->GetSelection();
+            m_lastNotebookPage = m_notebook->GetSelection();
         }
     }
 }
@@ -131,12 +227,14 @@ void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
 
 void PCB_CALCULATOR_FRAME::OnClosePcbCalc( wxCloseEvent& event )
 {
-    if( m_panelRegulators->m_RegulatorListChanged )
+    PANEL_REGULATOR* regPanel = GetCalculator<PANEL_REGULATOR>();
+
+    if( regPanel && regPanel->m_RegulatorListChanged )
     {
         wxString msg;
         wxString title = _( "Write Data Failed" );
 
-        if( m_panelRegulators->GetDataFilename().IsEmpty() )
+        if( regPanel->GetDataFilename().IsEmpty() )
         {
             msg = _( "No data filename to save modifications.\n"
                      "Do you want to exit and abandon your changes?" );
@@ -146,11 +244,11 @@ void PCB_CALCULATOR_FRAME::OnClosePcbCalc( wxCloseEvent& event )
         }
         else
         {
-            if( !m_panelRegulators->WriteDataFile() )
+            if( !regPanel->WriteDataFile() )
             {
                 msg.Printf( _( "Unable to write file '%s'\n"
                                "Do you want to exit and abandon your changes?"),
-                            m_panelRegulators->GetDataFilename() );
+                            regPanel->GetDataFilename() );
 
                 if( wxMessageBox( msg, title, wxYES_NO | wxICON_ERROR ) == wxNO )
                     return;
@@ -171,24 +269,10 @@ void PCB_CALCULATOR_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 
     PCB_CALCULATOR_SETTINGS* cfg = static_cast<PCB_CALCULATOR_SETTINGS*>( aCfg );
 
-    m_Notebook->ChangeSelection( cfg->m_LastPage );
+    m_notebook->ChangeSelection( cfg->m_LastPage );
 
-    m_panelTransline->LoadSettings( cfg );
-
-    // Attenuators panel config:
-    m_panelAttenuators->LoadSettings( cfg );
-
-    // Regul panel config:
-    m_panelRegulators->LoadSettings( cfg );
-
-    // color panel config:
-    m_panelColorCode->LoadSettings( cfg );
-
-    m_panelViaSize->LoadSettings( cfg );
-    m_panelTrackWidth->LoadSettings( cfg );
-    m_panelElectricalSpacing->LoadSettings( cfg );
-    m_panelBoardClass->LoadSettings( cfg );
-    m_panelESeries->LoadSettings( cfg );
+    for( auto& panel : m_panels )
+        panel->LoadSettings( cfg );
 }
 
 
@@ -204,16 +288,10 @@ void PCB_CALCULATOR_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 
     if( cfg )
     {
-        cfg->m_LastPage = m_Notebook->GetSelection();
+        cfg->m_LastPage = m_notebook->GetSelection();
 
-        m_panelTransline->SaveSettings( cfg );
-        m_panelRegulators->Regulators_WriteConfig( cfg );
-        m_panelAttenuators->SaveSettings( cfg );
-        m_panelColorCode->SaveSettings( cfg );
-        m_panelViaSize->SaveSettings( cfg );
-        m_panelTrackWidth->SaveSettings( cfg );
-        m_panelElectricalSpacing->SaveSettings( cfg );
-        m_panelBoardClass->SaveSettings( cfg );
+        for( auto& panel : m_panels )
+            panel->SaveSettings( cfg );
     }
 
 }
