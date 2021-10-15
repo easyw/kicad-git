@@ -689,7 +689,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
     {
         unsigned int segCount = GetCircleSegmentCount( aShape->GetBoundingBox().GetSizeMax() );
 
-        transformArcToSegments( aShape->GetCenter(), aShape->GetArcStart(), aShape->GetAngle(),
+        transformArcToSegments( aShape->GetCenter(), aShape->GetStart(), aShape->GetArcAngle(),
                                 segCount, linewidth, aDstContainer, *aShape );
     }
     break;
@@ -734,7 +734,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
 
     default:
         wxFAIL_MSG( "BOARD_ADAPTER::addShapeWithClearance no implementation for "
-                    + SHAPE_T_asString( aShape->GetShape()) );
+                    + aShape->SHAPE_T_asString() );
         break;
     }
 }

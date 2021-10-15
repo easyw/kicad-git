@@ -23,6 +23,7 @@
  */
 
 #include <vector>
+#include <macros.h>
 #include <bezier_curves.h>
 #include <board_design_settings.h>
 #include <trigo.h>
@@ -415,8 +416,8 @@ void PCB_TEXT::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuff
 }
 
 
-void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
-                                                      PCB_LAYER_ID aLayer, int aClearanceValue,
+void EDA_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                      int aClearanceValue,
                                                       int aError, ERROR_LOC aErrorLoc,
                                                       bool ignoreLineWidth ) const
 {
@@ -429,12 +430,12 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     case SHAPE_T::CIRCLE:
         if( IsFilled() )
         {
-            TransformCircleToPolygon( aCornerBuffer, GetCenter(), GetRadius() + width / 2, aError,
+            TransformCircleToPolygon( aCornerBuffer, getCenter(), GetRadius() + width / 2, aError,
                                       aErrorLoc );
         }
         else
         {
-            TransformRingToPolygon( aCornerBuffer, GetCenter(), GetRadius(), width, aError,
+            TransformRingToPolygon( aCornerBuffer, getCenter(), GetRadius(), width, aError,
                                     aErrorLoc );
         }
 
@@ -465,12 +466,12 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     }
 
     case SHAPE_T::ARC:
-        TransformArcToPolygon( aCornerBuffer, GetArcStart(), GetArcMid(), GetArcEnd(), width,
-                               aError, aErrorLoc );
+        TransformArcToPolygon( aCornerBuffer, GetStart(), GetArcMid(), GetEnd(), width, aError,
+                               aErrorLoc );
         break;
 
     case SHAPE_T::SEGMENT:
-        TransformOvalToPolygon( aCornerBuffer, m_start, m_end, width, aError, aErrorLoc );
+        TransformOvalToPolygon( aCornerBuffer, GetStart(), GetEnd(), width, aError, aErrorLoc );
         break;
 
     case SHAPE_T::POLY:
@@ -479,12 +480,8 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
             break;
 
         // The polygon is expected to be a simple polygon; not self intersecting, no hole.
-        FOOTPRINT* footprint = GetParentFootprint();
-        double     orientation = footprint ? footprint->GetOrientation() : 0.0;
-        wxPoint    offset;
-
-        if( footprint )
-            offset = footprint->GetPosition();
+        double  orientation = getParentOrientation();
+        wxPoint offset = getParentPosition();
 
         // Build the polygon with the actual position and orientation:
         std::vector<wxPoint> poly;
@@ -520,10 +517,10 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
         break;
     }
 
-    case SHAPE_T::BEZIER: // Bezier curve
+    case SHAPE_T::BEZIER:
     {
-        std::vector<wxPoint> ctrlPoints = { m_start, m_bezierC1, m_bezierC2, m_end };
-        BEZIER_POLY converter( ctrlPoints );
+        std::vector<wxPoint> ctrlPts = { GetStart(), GetBezierC1(), GetBezierC2(), GetEnd() };
+        BEZIER_POLY converter( ctrlPts );
         std::vector< wxPoint> poly;
         converter.GetPoly( poly, m_width );
 
@@ -537,10 +534,19 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     }
 
     default:
-        wxFAIL_MSG( "PCB_SHAPE::TransformShapeWithClearanceToPolygon no implementation for "
-                    + SHAPE_T_asString( m_shape ) );
+        UNIMPLEMENTED_FOR( SHAPE_T_asString() );
         break;
     }
+}
+
+
+void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                      PCB_LAYER_ID aLayer, int aClearanceValue,
+                                                      int aError, ERROR_LOC aErrorLoc,
+                                                      bool ignoreLineWidth ) const
+{
+    EDA_SHAPE::TransformShapeWithClearanceToPolygon( aCornerBuffer, aClearanceValue, aError,
+                                                     aErrorLoc, ignoreLineWidth );
 }
 
 
