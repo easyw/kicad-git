@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KiCad\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-18 12:18-0700\n"
+"POT-Creation-Date: 2021-10-25 06:24-0700\n"
 "PO-Revision-Date: 2018-07-15 17:07+0200\n"
 "Last-Translator: Simon Richter <Simon.Richter@hogyros.de>\n"
 "Language-Team: Simon Richter <Simon.Richter@hogyros.de>\n"
@@ -14,49 +14,6 @@ msgstr ""
 
 msgid "All Files"
 msgstr "All Files"
-
-#, c-format
-msgid "All supported files (%s)"
-msgstr "All supported files (%s)"
-
-msgid "Available paths:"
-msgstr "Available paths:"
-
-msgid "Configure Paths"
-msgstr "Configure Paths"
-
-msgid "Select 3D Model"
-msgstr "Select 3D Model"
-
-msgid "Scale"
-msgstr "Scale"
-
-msgid "X:"
-msgstr "X:"
-
-msgid "Y:"
-msgstr "Y:"
-
-msgid "Z:"
-msgstr "Z:"
-
-msgid "Rotation"
-msgstr "Rotation"
-
-msgid "Offset"
-msgstr "Offset"
-
-msgid "Opacity"
-msgstr "Opacity"
-
-msgid "Preview"
-msgstr "Preview"
-
-msgid "Enable/disable orthographic projection"
-msgstr "Enable/disable orthographic projection"
-
-msgid "Reload board and 3D models"
-msgstr "Reload board and 3D models"
 
 msgid "Build board outline"
 msgstr "Build board outline"
@@ -124,33 +81,6 @@ msgstr "Net %s\tNetClass %s\tPadName %s"
 msgid "Net %s\tNetClass %s"
 msgstr "Net %s\tNetClass %s"
 
-msgid "Load Raytracing: board"
-msgstr "Load Raytracing: board"
-
-msgid "Load Raytracing: layers"
-msgstr "Load Raytracing: layers"
-
-msgid "Loading 3D models..."
-msgstr "Loading 3D models..."
-
-#, c-format
-msgid "Reload time %.3f s"
-msgstr "Reload time %.3f s"
-
-msgid "Loading..."
-msgstr "Loading…"
-
-#, c-format
-msgid "Rendering time %.3f s"
-msgstr "Rendering time %.3f s"
-
-#, c-format
-msgid "Rendering: %.0f %%"
-msgstr "Rendering: %.0f %%"
-
-msgid "Rendering: Post processing shader"
-msgstr "Rendering: Post processing shader"
-
 msgid "Load OpenGL: board"
 msgstr "Load OpenGL: board"
 
@@ -164,9 +94,36 @@ msgstr "Load OpenGL: layers"
 msgid "Load OpenGL layer %d"
 msgstr "Load OpenGL layer %d"
 
+msgid "Loading 3D models..."
+msgstr "Loading 3D models..."
+
+#, c-format
+msgid "Reload time %.3f s"
+msgstr "Reload time %.3f s"
+
 #, c-format
 msgid "Loading %s..."
 msgstr "Loading %s..."
+
+msgid "Loading..."
+msgstr "Loading…"
+
+msgid "Load Raytracing: board"
+msgstr "Load Raytracing: board"
+
+msgid "Load Raytracing: layers"
+msgstr "Load Raytracing: layers"
+
+#, c-format
+msgid "Rendering time %.3f s"
+msgstr "Rendering time %.3f s"
+
+#, c-format
+msgid "Rendering: %.0f %%"
+msgstr "Rendering: %.0f %%"
+
+msgid "Rendering: Post processing shader"
+msgstr "Rendering: Post processing shader"
 
 msgid "Export Current View as PNG..."
 msgstr "Export Current View as PNG…"
@@ -216,6 +173,224 @@ msgstr "Copy 3D image to clipboard"
 msgid "Render current view using Raytracing"
 msgstr "Render current view using Raytracing"
 
+msgid "KiCad 3D Viewer"
+msgstr "KiCad 3D Viewer"
+
+msgid "General"
+msgstr "General"
+
+msgid "Realtime Renderer"
+msgstr "Realtime Renderer"
+
+msgid "Raytracing Renderer"
+msgstr "Raytracing Renderer"
+
+msgid "Colors"
+msgstr "Colors"
+
+msgid "3D Image File Name"
+msgstr "3D Image File Name"
+
+#, c-format
+msgid "Insufficient permissions to save file '%s'."
+msgstr "Insufficient permissions to save file '%s'."
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Failed to copy image to clipboard"
+msgstr "Failed to copy image to clipboard"
+
+msgid "Can't save file"
+msgstr "Can't save file"
+
+msgid "Center pivot rotation"
+msgstr "Center pivot rotation"
+
+msgid "Center pivot rotation (middle mouse click)"
+msgstr "Center pivot rotation (middle mouse click)"
+
+msgid "Rotate X Clockwise"
+msgstr "Rotate X Clockwise"
+
+msgid "Rotate X Counterclockwise"
+msgstr "Rotate X Counterclockwise"
+
+msgid "Rotate Y Clockwise"
+msgstr "Rotate Y Clockwise"
+
+msgid "Rotate Y Counterclockwise"
+msgstr "Rotate Y Counterclockwise"
+
+msgid "Rotate Z Clockwise"
+msgstr "Rotate Z Clockwise"
+
+msgid "Rotate Z Counterclockwise"
+msgstr "Rotate Z Counterclockwise"
+
+msgid "Move board Left"
+msgstr "Move board Left"
+
+msgid "Move board Right"
+msgstr "Move board Right"
+
+msgid "Move board Up"
+msgstr "Move board Up"
+
+msgid "Move board Down"
+msgstr "Move board Down"
+
+msgid "Home view"
+msgstr "Home view"
+
+msgid "Reset view"
+msgstr "Reset view"
+
+msgid "Flip Board"
+msgstr "Flip Board"
+
+msgid "Flip the board view"
+msgstr "Flip the board view"
+
+msgid "Toggle orthographic projection"
+msgstr "Toggle orthographic projection"
+
+msgid "Enable/disable orthographic projection"
+msgstr "Enable/disable orthographic projection"
+
+msgid "View Front"
+msgstr "View Front"
+
+msgid "View Back"
+msgstr "View Back"
+
+msgid "View Left"
+msgstr "View Left"
+
+msgid "View Right"
+msgstr "View Right"
+
+msgid "View Top"
+msgstr "View Top"
+
+msgid "View Bottom"
+msgstr "View Bottom"
+
+msgid "No 3D Grid"
+msgstr "No 3D Grid"
+
+msgid "3D Grid 10mm"
+msgstr "3D Grid 10mm"
+
+msgid "3D Grid 5mm"
+msgstr "3D Grid 5mm"
+
+msgid "3D Grid 2.5mm"
+msgstr "3D Grid 2.5mm"
+
+msgid "3D Grid 1mm"
+msgstr "3D Grid 1mm"
+
+msgid "Render Realistic Materials"
+msgstr "Render Realistic Materials"
+
+msgid "Use all material properties from each 3D model file"
+msgstr "Use all material properties from each 3D model file"
+
+msgid "Render Solid Colors"
+msgstr "Render Solid Colors"
+
+msgid "Use only the diffuse color property from model 3D model file"
+msgstr "Use only the diffuse color property from model 3D model file"
+
+msgid "Render CAD Colors"
+msgstr "Render CAD Colors"
+
+msgid "Use a CAD color style based on the diffuse color of the material"
+msgstr "Use a CAD color style based on the diffuse color of the material"
+
+msgid "Toggle Through Hole 3D models"
+msgstr "Toggle Through Hole 3D models"
+
+msgid "Toggle 3D models for 'Through hole' type components"
+msgstr "Toggle 3D models for 'Through hole' type components"
+
+msgid "Toggle SMD 3D models"
+msgstr "Toggle SMD 3D models"
+
+msgid "Toggle 3D models for 'Surface mount' type components"
+msgstr "Toggle 3D models for 'Surface mount' type components"
+
+msgid "Toggle Other 3D models"
+msgstr "Toggle Other 3D models"
+
+msgid "Toggle 3D models for 'Other' type components"
+msgstr "Toggle 3D models for 'Other' type components"
+
+msgid "Show Model Bounding Boxes"
+msgstr "Show Model Bounding Boxes"
+
+msgid "Toggle realistic mode"
+msgstr "Toggle realistic mode"
+
+msgid "Toggle board body display"
+msgstr "Toggle board body display"
+
+msgid "Show 3D Axis"
+msgstr "Show 3D Axis"
+
+msgid "Toggle zone display"
+msgstr "Toggle zone display"
+
+msgid "Toggle adhesive display"
+msgstr "Toggle adhesive display"
+
+msgid "Toggle display of adhesive layers"
+msgstr "Toggle display of adhesive layers"
+
+msgid "Toggle silkscreen display"
+msgstr "Toggle silkscreen display"
+
+msgid "Toggle display of silkscreen layers"
+msgstr "Toggle display of silkscreen layers"
+
+msgid "Toggle solder mask display"
+msgstr "Toggle solder mask display"
+
+msgid "Toggle display of solder mask layers"
+msgstr "Toggle display of solder mask layers"
+
+msgid "Toggle solder paste display"
+msgstr "Toggle solder paste display"
+
+msgid "Toggle display of solder paste layers"
+msgstr "Toggle display of solder paste layers"
+
+msgid "Toggle comments display"
+msgstr "Toggle comments display"
+
+msgid "Toggle display of comments and drawings layers"
+msgstr "Toggle display of comments and drawings layers"
+
+msgid "Toggle ECO display"
+msgstr "Toggle ECO display"
+
+msgid "Toggle display of ECO layers"
+msgstr "Toggle display of ECO layers"
+
+#, c-format
+msgid "All supported files (%s)"
+msgstr "All supported files (%s)"
+
+msgid "Available paths:"
+msgstr "Available paths:"
+
+msgid "Configure Paths"
+msgstr "Configure Paths"
+
+msgid "Select 3D Model"
+msgstr "Select 3D Model"
+
 msgid "Environment Colors"
 msgstr "Environment Colors"
 
@@ -261,6 +436,12 @@ msgstr "Board Layers"
 msgid "Show silkscreen layers"
 msgstr "Show silkscreen layers"
 
+msgid "Clip silkscreen at solder mask edges"
+msgstr "Clip silkscreen at solder mask edges"
+
+msgid "Clip silkscreen at via annuli"
+msgstr "Clip silkscreen at via annuli"
+
 msgid "Show solder mask layers"
 msgstr "Show solder mask layers"
 
@@ -273,8 +454,8 @@ msgstr "Show adhesive layers"
 msgid "User Layers (not shown in realistic mode)"
 msgstr "User Layers (not shown in realistic mode)"
 
-msgid "Show comments and drawings layers"
-msgstr "Show comments and drawings layers"
+msgid "Show comment and drawing layers"
+msgstr "Show comment and drawing layers"
 
 msgid "Show ECO layers"
 msgstr "Show ECO layers"
@@ -290,12 +471,6 @@ msgstr "Show board body"
 
 msgid "Show filled areas in zones"
 msgstr "Show filled areas in zones"
-
-msgid "Subtract soldermask from silkscreen"
-msgstr "Subtract soldermask from silkscreen"
-
-msgid "Clip silkscreen at via annuli"
-msgstr "Clip silkscreen at via annuli"
 
 msgid "Use bare copper color for unplated copper"
 msgstr "Use bare copper color for unplated copper"
@@ -318,8 +493,8 @@ msgstr "CAD colors"
 msgid "Camera Options"
 msgstr "Camera Options"
 
-msgid "Rotation Increment:"
-msgstr "Rotation Increment:"
+msgid "Rotation increment:"
+msgstr "Rotation increment:"
 
 msgid "deg"
 msgstr "deg"
@@ -478,204 +653,32 @@ msgstr "Light 4:"
 msgid "Light 8:"
 msgstr "Light 8:"
 
-msgid "KiCad 3D Viewer"
-msgstr "KiCad 3D Viewer"
+msgid "Scale"
+msgstr "Scale"
 
-msgid "Display Options"
-msgstr "Display Options"
+msgid "X:"
+msgstr "X:"
 
-msgid "OpenGL"
-msgstr "OpenGL"
+msgid "Y:"
+msgstr "Y:"
 
-msgid "Colors"
-msgstr "Colors"
+msgid "Z:"
+msgstr "Z:"
 
-msgid "3D Image File Name"
-msgstr "3D Image File Name"
+msgid "Rotation"
+msgstr "Rotation"
 
-#, c-format
-msgid "Insufficient permissions to save file '%s'."
-msgstr "Insufficient permissions to save file '%s'."
+msgid "Offset"
+msgstr "Offset"
 
-msgid "Error"
-msgstr "Error"
+msgid "Opacity"
+msgstr "Opacity"
 
-msgid "Failed to copy image to clipboard"
-msgstr "Failed to copy image to clipboard"
+msgid "Preview"
+msgstr "Preview"
 
-msgid "Can't save file"
-msgstr "Can't save file"
-
-msgid "Center pivot rotation"
-msgstr "Center pivot rotation"
-
-msgid "Center pivot rotation (middle mouse click)"
-msgstr "Center pivot rotation (middle mouse click)"
-
-msgid "Rotate X Clockwise"
-msgstr "Rotate X Clockwise"
-
-msgid "Rotate X Counterclockwise"
-msgstr "Rotate X Counterclockwise"
-
-msgid "Rotate Y Clockwise"
-msgstr "Rotate Y Clockwise"
-
-msgid "Rotate Y Counterclockwise"
-msgstr "Rotate Y Counterclockwise"
-
-msgid "Rotate Z Clockwise"
-msgstr "Rotate Z Clockwise"
-
-msgid "Rotate Z Counterclockwise"
-msgstr "Rotate Z Counterclockwise"
-
-msgid "Move board Left"
-msgstr "Move board Left"
-
-msgid "Move board Right"
-msgstr "Move board Right"
-
-msgid "Move board Up"
-msgstr "Move board Up"
-
-msgid "Move board Down"
-msgstr "Move board Down"
-
-msgid "Home view"
-msgstr "Home view"
-
-msgid "Reset view"
-msgstr "Reset view"
-
-msgid "Flip Board"
-msgstr "Flip Board"
-
-msgid "Flip the board view"
-msgstr "Flip the board view"
-
-msgid "Toggle orthographic projection"
-msgstr "Toggle orthographic projection"
-
-msgid "View Front"
-msgstr "View Front"
-
-msgid "View Back"
-msgstr "View Back"
-
-msgid "View Left"
-msgstr "View Left"
-
-msgid "View Right"
-msgstr "View Right"
-
-msgid "View Top"
-msgstr "View Top"
-
-msgid "View Bottom"
-msgstr "View Bottom"
-
-msgid "No 3D Grid"
-msgstr "No 3D Grid"
-
-msgid "3D Grid 10mm"
-msgstr "3D Grid 10mm"
-
-msgid "3D Grid 5mm"
-msgstr "3D Grid 5mm"
-
-msgid "3D Grid 2.5mm"
-msgstr "3D Grid 2.5mm"
-
-msgid "3D Grid 1mm"
-msgstr "3D Grid 1mm"
-
-msgid "Render Realistic Materials"
-msgstr "Render Realistic Materials"
-
-msgid "Use all material properties from each 3D model file"
-msgstr "Use all material properties from each 3D model file"
-
-msgid "Render Solid Colors"
-msgstr "Render Solid Colors"
-
-msgid "Use only the diffuse color property from model 3D model file"
-msgstr "Use only the diffuse color property from model 3D model file"
-
-msgid "Render CAD Colors"
-msgstr "Render CAD Colors"
-
-msgid "Use a CAD color style based on the diffuse color of the material"
-msgstr "Use a CAD color style based on the diffuse color of the material"
-
-msgid "Toggle Through Hole 3D models"
-msgstr "Toggle Through Hole 3D models"
-
-msgid "Toggle 3D models for 'Through hole' type components"
-msgstr "Toggle 3D models for 'Through hole' type components"
-
-msgid "Toggle SMD 3D models"
-msgstr "Toggle SMD 3D models"
-
-msgid "Toggle 3D models for 'Surface mount' type components"
-msgstr "Toggle 3D models for 'Surface mount' type components"
-
-msgid "Toggle Other 3D models"
-msgstr "Toggle Other 3D models"
-
-msgid "Toggle 3D models for 'Other' type components"
-msgstr "Toggle 3D models for 'Other' type components"
-
-msgid "Show Model Bounding Boxes"
-msgstr "Show Model Bounding Boxes"
-
-msgid "Toggle realistic mode"
-msgstr "Toggle realistic mode"
-
-msgid "Toggle board body display"
-msgstr "Toggle board body display"
-
-msgid "Show 3D Axis"
-msgstr "Show 3D Axis"
-
-msgid "Toggle zone display"
-msgstr "Toggle zone display"
-
-msgid "Toggle adhesive display"
-msgstr "Toggle adhesive display"
-
-msgid "Toggle display of adhesive layers"
-msgstr "Toggle display of adhesive layers"
-
-msgid "Toggle silkscreen display"
-msgstr "Toggle silkscreen display"
-
-msgid "Toggle display of silkscreen layers"
-msgstr "Toggle display of silkscreen layers"
-
-msgid "Toggle solder mask display"
-msgstr "Toggle solder mask display"
-
-msgid "Toggle display of solder mask layers"
-msgstr "Toggle display of solder mask layers"
-
-msgid "Toggle solder paste display"
-msgstr "Toggle solder paste display"
-
-msgid "Toggle display of solder paste layers"
-msgstr "Toggle display of solder paste layers"
-
-msgid "Toggle comments display"
-msgstr "Toggle comments display"
-
-msgid "Toggle display of comments and drawings layers"
-msgstr "Toggle display of comments and drawings layers"
-
-msgid "Toggle ECO display"
-msgstr "Toggle ECO display"
-
-msgid "Toggle display of ECO layers"
-msgstr "Toggle display of ECO layers"
+msgid "Reload board and 3D models"
+msgstr "Reload board and 3D models"
 
 msgid "mm"
 msgstr "mm"
@@ -2455,6 +2458,9 @@ msgstr "Unknown MIME type for documentation file '%s'"
 msgid "Inches"
 msgstr "Inches"
 
+msgid "Constrain to H, V, 45"
+msgstr "Constrain to H, V, 45"
+
 msgid "Edit User Grid..."
 msgstr "Edit User Grid..."
 
@@ -3285,11 +3291,8 @@ msgstr "Values"
 msgid "Reference designators"
 msgstr "Reference designators"
 
-msgid "Footprint text front"
-msgstr "Footprint text front"
-
-msgid "Footprint text back"
-msgstr "Footprint text back"
+msgid "Footprint text"
+msgstr "Footprint text"
 
 msgid "Hidden text"
 msgstr "Hidden text"
@@ -6221,9 +6224,6 @@ msgstr "Margin between the pin name position and the symbol body."
 msgid "units"
 msgstr "units"
 
-msgid "General"
-msgstr "General"
-
 msgid "Footprint filters:"
 msgstr "Footprint filters:"
 
@@ -7927,11 +7927,11 @@ msgstr "Highlight cross-probed nets"
 msgid "Highlight nets when they are highlighted in the PCB editor"
 msgstr "Highlight nets when they are highlighted in the PCB editor"
 
-msgid "&Restrict buses and wires to H and V orientation"
-msgstr "&Restrict buses and wires to H and V orientation"
+msgid "Constrain buses and wires to H or V"
+msgstr "Constrain buses and wires to H or V"
 
-msgid "Mouse drag performs drag (G) operation"
-msgstr "Mouse drag performs drag (G) operation"
+msgid "Mouse drag performs Drag (G) operation"
+msgstr "Mouse drag performs Drag (G) operation"
 
 msgid "If unchecked, mouse drag will perform move (M) operation"
 msgstr "If unchecked, mouse drag will perform move (M) operation"
@@ -8341,6 +8341,9 @@ msgid ""
 msgstr ""
 "An error occurred attempting to load the global symbol library table.\n"
 "Please edit this global symbol library table in Preferences menu."
+
+msgid "Display Options"
+msgstr "Display Options"
 
 msgid "Editing Options"
 msgstr "Editing Options"
@@ -13758,93 +13761,91 @@ msgstr "Error writing objects to clipboard"
 
 msgid ""
 "### Bridged Tee Attenuator\n"
-"__Zin__ desired input impedance in &#x2126;<br>\n"
-"__Zout__ desired output impedance<br>\n"
-"__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
+"___a___ is attenuation in dB<br>\n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;<br>\n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;<br>\n"
+"___Z<sub>0</sub> = Z<sub>in</sub> = Z<sub>out</sub>___\n"
 "\n"
-"* __a__ attenuation in dB\n"
-"* __L = 10<sup>a/20</sup>__ (the loss)<br><br>\n"
-"* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
-"* ___R2 = Z<sub>0</sub> / (L - 1)___"
+"___L = 10<sup>a/20</up>___\n"
+"___R<sub>1</sub> = Z<sub>0</sub> &middot; (L&minus;1)___<br>\n"
+"___R<sub>2</sub> = Z<sub>0</sub> / (L&minus;1)___\n"
 msgstr ""
 "### Bridged Tee Attenuator\n"
-"__Zin__ desired input impedance in &#x2126;<br>\n"
-"__Zout__ desired output impedance<br>\n"
-"__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
+"___a___ is attenuation in dB<br>\n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;<br>\n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;<br>\n"
+"___Z<sub>0</sub> = Z<sub>in</sub> = Z<sub>out</sub>___\n"
 "\n"
-"* __a__ attenuation in dB\n"
-"* __L = 10<sup>a/20</sup>__ (the loss)<br><br>\n"
-"* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
-"* ___R2 = Z<sub>0</sub> / (L - 1)___"
+"___L = 10<sup>a/20</up>___\n"
+"___R<sub>1</sub> = Z<sub>0</sub> &middot; (L&minus;1)___<br>\n"
+"___R<sub>2</sub> = Z<sub>0</sub> / (L&minus;1)___\n"
 
 msgid ""
-"### PI Attenuator\n"
-"__Zin__ desired input impedance in &#x2126;<br>\n"
-"__Zout__ desired output impedance<br>\n"
-"__Zin = Zout__<br><br>\n"
+"### Pi Attenuator\n"
+"___a___ is attenuation in dB<br>\n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;<br>\n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;<br>\n"
 "\n"
-"* __a__ attenuation in dB\n"
-"* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* __A = (L + 1) / (L - 1)__<br><br>\n"
-"* ___R2 = (L- 1) / 2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
-"* ___R1 = 1 / (A / Zin - 1 / R2)___\n"
-"* ___R3 = 1 / (A / Zout - 1 / R2)___"
+"___L = 10<sup>a/20</sup>___<br>\n"
+"___A = (L+1) / (L&minus;1)___<br><br>\n"
+"___R<sub>2</sub> = (L&minus;1) / 2&middot;&radic;(Z<sub>in</sub> &middot; "
+"Z<sub>out</sub> / L)___<br>\n"
+"___R<sub>1</sub> = 1 / (A/Z<sub>in</sub> &minus; 1/R<sub>2</sub>)___<br>\n"
+"___R<sub>3</sub> = 1 / (A/Z<sub>out</sub> &minus; 1/R<sub>2</sub>)___\n"
 msgstr ""
-"### PI Attenuator\n"
-"__Zin__ desired input impedance in &#x2126;<br>\n"
-"__Zout__ desired output impedance<br>\n"
-"__Zin = Zout__<br><br>\n"
+"### Pi Attenuator\n"
+"___a___ is attenuation in dB<br>\n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;<br>\n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;<br>\n"
 "\n"
-"* __a__ attenuation in dB\n"
-"* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* __A = (L + 1) / (L - 1)__<br><br>\n"
-"* ___R2 = (L- 1) / 2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
-"* ___R1 = 1 / (A / Zin - 1 / R2)___\n"
-"* ___R3 = 1 / (A / Zout - 1 / R2)___"
+"___L = 10<sup>a/20</sup>___<br>\n"
+"___A = (L+1) / (L&minus;1)___<br><br>\n"
+"___R<sub>2</sub> = (L&minus;1) / 2&middot;&radic;(Z<sub>in</sub> &middot; "
+"Z<sub>out</sub> / L)___<br>\n"
+"___R<sub>1</sub> = 1 / (A/Z<sub>in</sub> &minus; 1/R<sub>2</sub>)___<br>\n"
+"___R<sub>3</sub> = 1 / (A/Z<sub>out</sub> &minus; 1/R<sub>2</sub>)___\n"
 
 msgid ""
 "### Split Attenuator\n"
-"#### Attenuation is 6dB\n"
-"___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
-"___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
-"___Z<sub>in</sub> = Z<sub>out</sub>___\n"
+"Attenuation is 6 dB  \n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;  \n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;  \n"
+"___Z<sub>0</sub> = Z<sub>in</sub> = Z<sub>out</sub>___\n"
 "\n"
-"___R1 = R2 = R3 = Z<sub>out</sub> / 3___\n"
+"___R<sub>1</sub> = R<sub>2</sub> = R<sub>3</sub> = Z<sub>0</sub>/3___\n"
 msgstr ""
 "### Split Attenuator\n"
-"#### Attenuation is 6dB\n"
-"___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
-"___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
-"___Z<sub>in</sub> = Z<sub>out</sub>___\n"
+"Attenuation is 6 dB  \n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;  \n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;  \n"
+"___Z<sub>0</sub> = Z<sub>in</sub> = Z<sub>out</sub>___\n"
 "\n"
-"___R1 = R2 = R3 = Z<sub>out</sub> / 3___\n"
+"___R<sub>1</sub> = R<sub>2</sub> = R<sub>3</sub> = Z<sub>0</sub>/3___\n"
 
 msgid ""
 "### Tee Attenuator\n"
-"__Zin__ desired input impedance in &#x2126;<br>\n"
-"__Zout__ desired output impedance<br>\n"
-"__Zin = Zout__<br><br>\n"
+"___a___ is attenuation in dB<br>\n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;<br>\n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;<br>\n"
 "\n"
-"* __a__ attenuation in dB\n"
-"* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* ___A = (L + 1) / (L - 1)___<br><br>\n"
-"* ___R2 = 2 &radic; (L \\* Z<sub>in</sub> \\* Z<sub>out</sub> ) / (L - "
-"1)___\n"
-"* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
-"* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
+"___L = 10<sup>a/20</sup>___<br>\n"
+"___A = (L+1) / (L&minus;1)___<br>\n"
+"___R<sub>2</sub> = 2&middot;&radic;(L &middot; Z<sub>in</sub> &middot; "
+"Z<sub>out</sub>) / (L&minus;1)___<br>\n"
+"___R<sub>1</sub> = Z<sub>in</sub> &middot; A &minus; R<sub>2</sub>___<br>\n"
+"___R<sub>3</sub> = Z<sub>out</sub> &middot; A &minus; R<sub>2</sub>___\n"
 msgstr ""
 "### Tee Attenuator\n"
-"__Zin__ desired input impedance in &#x2126;<br>\n"
-"__Zout__ desired output impedance<br>\n"
-"__Zin = Zout__<br><br>\n"
+"___a___ is attenuation in dB<br>\n"
+"___Z<sub>in</sub>___ is desired input impedance in &#x2126;<br>\n"
+"___Z<sub>out</sub>___ is desired output impedance in &#x2126;<br>\n"
 "\n"
-"* __a__ attenuation in dB\n"
-"* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* ___A = (L + 1) / (L - 1)___<br><br>\n"
-"* ___R2 = 2 &radic; (L \\* Z<sub>in</sub> \\* Z<sub>out</sub> ) / (L - "
-"1)___\n"
-"* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
-"* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
+"___L = 10<sup>a/20</sup>___<br>\n"
+"___A = (L+1) / (L&minus;1)___<br>\n"
+"___R<sub>2</sub> = 2&middot;&radic;(L &middot; Z<sub>in</sub> &middot; "
+"Z<sub>out</sub>) / (L&minus;1)___<br>\n"
+"___R<sub>1</sub> = Z<sub>in</sub> &middot; A &minus; R<sub>2</sub>___<br>\n"
+"___R<sub>3</sub> = Z<sub>out</sub> &middot; A &minus; R<sub>2</sub>___\n"
 
 #, c-format
 msgid "Attenuation more than %f dB"
@@ -13868,8 +13869,8 @@ msgstr "Attenuators"
 msgid "Parameters"
 msgstr "Parameters"
 
-msgid "Attenuation:"
-msgstr "Attenuation:"
+msgid "Attenuation (a):"
+msgstr "Attenuation (a):"
 
 msgid "dB"
 msgstr "dB"
@@ -14169,8 +14170,11 @@ msgstr "Enter a new item to the current list of available regulators"
 msgid "Remove an item from the current list of available regulators"
 msgstr "Remove an item from the current list of available regulators"
 
-msgid "Current:"
-msgstr "Current:"
+msgid "Temperature rise"
+msgstr "Temperature rise"
+
+msgid "Current (I):"
+msgstr "Current (I):"
 
 msgid "Temperature rise:"
 msgstr "Temperature rise:"
@@ -14190,11 +14194,11 @@ msgstr "ohm-meter"
 msgid "External Layer Traces"
 msgstr "External Layer Traces"
 
-msgid "Trace width:"
-msgstr "Trace width:"
+msgid "Trace width (W):"
+msgstr "Trace width (W):"
 
-msgid "Trace thickness:"
-msgstr "Trace thickness:"
+msgid "Trace thickness (H):"
+msgstr "Trace thickness (H):"
 
 msgid "Cross-section area:"
 msgstr "Cross-section area:"
@@ -14475,10 +14479,9 @@ msgid ""
 "- You can enter the required resistance from 0.0025 to 4000 kΩ.\n"
 "- Solutions using up to 4 components are given.\n"
 "\n"
-"By default, the request value is always excluded from the solution set.  It "
-"is also possible to specify\n"
-"up to two additional values to exclude from the solution if these component "
-"values are not available\n"
+"The requested value is always excluded from the solution set.<br>\n"
+"Optionally up to two additional values can be excluded in case of component "
+"availability problems.\n"
 "\n"
 "Solutions are given in the following formats:\n"
 "\n"
@@ -14502,10 +14505,9 @@ msgstr ""
 "- You can enter the required resistance from 0.0025 to 4000 kΩ.\n"
 "- Solutions using up to 4 components are given.\n"
 "\n"
-"By default, the request value is always excluded from the solution set.  It "
-"is also possible to specify\n"
-"up to two additional values to exclude from the solution if these component "
-"values are not available\n"
+"The requested value is always excluded from the solution set.<br>\n"
+"Optionally up to two additional values can be excluded in case of component "
+"availability problems.\n"
 "\n"
 "Solutions are given in the following formats:\n"
 "\n"
@@ -14566,16 +14568,18 @@ msgid ""
 "The controlling value is shown in bold.\n"
 "\n"
 "The calculations are valid for currents up to 35 A (external) or 17.5 A "
-"(internal), temperature rises up to 100 ºC, and widths of up to 400 mil (10 "
+"(internal), temperature rises up to 100 °C, and widths of up to 400 mils (10 "
 "mm).\n"
 "\n"
-"The formula, from IPC 2221, is\n"
-"<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
+"The formula, from IPC 2221, is  \n"
+"<center>___I = K &sdot; &Delta;T<sup>0.44</sup> &sdot; (W &sdot; "
+"H)<sup>0.725</sup>___</center>  \n"
 "where:  \n"
-"__I__ = maximum current in A  \n"
-"__dt__ = temperature rise above ambient in ºC  \n"
-"__W,H__ = width and thickness in mils  \n"
-"__K__ = 0.024 for internal traces or 0.048 for external traces\n"
+"___I___ is maximum current in A  \n"
+"___&Delta;T___ is temperature rise above ambient in &deg;C  \n"
+"___W___ is width in mils  \n"
+"___H___ is thickness (height) in mils  \n"
+"___K___ is 0.024 for internal traces or 0.048 for external traces  \n"
 msgstr ""
 "If you specify the maximum current, then the trace widths will be calculated "
 "to suit.\n"
@@ -14587,16 +14591,18 @@ msgstr ""
 "The controlling value is shown in bold.\n"
 "\n"
 "The calculations are valid for currents up to 35 A (external) or 17.5 A "
-"(internal), temperature rises up to 100 ºC, and widths of up to 400 mil (10 "
+"(internal), temperature rises up to 100 °C, and widths of up to 400 mils (10 "
 "mm).\n"
 "\n"
-"The formula, from IPC 2221, is\n"
-"<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
+"The formula, from IPC 2221, is  \n"
+"<center>___I = K &sdot; &Delta;T<sup>0.44</sup> &sdot; (W &sdot; "
+"H)<sup>0.725</sup>___</center>  \n"
 "where:  \n"
-"__I__ = maximum current in A  \n"
-"__dt__ = temperature rise above ambient in ºC  \n"
-"__W,H__ = width and thickness in mils  \n"
-"__K__ = 0.024 for internal traces or 0.048 for external traces\n"
+"___I___ is maximum current in A  \n"
+"___&Delta;T___ is temperature rise above ambient in &deg;C  \n"
+"___W___ is width in mils  \n"
+"___H___ is thickness (height) in mils  \n"
+"___K___ is 0.024 for internal traces or 0.048 for external traces  \n"
 
 msgid "Dielectric Loss Factor"
 msgstr "Dielectric Loss Factor"
@@ -17919,6 +17925,12 @@ msgstr "Select a corner to add the new corner after."
 msgid "Select a corner to delete."
 msgstr "Select a corner to delete."
 
+msgid "Pad Properties"
+msgstr "Pad Properties"
+
+msgid "Default Pad Properties for Add Pad Tool"
+msgstr "Default Pad Properties for Add Pad Tool"
+
 #, c-format
 msgid "Footprint %s (%s), %s, rotated %g deg"
 msgstr "Footprint %s (%s), %s, rotated %g deg"
@@ -18373,9 +18385,6 @@ msgstr "Delete Primitive"
 msgid "Custom Shape Primitives"
 msgstr "Custom Shape Primitives"
 
-msgid "Footprint R1 (300K), back side (mirrored), rotated 180.0º"
-msgstr "Footprint R1 (300K), back side (mirrored), rotated 180.0º"
-
 msgid "Preview pad in sketch mode"
 msgstr "Preview pad in sketch mode"
 
@@ -18402,9 +18411,6 @@ msgstr "Duplicate:"
 
 msgid "Coordinates are relative to anchor pad, rotated 0.0 deg."
 msgstr "Coordinates are relative to anchor pad, rotated 0.0 deg."
-
-msgid "Pad Properties"
-msgstr "Pad Properties"
 
 msgid "Pad Custom Shape Geometry Transform"
 msgstr "Pad Custom Shape Geometry Transform"
@@ -18559,6 +18565,9 @@ msgid ""
 msgstr ""
 "Generate a Gerber job file that contains info about the board,\n"
 "and the list of generated Gerber plot files"
+
+msgid "Subtract soldermask from silkscreen"
+msgstr "Subtract soldermask from silkscreen"
 
 msgid "Remove silkscreen from areas without soldermask"
 msgstr "Remove silkscreen from areas without soldermask"
@@ -18820,15 +18829,6 @@ msgstr "Walk around"
 
 msgid "Mode"
 msgstr "Mode"
-
-msgid "Mouse drag behavior:"
-msgstr "Mouse drag behavior:"
-
-msgid "Move item"
-msgstr "Move item"
-
-msgid "Interactive drag"
-msgstr "Interactive drag"
 
 msgid "Free angle mode (no shove/walkaround)"
 msgstr "Free angle mode (no shove/walkaround)"
@@ -19387,8 +19387,8 @@ msgstr "Highlight net (for pads or tracks)."
 msgid "Graphics Editing"
 msgstr "Graphics Editing"
 
-msgid "Limit actions to 45 degrees from start"
-msgstr "Limit actions to 45 degrees from start"
+msgid "Constrain to H, V, 45 degrees"
+msgstr "Constrain to H, V, 45 degrees"
 
 msgid "Magnetic Points"
 msgstr "Magnetic Points"
@@ -19447,6 +19447,9 @@ msgid ""
 "Drags the nearest joint in the track without restricting the track angle."
 msgstr ""
 "Drags the nearest joint in the track without restricting the track angle."
+
+msgid "Limit actions to 45 degrees from start"
+msgstr "Limit actions to 45 degrees from start"
 
 msgid "Draw an outline to show the sheet size."
 msgstr "Draw an outline to show the sheet size."
@@ -20929,6 +20932,9 @@ msgstr "Differential uncoupled length too long"
 msgid "Footprint type doesn't match footprint pads"
 msgstr "Footprint type doesn't match footprint pads"
 
+msgid "Through hole pad has no hole"
+msgstr "Through hole pad has no hole"
+
 #, c-format
 msgid "Rule: %s"
 msgstr "Rule: %s"
@@ -21475,6 +21481,10 @@ msgstr "Expected \"SMD\" type but set to \"%s\""
 #, c-format
 msgid "Expected \"Other\" type but set to \"%s\""
 msgstr "Expected \"Other\" type but set to \"%s\""
+
+#, c-format
+msgid "(pad \"%s\")"
+msgstr "(pad \"%s\")"
 
 msgid "Clearance Override"
 msgstr "Clearance Override"
@@ -22870,10 +22880,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Track found on an Altium layer (%d) with no KiCadequivalent. It has been "
+"Track found on an Altium layer (%d) with no KiCad equivalent. It has been "
 "moved to KiCad layer Eco1_User."
 msgstr ""
-"Track found on an Altium layer (%d) with no KiCadequivalent. It has been "
+"Track found on an Altium layer (%d) with no KiCad equivalent. It has been "
 "moved to KiCad layer Eco1_User."
 
 msgid "Loading text..."
@@ -25199,11 +25209,10 @@ msgstr "Toggle Lock"
 msgid "Lock or unlock selected items"
 msgstr "Lock or unlock selected items"
 
-msgid "Toggle 45 Limit"
-msgstr "Toggle 45 Limit"
-
-msgid "Limit actions to 45 degrees from the starting point"
-msgstr "Limit actions to 45 degrees from the starting point"
+msgid ""
+"Limit actions to horizontal, vertical, or 45 degrees from the starting point"
+msgstr ""
+"Limit actions to horizontal, vertical, or 45 degrees from the starting point"
 
 msgid "Prevent items from being moved and/or resized on the canvas"
 msgstr "Prevent items from being moved and/or resized on the canvas"
@@ -26473,6 +26482,255 @@ msgstr "KiCad Schematic"
 
 msgid "KiCad Printed Circuit Board"
 msgstr "KiCad Printed Circuit Board"
+
+#~ msgid "Footprint text front"
+#~ msgstr "Footprint text front"
+
+#~ msgid "Footprint text back"
+#~ msgstr "Footprint text back"
+
+#~ msgid "&Restrict buses and wires to H and V orientation"
+#~ msgstr "&Restrict buses and wires to H and V orientation"
+
+#~ msgid "Mouse drag performs drag (G) operation"
+#~ msgstr "Mouse drag performs drag (G) operation"
+
+#~ msgid ""
+#~ "### Bridged Tee Attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)<br><br>\n"
+#~ "* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
+#~ "* ___R2 = Z<sub>0</sub> / (L - 1)___"
+#~ msgstr ""
+#~ "### Bridged Tee Attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)<br><br>\n"
+#~ "* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
+#~ "* ___R2 = Z<sub>0</sub> / (L - 1)___"
+
+#~ msgid ""
+#~ "### PI Attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* __A = (L + 1) / (L - 1)__<br><br>\n"
+#~ "* ___R2 = (L- 1) / 2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
+#~ "* ___R1 = 1 / (A / Zin - 1 / R2)___\n"
+#~ "* ___R3 = 1 / (A / Zout - 1 / R2)___"
+#~ msgstr ""
+#~ "### PI Attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* __A = (L + 1) / (L - 1)__<br><br>\n"
+#~ "* ___R2 = (L- 1) / 2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
+#~ "* ___R1 = 1 / (A / Zin - 1 / R2)___\n"
+#~ "* ___R3 = 1 / (A / Zout - 1 / R2)___"
+
+#~ msgid ""
+#~ "### Split Attenuator\n"
+#~ "#### Attenuation is 6dB\n"
+#~ "___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
+#~ "___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
+#~ "___Z<sub>in</sub> = Z<sub>out</sub>___\n"
+#~ "\n"
+#~ "___R1 = R2 = R3 = Z<sub>out</sub> / 3___\n"
+#~ msgstr ""
+#~ "### Split Attenuator\n"
+#~ "#### Attenuation is 6dB\n"
+#~ "___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
+#~ "___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
+#~ "___Z<sub>in</sub> = Z<sub>out</sub>___\n"
+#~ "\n"
+#~ "___R1 = R2 = R3 = Z<sub>out</sub> / 3___\n"
+
+#~ msgid ""
+#~ "### Tee Attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* ___A = (L + 1) / (L - 1)___<br><br>\n"
+#~ "* ___R2 = 2 &radic; (L \\* Z<sub>in</sub> \\* Z<sub>out</sub> ) / (L - "
+#~ "1)___\n"
+#~ "* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
+#~ "* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
+#~ msgstr ""
+#~ "### Tee Attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* ___A = (L + 1) / (L - 1)___<br><br>\n"
+#~ "* ___R2 = 2 &radic; (L \\* Z<sub>in</sub> \\* Z<sub>out</sub> ) / (L - "
+#~ "1)___\n"
+#~ "* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
+#~ "* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
+
+#~ msgid "Attenuation:"
+#~ msgstr "Attenuation:"
+
+#~ msgid "Current:"
+#~ msgstr "Current:"
+
+#~ msgid "Trace width:"
+#~ msgstr "Trace width:"
+
+#~ msgid "Trace thickness:"
+#~ msgstr "Trace thickness:"
+
+#~ msgid ""
+#~ "E-series are defined in IEC 60063.\n"
+#~ "\n"
+#~ "Available values are approximately equally spaced in a logarithmic "
+#~ "scale.\n"
+#~ "\n"
+#~ "\tE24(5%):  1.0 1.1 1.2 1.3 1.5 1.6 1.8 2.0 2.2 2.4 2.7 3.0 3.3 3.6 3.9 "
+#~ "4.3 4.7 5.1 5.6 6.2 6.8 7.5 8.2 9.1\n"
+#~ "\tE12(10%): 1.0 1.2 1.5 1.8 2.2 2.7 3.3 3.9 4.7 5.6 6.8 8.2\n"
+#~ "\tE6(20%):  1.0  -  1.5  -  2.2  -  3.3  -  4.7  -  6.8  -\n"
+#~ "\tE3(50%):  1.0  -   -   -  2.2  -   -   -  4.7  -   -   -\n"
+#~ "\tE1     :  1.0  -   -   -   -   -   -   -   -   -   -   -\n"
+#~ "\n"
+#~ "- This calculator finds combinations of standard E-series (between 10Ω "
+#~ "and 1MΩ) to create arbitrary values.\n"
+#~ "- You can enter the required resistance from 0.0025 to 4000 kΩ.\n"
+#~ "- Solutions using up to 4 components are given.\n"
+#~ "\n"
+#~ "By default, the request value is always excluded from the solution set.  "
+#~ "It is also possible to specify\n"
+#~ "up to two additional values to exclude from the solution if these "
+#~ "component values are not available\n"
+#~ "\n"
+#~ "Solutions are given in the following formats:\n"
+#~ "\n"
+#~ "\tR1 + R2 +...+ Rn\tresistors in series\n"
+#~ "\tR1 | R2 |...| Rn\tresistors in parallel\n"
+#~ "\tR1 + (R2|R3)...\t\tany combination of the above\n"
+#~ msgstr ""
+#~ "E-series are defined in IEC 60063.\n"
+#~ "\n"
+#~ "Available values are approximately equally spaced in a logarithmic "
+#~ "scale.\n"
+#~ "\n"
+#~ "\tE24(5%):  1.0 1.1 1.2 1.3 1.5 1.6 1.8 2.0 2.2 2.4 2.7 3.0 3.3 3.6 3.9 "
+#~ "4.3 4.7 5.1 5.6 6.2 6.8 7.5 8.2 9.1\n"
+#~ "\tE12(10%): 1.0 1.2 1.5 1.8 2.2 2.7 3.3 3.9 4.7 5.6 6.8 8.2\n"
+#~ "\tE6(20%):  1.0  -  1.5  -  2.2  -  3.3  -  4.7  -  6.8  -\n"
+#~ "\tE3(50%):  1.0  -   -   -  2.2  -   -   -  4.7  -   -   -\n"
+#~ "\tE1     :  1.0  -   -   -   -   -   -   -   -   -   -   -\n"
+#~ "\n"
+#~ "- This calculator finds combinations of standard E-series (between 10Ω "
+#~ "and 1MΩ) to create arbitrary values.\n"
+#~ "- You can enter the required resistance from 0.0025 to 4000 kΩ.\n"
+#~ "- Solutions using up to 4 components are given.\n"
+#~ "\n"
+#~ "By default, the request value is always excluded from the solution set.  "
+#~ "It is also possible to specify\n"
+#~ "up to two additional values to exclude from the solution if these "
+#~ "component values are not available\n"
+#~ "\n"
+#~ "Solutions are given in the following formats:\n"
+#~ "\n"
+#~ "\tR1 + R2 +...+ Rn\tresistors in series\n"
+#~ "\tR1 | R2 |...| Rn\tresistors in parallel\n"
+#~ "\tR1 + (R2|R3)...\t\tany combination of the above\n"
+
+#~ msgid ""
+#~ "If you specify the maximum current, then the trace widths will be "
+#~ "calculated to suit.\n"
+#~ "\n"
+#~ "If you specify one of the trace widths, the maximum current it can handle "
+#~ "will be calculated. The width for the other trace to also handle this "
+#~ "current will then be calculated.\n"
+#~ "\n"
+#~ "The controlling value is shown in bold.\n"
+#~ "\n"
+#~ "The calculations are valid for currents up to 35 A (external) or 17.5 A "
+#~ "(internal), temperature rises up to 100 ºC, and widths of up to 400 mil "
+#~ "(10 mm).\n"
+#~ "\n"
+#~ "The formula, from IPC 2221, is\n"
+#~ "<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
+#~ "where:  \n"
+#~ "__I__ = maximum current in A  \n"
+#~ "__dt__ = temperature rise above ambient in ºC  \n"
+#~ "__W,H__ = width and thickness in mils  \n"
+#~ "__K__ = 0.024 for internal traces or 0.048 for external traces\n"
+#~ msgstr ""
+#~ "If you specify the maximum current, then the trace widths will be "
+#~ "calculated to suit.\n"
+#~ "\n"
+#~ "If you specify one of the trace widths, the maximum current it can handle "
+#~ "will be calculated. The width for the other trace to also handle this "
+#~ "current will then be calculated.\n"
+#~ "\n"
+#~ "The controlling value is shown in bold.\n"
+#~ "\n"
+#~ "The calculations are valid for currents up to 35 A (external) or 17.5 A "
+#~ "(internal), temperature rises up to 100 ºC, and widths of up to 400 mil "
+#~ "(10 mm).\n"
+#~ "\n"
+#~ "The formula, from IPC 2221, is\n"
+#~ "<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
+#~ "where:  \n"
+#~ "__I__ = maximum current in A  \n"
+#~ "__dt__ = temperature rise above ambient in ºC  \n"
+#~ "__W,H__ = width and thickness in mils  \n"
+#~ "__K__ = 0.024 for internal traces or 0.048 for external traces\n"
+
+#~ msgid "Mouse drag behavior:"
+#~ msgstr "Mouse drag behavior:"
+
+#~ msgid "Move item"
+#~ msgstr "Move item"
+
+#~ msgid "Interactive drag"
+#~ msgstr "Interactive drag"
+
+#~ msgid "Toggle 45 Limit"
+#~ msgstr "Toggle 45 Limit"
+
+#~ msgid "Limit actions to 45 degrees from the starting point"
+#~ msgstr "Limit actions to 45 degrees from the starting point"
+
+#~ msgid "Show comments and drawings layers"
+#~ msgstr "Show comments and drawings layers"
+
+#~ msgid "Rotation Increment:"
+#~ msgstr "Rotation Increment:"
+
+#~ msgid "OpenGL"
+#~ msgstr "OpenGL"
+
+#~ msgid "Footprint R1 (300K), back side (mirrored), rotated 180.0º"
+#~ msgstr "Footprint R1 (300K), back side (mirrored), rotated 180.0º"
+
+#, c-format
+#~ msgid ""
+#~ "Track found on an Altium layer (%d) with no KiCadequivalent. It has been "
+#~ "moved to KiCad layer Eco1_User."
+#~ msgstr ""
+#~ "Track found on an Altium layer (%d) with no KiCadequivalent. It has been "
+#~ "moved to KiCad layer Eco1_User."
 
 #~ msgid "Polyline"
 #~ msgstr "Polyline"

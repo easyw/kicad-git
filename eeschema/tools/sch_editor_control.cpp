@@ -890,6 +890,9 @@ int SCH_EDITOR_CONTROL::SimTune( const TOOL_EVENT& aEvent )
                 if( simFrame )
                     static_cast<SIM_PLOT_FRAME*>( simFrame )->AddTuner( symbol );
 
+                // We do not really want to keep a symbol selected in schematic,
+                // so clear the current selection
+                selTool->ClearSelection();
                 return true;
             } );
 
@@ -924,6 +927,10 @@ int SCH_EDITOR_CONTROL::SimTune( const TOOL_EVENT& aEvent )
                     m_toolMgr->GetTool<EE_SELECTION_TOOL>()->UnbrightenItem( m_pickerItem );
 
                 // Wake the selection tool after exiting to ensure the cursor gets updated
+                // and deselect previous selection from simulator to avoid any issue
+                // ( avoid crash in some cases when the SimTune tool is deselected )
+                EE_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
+                selectionTool->ClearSelection();
                 m_toolMgr->RunAction( EE_ACTIONS::selectionActivate, false );
             } );
 
@@ -1941,7 +1948,20 @@ int SCH_EDITOR_CONTROL::EditWithSymbolEditor( const TOOL_EVENT& aEvent )
     symbolEditor = (SYMBOL_EDIT_FRAME*) m_frame->Kiway().Player( FRAME_SCH_SYMBOL_EDITOR, false );
 
     if( symbolEditor )
-        symbolEditor->LoadSymbolFromSchematic( symbol );
+    {
+        if( aEvent.IsAction( &EE_ACTIONS::editWithLibEdit ) )
+            symbolEditor->LoadSymbolFromSchematic( symbol );
+        else if( aEvent.IsAction( &EE_ACTIONS::editLibSymbolWithLibEdit ) )
+        {
+            symbolEditor->LoadSymbol( symbol->GetLibId(), symbol->GetConvert(), symbol->GetUnit() );
+
+            if( !symbolEditor->IsSymbolTreeShown() )
+            {
+                wxCommandEvent evt;
+                symbolEditor->OnToggleSymbolTree( evt );
+            }
+        }
+    }
 
     return 0;
 }
@@ -2177,6 +2197,7 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::Duplicate,             ACTIONS::duplicate.MakeEvent() );
 
     Go( &SCH_EDITOR_CONTROL::EditWithSymbolEditor,  EE_ACTIONS::editWithLibEdit.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::EditWithSymbolEditor,  EE_ACTIONS::editLibSymbolWithLibEdit.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ShowCvpcb,             EE_ACTIONS::assignFootprints.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ImportFPAssignments,   EE_ACTIONS::importFPAssignments.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Annotate,              EE_ACTIONS::annotate.MakeEvent() );

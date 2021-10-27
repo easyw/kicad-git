@@ -90,7 +90,7 @@ EDA_3D_VIEWER_FRAME::EDA_3D_VIEWER_FRAME( KIWAY *aKiway, PCB_BASE_FRAME *aParent
         m_mainToolBar( nullptr ),
         m_canvas( nullptr ),
         m_currentCamera( m_trackBallCamera ),
-        m_trackBallCamera( RANGE_SCALE_3D, 0.66f )
+        m_trackBallCamera( 2 * RANGE_SCALE_3D )
 {
     wxLogTrace( m_logTrace, "EDA_3D_VIEWER_FRAME::EDA_3D_VIEWER_FRAME %s", aTitle );
 
@@ -234,9 +234,9 @@ void EDA_3D_VIEWER_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
     wxTreebook* book = aParent->GetTreebook();
 
     book->AddPage( new wxPanel( book ), _( "3D Viewer" ) );
-    book->AddSubPage( new PANEL_3D_DISPLAY_OPTIONS( this, book ), _( "Display Options" ) );
-    book->AddSubPage( new PANEL_3D_OPENGL_OPTIONS( this, book ), _( "OpenGL" ) );
-    book->AddSubPage( new PANEL_3D_RAYTRACING_OPTIONS( this, book ), _( "Raytracing" ) );
+    book->AddSubPage( new PANEL_3D_DISPLAY_OPTIONS( this, book ), _( "General" ) );
+    book->AddSubPage( new PANEL_3D_OPENGL_OPTIONS( this, book ), _( "Realtime Renderer" ) );
+    book->AddSubPage( new PANEL_3D_RAYTRACING_OPTIONS( this, book ), _( "Raytracing Renderer" ) );
     book->AddSubPage( new PANEL_3D_COLORS( this, book ), _( "Colors" ) );
 
     aHotkeysPanel->AddHotKeys( GetToolManager() );
@@ -357,8 +357,8 @@ void EDA_3D_VIEWER_FRAME::OnRenderEngineSelection( wxCommandEvent &event )
         m_boardAdapter.SetRenderEngine( RENDER_ENGINE::OPENGL );
 
     wxLogTrace( m_logTrace, "EDA_3D_VIEWER_FRAME::OnRenderEngineSelection type %s ",
-                ( m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::RAYTRACING ) ? "Raytrace" :
-                                                                                    "OpenGL" );
+                ( m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::RAYTRACING ) ? "raytracing" :
+                                                                                    "realtime" );
 
     if( old_engine != m_boardAdapter.GetRenderEngine() )
         RenderEngineChanged();

@@ -2117,26 +2117,18 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
 
                         FP_SHAPE* arc = new FP_SHAPE( fp, SHAPE_T::ARC );
 
-                        if( src->mirror )
-                        {
-                            arc->SetLayer( FlipLayer( layer ) );
-                            arc->SetCenter( wxPoint( lsrc->center_x, 2 * src->y - lsrc->center_y ) );
-                            arc->SetStart( wxPoint( lsrc->end_x, 2 * src->y - lsrc->end_y ) );
-                            arc->SetArcAngleAndEnd0( lsrc->result.GetCentralAngle() * 10.0 );
-                        }
-                        else
-                        {
-                            arc->SetLayer( layer );
-                            arc->SetCenter( wxPoint( lsrc->center_x, lsrc->center_y ) );
-                            arc->SetStart( wxPoint( lsrc->end_x, lsrc->end_y ) );
-                            arc->SetArcAngleAndEnd0( -lsrc->result.GetCentralAngle() * 10.0 );
-                        }
-
+                        arc->SetLayer( layer );
+                        arc->SetArcGeometry( (wxPoint) lsrc->result.GetP0(),
+                                             (wxPoint) lsrc->result.GetArcMid(),
+                                             (wxPoint) lsrc->result.GetP1() );
                         arc->SetWidth( lsrc->width );
                         arc->SetLocalCoord();
 
                         if( lsrc->width == 0 )
                             arc->SetWidth( ds.GetLineThickness( arc->GetLayer() ) );
+
+                        if( src->mirror )
+                            arc->Flip( arc->GetCenter(), false );
 
                         fp->Add( arc, ADD_MODE::APPEND );
                         break;
@@ -2683,8 +2675,11 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
         zone->SetIsRuleArea( true );
         zone->SetDoNotAllowVias( true );
     }
+    else
+    {
+        zone->SetPriority( 50 );
+    }
 
-    zone->SetPriority( 50 );
     zone->SetLocalClearance( 0 );
     zone->SetPadConnection( ZONE_CONNECTION::FULL );
 
@@ -2773,9 +2768,9 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
 
             PCB_SHAPE* arc = new PCB_SHAPE( aBoard, SHAPE_T::ARC );
             arc->SetLayer( layer );
-            arc->SetCenter( wxPoint( src->center_x, src->center_y ) );
-            arc->SetStart( wxPoint( src->start_x, src->start_y ) );
-            arc->SetArcAngleAndEnd( src->result.GetCentralAngle() * 10.0 );
+            arc->SetArcGeometry( (wxPoint) src->result.GetP0(),
+                                 (wxPoint) src->result.GetArcMid(),
+                                 (wxPoint) src->result.GetP1() );
             arc->SetWidth( src->width );
 
             if( arc->GetWidth() == 0 )
@@ -2888,9 +2883,9 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
 
                 PCB_SHAPE* arc = new PCB_SHAPE( aBoard, SHAPE_T::ARC );
                 arc->SetLayer( layer );
-                arc->SetCenter( wxPoint( src->center_x, src->center_y ) );
-                arc->SetStart( wxPoint( src->start_x, src->start_y ) );
-                arc->SetArcAngleAndEnd( src->result.GetCentralAngle() * 10.0 );
+                arc->SetArcGeometry( (wxPoint) src->result.GetP0(),
+                                     (wxPoint) src->result.GetArcMid(),
+                                     (wxPoint) src->result.GetP1() );
                 arc->SetWidth( src->width );
 
                 aBoard->Add( arc, ADD_MODE::APPEND );
@@ -2955,6 +2950,10 @@ bool FABMASTER::orderZones( BOARD* aBoard )
 
     for( ZONE* zone : zones )
     {
+        /// Rule areas do not have priorities
+        if( zone->GetIsRuleArea() )
+            continue;
+
         if( zone->GetLayer() != layer )
         {
             layer = zone->GetLayer();
