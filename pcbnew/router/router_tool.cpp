@@ -94,7 +94,7 @@ static const TOOL_ACTION ACT_EndTrack( "pcbnew.InteractiveRouter.EndTrack",
 static const TOOL_ACTION ACT_AutoEndRoute( "pcbnew.InteractiveRouter.AutoEndRoute",
         AS_CONTEXT,
         'F', "",
-        _( "Auto-finish Track" ),  _( "Automagically finishes laying the current track." ) );
+        _( "Auto-finish Track" ),  _( "Automatically finishes laying the current track." ) );
 
 static const TOOL_ACTION ACT_PlaceThroughVia( "pcbnew.InteractiveRouter.PlaceVia",
         AS_CONTEXT,
@@ -532,7 +532,7 @@ void ROUTER_TOOL::saveRouterDebugLog()
         m_router->Settings().Mode(),
         m_router->Settings().RemoveLoops() ? 1 : 0,
         m_router->Settings().GetFixAllSegments() ? 1 : 0,
-        m_router->Settings().GetCornerMode()
+        static_cast<int>( m_router->Settings().GetCornerMode() )
      );
 
     const auto& events = logger->GetEvents();
@@ -807,14 +807,47 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             wxPoint endPoint = (wxPoint) view()->ToScreen( m_endSnapPoint );
             endPoint = frame()->GetCanvas()->ClientToScreen( endPoint );
 
+            // Build the list of not allowed layer for the target layer
+            LSET not_allowed_ly = LSET::AllNonCuMask();
+
+            if( viaType != VIATYPE::THROUGH )
+            {
+                not_allowed_ly.set( currentLayer );
+            }
+
+            if( viaType == VIATYPE::MICROVIA )
+            {
+                // Allows only the previous or the next layer from the current layer
+                int previous_layer = currentLayer == B_Cu ? layerCount - 2
+                                                          : currentLayer - 1;
+
+                int next_layer = currentLayer >= layerCount-2 ? B_Cu
+                                                              : currentLayer + 1;
+
+                not_allowed_ly = LSET::AllLayersMask();
+
+                if( previous_layer >= F_Cu && previous_layer != currentLayer )
+                    not_allowed_ly.reset( previous_layer );
+
+                if( next_layer != currentLayer )
+                    not_allowed_ly.reset( next_layer );
+            }
+
             targetLayer = frame()->SelectOneLayer( static_cast<PCB_LAYER_ID>( currentLayer ),
-                                                   LSET::AllNonCuMask(), endPoint );
+                                                   not_allowed_ly, endPoint );
 
             // Reset the cursor to the end of the track
             controls()->SetCursorPosition( m_endSnapPoint );
 
             if( targetLayer == UNDEFINED_LAYER )    // cancelled by user
                 return 0;
+
+            // One cannot place a blind/buried via on only one layer:
+            if( viaType != VIATYPE::THROUGH )
+            {
+                if( currentLayer == targetLayer )
+                    return 0;
+            }
         }
     }
 
@@ -889,7 +922,19 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             break;
 
         case VIATYPE::MICROVIA:
-            if( currentLayer == F_Cu || currentLayer == In1_Cu )
+            // Try to use the layer pair preset, if the layers are adjacent,
+            // because a microvia is usually restricted to 2 adjacent copper layers
+            if( pairTop > pairBottom ) std::swap( pairTop, pairBottom );
+
+            if( currentLayer == pairTop && pairBottom == pairTop+1 )
+            {
+                 targetLayer = pairBottom;
+            }
+            else if( currentLayer == pairBottom && pairBottom == pairTop+1 )
+            {
+                 targetLayer = pairTop;
+            }
+            else if( currentLayer == F_Cu || currentLayer == In1_Cu )
             {
                 // front-side microvia
                 currentLayer = F_Cu;
@@ -907,8 +952,10 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             }
             else
             {
-                wxFAIL_MSG( "Invalid implicit layer pair for microvia (must be on "
-                            "or adjacent to an outer layer)." );
+                // This is not optimal: from an internal layer one can want to switch
+                // to the previous or the next internal layer
+                // but at this point we do not know what the user want.
+               targetLayer = PCB_LAYER_ID( currentLayer + 1 );
             }
             break;
 
@@ -926,10 +973,22 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
                 // so fallback and swap to the top layer of the pair by default
                 targetLayer = pairTop;
             }
+
+            // Do not create a broken via (i.e. a via on only one copper layer)
+            if( currentLayer == targetLayer )
+            {
+                WX_INFOBAR* infobar = frame()->GetInfoBar();
+                infobar->ShowMessageFor( _( "Blind/buried via need 2 different layers." ),
+                                         2000, wxICON_ERROR,
+                                         WX_INFOBAR::MESSAGE_TYPE::DRC_VIOLATION );
+                return 0;
+            }
+
             break;
 
         default:
             wxFAIL_MSG( "unexpected via type" );
+            return 0;
             break;
         }
     }
@@ -1085,6 +1144,8 @@ void ROUTER_TOOL::performRouting()
     // Set initial cursor
     setCursor();
 
+    bool abortRouting = false;
+
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
@@ -1144,6 +1205,7 @@ void ROUTER_TOOL::performRouting()
         else if( evt->IsAction( &ACT_SwitchRounding ) )
         {
             m_router->ToggleRounded();
+            updateMessagePanel();
             updateEndItem( *evt );
             m_router->Move( m_endSnapPoint, m_endItem );        // refresh
         }
@@ -1174,8 +1236,13 @@ void ROUTER_TOOL::performRouting()
                  || evt->IsUndoRedo()
                  || evt->IsAction( &PCB_ACTIONS::routerInlineDrag ) )
         {
-            if( evt->IsCancelInteractive() && !m_router->RoutingInProgress() )
-                m_cancelled = true;
+            if( evt->IsCancelInteractive() )
+            {
+                if( m_router->RoutingInProgress() )
+                    abortRouting = true;
+                else
+                    m_cancelled = true;
+            }
 
             if( evt->IsActivate() && !evt->IsMoveTool() )
                 m_cancelled = true;
@@ -1192,7 +1259,10 @@ void ROUTER_TOOL::performRouting()
         }
     }
 
-    m_router->CommitRouting();
+    if( abortRouting )
+        m_router->AbortRouting();
+    else
+        m_router->CommitRouting();
 
     finishInteractive();
 }
@@ -1223,6 +1293,8 @@ int ROUTER_TOOL::SettingsDialog( const TOOL_EVENT& aEvent )
     DIALOG_PNS_SETTINGS settingsDlg( frame(), m_router->Settings() );
 
     settingsDlg.ShowModal();
+
+    updateMessagePanel();
 
     return 0;
 }
@@ -1980,6 +2052,26 @@ void ROUTER_TOOL::updateMessagePanel()
     {
         items.emplace_back( _( "Routing Track" ), _( "(no net)" ) );
     }
+
+    wxString cornerMode;
+
+    if( m_router->Settings().GetFreeAngleMode() )
+    {
+        cornerMode = _( "Free-angle" );
+    }
+    else
+    {
+        switch( m_router->Settings().GetCornerMode() )
+        {
+        case PNS::CORNER_MODE::MITERED_45: cornerMode = _( "45-degree" );         break;
+        case PNS::CORNER_MODE::ROUNDED_45: cornerMode = _( "45-degree rounded" ); break;
+        case PNS::CORNER_MODE::MITERED_90: cornerMode = _( "90-degree" );         break;
+        case PNS::CORNER_MODE::ROUNDED_90: cornerMode = _( "90-degree rounded" ); break;
+        default: break;
+        }
+    }
+
+    items.emplace_back( _( "Corner Style" ), cornerMode );
 
     EDA_UNITS units = frame()->GetUserUnits();
 

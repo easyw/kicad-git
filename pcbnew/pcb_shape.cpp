@@ -35,14 +35,14 @@
 
 PCB_SHAPE::PCB_SHAPE( BOARD_ITEM* aParent, KICAD_T idtype, SHAPE_T shapetype ) :
     BOARD_ITEM( aParent, idtype ),
-    EDA_SHAPE( shapetype, Millimeter2iu( DEFAULT_LINE_WIDTH ), FILL_T::NO_FILL )
+    EDA_SHAPE( shapetype, Millimeter2iu( DEFAULT_LINE_WIDTH ), FILL_T::NO_FILL, false )
 {
 }
 
 
 PCB_SHAPE::PCB_SHAPE( BOARD_ITEM* aParent, SHAPE_T shapetype ) :
     BOARD_ITEM( aParent, PCB_SHAPE_T ),
-    EDA_SHAPE( shapetype, Millimeter2iu( DEFAULT_LINE_WIDTH ), FILL_T::NO_FILL )
+    EDA_SHAPE( shapetype, Millimeter2iu( DEFAULT_LINE_WIDTH ), FILL_T::NO_FILL, false )
 {
 }
 
@@ -151,7 +151,7 @@ void PCB_SHAPE::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_I
 {
     aList.emplace_back( _( "Type" ), _( "Drawing" ) );
 
-    if( IsLocked() )
+    if( aFrame->GetName() == PCB_EDIT_FRAME_NAME && IsLocked() )
         aList.emplace_back( _( "Status" ), _( "Locked" ) );
 
     ShapeGetMsgPanelInfo( aFrame, aList );

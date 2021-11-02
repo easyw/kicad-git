@@ -445,6 +445,9 @@ bool SCH_SCREEN::IsJunctionNeeded( const wxPoint& aPosition, bool aNew ) const
             }
             else if( line->HitTest( aPosition, -1 ) )
             {
+                if( aNew )
+                    breakLines[ layer ] = true;
+
                 // Defer any line midpoints until we know whether or not we're breaking them
                 midPointLines[ layer ].push_back( line );
             }
@@ -452,6 +455,16 @@ bool SCH_SCREEN::IsJunctionNeeded( const wxPoint& aPosition, bool aNew ) const
             break;
 
         case SCH_BUS_WIRE_ENTRY_T:
+            if( item->IsConnected( aPosition ) )
+            {
+                breakLines[ BUSES ] = true;
+                exitAngles[ BUSES ].insert( uniqueAngle++ );
+                breakLines[ WIRES ] = true;
+                exitAngles[ WIRES ].insert( uniqueAngle++ );
+            }
+
+            break;
+
         case SCH_SYMBOL_T:
         case SCH_SHEET_T:
             if( item->IsConnected( aPosition ) )
