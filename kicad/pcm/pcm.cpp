@@ -62,7 +62,8 @@ PLUGIN_CONTENT_MANAGER::PLUGIN_CONTENT_MANAGER( wxWindow* aParent ) : m_dialog( 
         m_3rdparty_path = PATHS::GetDefault3rdPartyPath();
 
     // Read and store pcm schema
-    wxFileName schema_file( PATHS::GetStockDataPath(), "pcm.v1.schema.json" );
+    wxFileName schema_file( PATHS::GetStockDataPath( true ), "pcm.v1.schema.json" );
+    schema_file.Normalize();
     schema_file.AppendDir( "schemas" );
 
     std::ifstream  schema_stream( schema_file.GetFullPath().ToUTF8() );
@@ -129,25 +130,27 @@ PLUGIN_CONTENT_MANAGER::PLUGIN_CONTENT_MANAGER( wxWindow* aParent ) : m_dialog( 
 
             while( more )
             {
-                if( m_installed.find( subdir ) == m_installed.end() )
+                wxString actual_package_id = subdir;
+                actual_package_id.Replace( '_', '.' );
+
+                if( m_installed.find( actual_package_id ) == m_installed.end() )
                 {
                     PCM_INSTALLATION_ENTRY entry;
                     wxFileName             subdir_file( d.GetPath(), subdir );
 
-                    wxString actual_package_id = subdir;
-                    actual_package_id.Replace( '_', '.' );
-
                     // wxFileModificationTime bugs out on windows for directories
                     wxStructStat stat;
-                    wxStat( subdir_file.GetFullPath(), &stat );
+                    int          stat_code = wxStat( subdir_file.GetFullPath(), &stat );
 
                     entry.package.name = subdir;
                     entry.package.identifier = actual_package_id;
                     entry.current_version = "0.0";
-                    entry.install_timestamp = stat.st_mtime;
                     entry.repository_name = wxT( "<unknown>" );
 
-                    m_installed.emplace( subdir, entry );
+                    if( stat_code == 0 )
+                        entry.install_timestamp = stat.st_mtime;
+
+                    m_installed.emplace( actual_package_id, entry );
                 }
 
                 more = package_dir.GetNext( &subdir );
@@ -648,18 +651,25 @@ PLUGIN_CONTENT_MANAGER::~PLUGIN_CONTENT_MANAGER()
 {
     // Save current installed packages list.
 
-    nlohmann::json js;
-    js["packages"] = nlohmann::json::array();
-
-    for( const auto& entry : m_installed )
+    try
     {
-        js["packages"].emplace_back( entry.second );
+        nlohmann::json js;
+        js["packages"] = nlohmann::json::array();
+
+        for( const auto& entry : m_installed )
+        {
+            js["packages"].emplace_back( entry.second );
+        }
+
+        wxFileName    f( SETTINGS_MANAGER::GetUserSettingsPath(), "installed_packages.json" );
+        std::ofstream stream( f.GetFullPath().ToUTF8() );
+
+        stream << std::setw( 4 ) << js << std::endl;
     }
-
-    wxFileName    f( SETTINGS_MANAGER::GetUserSettingsPath(), "installed_packages.json" );
-    std::ofstream stream( f.GetFullPath().ToUTF8() );
-
-    stream << std::setw( 4 ) << js << std::endl;
+    catch( nlohmann::detail::exception& )
+    {
+        // Ignore
+    }
 }
 
 
@@ -716,8 +726,8 @@ int PLUGIN_CONTENT_MANAGER::GetPackageSearchRank( const PCM_PACKAGE& aPackage,
     rank += 500 * find_term_matches( aPackage.name );
 
     // Match on tags
-    for( const wxString& tag : aPackage.tags )
-        rank += 100 * find_term_matches( tag );
+    for( const std::string& tag : aPackage.tags )
+        rank += 100 * find_term_matches( wxString( tag ) );
 
     // Match on package description
     rank += 10 * find_term_matches( aPackage.description );
@@ -809,10 +819,13 @@ std::unordered_map<wxString, wxBitmap> PLUGIN_CONTENT_MANAGER::GetInstalledPacka
 
         if( icon.FileExists() )
         {
+            wxString actual_package_id = subdir;
+            actual_package_id.Replace( '_', '.' );
+
             try
             {
                 wxBitmap bitmap( icon.GetFullPath(), wxBITMAP_TYPE_PNG );
-                bitmaps.emplace( subdir, bitmap );
+                bitmaps.emplace( actual_package_id, bitmap );
             }
             catch( ... )
             {

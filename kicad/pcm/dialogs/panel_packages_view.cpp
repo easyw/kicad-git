@@ -263,7 +263,7 @@ void PANEL_PACKAGES_VIEW::setPackageDetails( const PACKAGE_VIEW_DATA& aPackageDa
 
 void PANEL_PACKAGES_VIEW::unsetPackageDetails()
 {
-    m_infoText->ChangeValue( _( "Pick a package on the left panel to view it's description." ) );
+    m_infoText->ChangeValue( _( "Pick a package on the left panel to view its description." ) );
 
     m_gridVersions->Freeze();
 
@@ -398,7 +398,7 @@ void PANEL_PACKAGES_VIEW::OnInstallVersionClicked( wxCommandEvent& event )
 {
     const auto rows = m_gridVersions->GetSelectedRows();
 
-    if( m_currentSelected && rows.size() != 1 )
+    if( !m_currentSelected || rows.size() != 1 )
     {
         wxBell();
         return;
