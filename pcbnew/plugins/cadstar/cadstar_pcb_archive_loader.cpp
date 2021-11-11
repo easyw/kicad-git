@@ -294,7 +294,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
         cadstarBoardStackup.pop_back();
 
         LAYER_BLOCK dummyLayer;
-        LAYER_ID           lastConstruction = secondToLastLayer.ConstructionLayers.back();
+        LAYER_ID    lastConstruction = secondToLastLayer.ConstructionLayers.back();
 
         if( secondToLastLayer.ConstructionLayers.size() > 1 )
         {
@@ -459,6 +459,11 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
 
     int numElecAndPowerLayers = 0;
 
+    // Map CADSTAR documentation layers to KiCad "User layers"
+    int                       currentDocLayer = 0;
+    std::vector<PCB_LAYER_ID> docLayers = { Dwgs_User, Cmts_User, User_1, User_2, User_3, User_4,
+                                            User_5,    User_6,    User_7, User_8, User_9 };
+
     for( LAYER_ID cadstarLayerID : Assignments.Layerdefs.LayerStack )
     {
         LAYER        curLayer = Assignments.Layerdefs.Layers.at( cadstarLayerID );
@@ -490,7 +495,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
                     break;
 
                 case LOG_LEVEL::WARN:
-                    logBoardStackupMessage( curLayer.Name, kicadLayerID );
+                    logBoardStackupWarning( curLayer.Name, kicadLayerID );
                     break;
                 }
             };
@@ -517,7 +522,12 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
             break;
 
         case LAYER_TYPE::DOC:
-            selectLayerID( PCB_LAYER_ID::Dwgs_User, PCB_LAYER_ID::Cmts_User, LOG_LEVEL::WARN );
+
+            if( currentDocLayer >= docLayers.size() )
+                currentDocLayer = 0;
+
+            kicadLayerID = docLayers.at( currentDocLayer++ );
+            logBoardStackupMessage( curLayer.Name, kicadLayerID );
             break;
 
         case LAYER_TYPE::NONELEC:
@@ -919,21 +929,14 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     switch( aCadstarPad.Side )
     {
     case PAD_SIDE::MAXIMUM: //Bottom side
-        pad->SetAttribute( PAD_ATTRIB::SMD );
         padLayerSet |= LSET( 3, B_Cu, B_Paste, B_Mask );
         break;
 
     case PAD_SIDE::MINIMUM: //TOP side
-        pad->SetAttribute( PAD_ATTRIB::SMD );
         padLayerSet |= LSET( 3, F_Cu, F_Paste, F_Mask );
         break;
 
     case PAD_SIDE::THROUGH_HOLE:
-        if( csPadcode.Plated )
-            pad->SetAttribute( PAD_ATTRIB::PTH );
-        else
-            pad->SetAttribute( PAD_ATTRIB::NPTH );
-
         padLayerSet = LSET::AllCuMask() | LSET( 4, F_Mask, B_Mask, F_Paste, B_Paste );
         break;
 
@@ -941,6 +944,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         wxFAIL_MSG( "Unknown Pad type" );
     }
 
+    pad->SetAttribute( PAD_ATTRIB::SMD ); // assume SMD pad for now
     pad->SetLocalSolderMaskMargin( 0 );
     pad->SetLocalSolderPasteMargin( 0 );
     pad->SetLocalSolderPasteMarginRatio( 0.0 );
@@ -1144,6 +1148,11 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
 
         drillOffset.x = -getKiCadLength( csPadcode.DrillXoffset );
         drillOffset.y = getKiCadLength( csPadcode.DrillYoffset );
+
+        if( csPadcode.Plated )
+            pad->SetAttribute( PAD_ATTRIB::PTH );
+        else
+            pad->SetAttribute( PAD_ATTRIB::NPTH );
     }
     else
     {
