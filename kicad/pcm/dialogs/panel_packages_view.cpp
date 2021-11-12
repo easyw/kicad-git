@@ -19,11 +19,13 @@
  */
 
 #include "panel_packages_view.h"
-#include "bitmaps.h"
-#include "grid_tricks.h"
-#include "kicad_settings.h"
-#include "pgm_base.h"
-#include "settings/settings_manager.h"
+#include <grid_tricks.h>
+#include <kicad_settings.h>
+#include <pgm_base.h>
+#include <settings/settings_manager.h>
+#include <widgets/wx_splitter_window.h>
+#include <string_utils.h>
+#include <html_window.h>
 
 #include <cmath>
 #include <fstream>
@@ -49,6 +51,16 @@ PANEL_PACKAGES_VIEW::PANEL_PACKAGES_VIEW( wxWindow*                             
         PANEL_PACKAGES_VIEW_BASE( parent ),
         m_pcm( aPcm )
 {
+    // Replace wxFormBuilder's sash initializer with one which will respect m_initialSashPos.
+    m_splitter1->Disconnect( wxEVT_IDLE,
+                             wxIdleEventHandler( PANEL_PACKAGES_VIEW_BASE::m_splitter1OnIdle ),
+                             NULL, this );
+    m_splitter1->Connect( wxEVT_IDLE, wxIdleEventHandler( PANEL_PACKAGES_VIEW::SetSashOnIdle ),
+                          NULL, this );
+
+    m_initSashPos = 380;
+    m_splitter1->SetPaneMinimums( 320, 460 );
+
 #ifdef __WXGTK__
     // wxSearchCtrl vertical height is not calculated correctly on some GTK setups
     // See https://gitlab.com/kicad/code/kicad/-/issues/9019
@@ -72,18 +84,9 @@ PANEL_PACKAGES_VIEW::PANEL_PACKAGES_VIEW( wxWindow*                             
                                                                           false ) );
     }
 
-    m_infoText->SetBackgroundColour( wxStaticText::GetClassDefaultAttributes().colBg );
-    m_infoText->EnableVerticalScrollbar( false );
-
-    // Try to disable the caret on platforms that show it even in read-only controls
-    m_infoText->Bind( wxEVT_SET_FOCUS,
-                      [&]( wxFocusEvent& event )
-                      {
-                          wxCaret* caret = m_infoText->GetCaret();
-
-                          if( caret )
-                              caret->Hide();
-                      } );
+    m_packageListWindow->SetBackgroundColour( wxStaticText::GetClassDefaultAttributes().colBg );
+    m_infoScrollWindow->SetBackgroundColour( wxStaticText::GetClassDefaultAttributes().colBg );
+    m_infoScrollWindow->EnableScrolling( false, true );
 
     ClearData();
 }
@@ -146,28 +149,60 @@ void PANEL_PACKAGES_VIEW::setPackageDetails( const PACKAGE_VIEW_DATA& aPackageDa
     const PCM_PACKAGE& package = aPackageData.package;
 
     // Details
-    m_infoText->Clear();
+    wxString details;
 
-    m_infoText->BeginBold();
-    m_infoText->WriteText( package.name );
-    m_infoText->EndBold();
-    m_infoText->Newline();
+    details << "<h5>" + package.name + "</h5>";
 
-    m_infoText->BeginParagraphSpacing( 0, 30 );
-    m_infoText->WriteText( package.description_full );
-    m_infoText->Newline();
-    m_infoText->EndParagraphSpacing();
+    auto format_desc =
+            []( const wxString& text ) -> wxString
+            {
+                wxString result;
+                bool     inURL = false;
+                wxString url;
 
-    m_infoText->BeginFontSize( floor( m_infoText->GetDefaultStyle().GetFontSize() * 1.1 ) );
-    m_infoText->WriteText( _( "Metadata" ) );
-    m_infoText->Newline();
-    m_infoText->EndFontSize();
+                for( unsigned i = 0; i < text.length(); ++i )
+                {
+                    wxUniChar c = text[i];
 
-    m_infoText->BeginParagraphSpacing( 0, 10 );
-    m_infoText->BeginSymbolBullet( wxString::FromUTF8( u8"\u2022" ), 30, 40 );
-    m_infoText->WriteText( wxString::Format( _( "Package identifier: %s\n" ),
-                                             package.identifier ) );
-    m_infoText->WriteText( wxString::Format( _( "License: %s\n" ), package.license ) );
+                    if( inURL )
+                    {
+                        if( c == ' ' )
+                        {
+                            result += wxString::Format( "<a href='%s'>%s</a>", url, url );
+                            inURL = false;
+
+                            result += c;
+                        }
+                        else
+                        {
+                            url += c;
+                        }
+                    }
+                    else if( text.Mid( i, 5 ) == "http:" || text.Mid( i, 6 ) == "https:" )
+                    {
+                        url = c;
+                        inURL = true;
+                    }
+                    else if( c == '\n' )
+                    {
+                        result += "</p><p>";
+                    }
+                    else
+                    {
+                        result += c;
+                    }
+                }
+
+                return result;
+            };
+
+    wxString desc = package.description_full;
+    details << "<p>" + format_desc( desc ) + "</p>";
+
+    details << "<p><b>" + _( "Metadata" ) + "</b></p>";
+    details << "<ul>";
+    details << "<li>" + _( "Package identifier: " ) + package.identifier + "</li>";
+    details << "<li>" + _( "License: " ) + package.license + "</li>";
 
     if( package.tags.size() > 0 )
     {
@@ -181,20 +216,33 @@ void PANEL_PACKAGES_VIEW::setPackageDetails( const PACKAGE_VIEW_DATA& aPackageDa
             tags_str += tag;
         }
 
-        m_infoText->WriteText( wxString::Format( _( "Tags: %s\n" ), tags_str ) );
+        details << "<li>" + _( "Tags: " ) + tags_str + "</li>";
     }
 
-    const auto write_contact = [&]( const wxString& type, const PCM_CONTACT& contact )
-    {
-        m_infoText->WriteText( wxString::Format( "%s: %s\n", type, contact.name ) );
+    auto format_entry =
+            []( const std::pair<const std::string, wxString>& entry ) -> wxString
+            {
+                wxString name = entry.first;
+                wxString url = EscapeHTML( entry.second );
 
-        m_infoText->BeginLeftIndent( 60, 40 );
+                if( name == "email" )
+                    return wxString::Format( "<a href='mailto:%s'>%s</a>", url, url );
+                else if( url.StartsWith( "http:" ) || url.StartsWith( "https:" ) )
+                    return wxString::Format( "<a href='%s'>%s</a>", url, url );
+                else
+                    return entry.second;
+            };
 
-        for( const auto& entry : contact.contact )
-            m_infoText->WriteText( wxString::Format( "%s: %s\n", entry.first, entry.second ) );
+    auto write_contact =
+            [&]( const wxString& type, const PCM_CONTACT& contact )
+            {
+                details << "<li>" + type + ": " + contact.name + "<ul>";
 
-        m_infoText->EndLeftIndent();
-    };
+                for( const std::pair<const std::string, wxString>& entry : contact.contact )
+                    details << "<li>" + entry.first + ": " + format_entry( entry ) + "</li>";
+
+                details << "</ul>";
+            };
 
     write_contact( _( "Author" ), package.author );
 
@@ -203,19 +251,17 @@ void PANEL_PACKAGES_VIEW::setPackageDetails( const PACKAGE_VIEW_DATA& aPackageDa
 
     if( package.resources.size() > 0 )
     {
-        m_infoText->WriteText( _( "Resources" ) );
-        m_infoText->Newline();
-
-        m_infoText->BeginLeftIndent( 60, 40 );
+        details << "<li>" + _( "Resources" ) + "<ul>";
 
         for( const std::pair<const std::string, wxString>& entry : package.resources )
-            m_infoText->WriteText( wxString::Format( "%s: %s\n", entry.first, entry.second ) );
+            details << "<li>" + entry.first + wxS( ": " ) + format_entry( entry ) + "</li>";
 
-        m_infoText->EndLeftIndent();
+        details << "</ul>";
     }
 
-    m_infoText->EndSymbolBullet();
-    m_infoText->EndParagraphSpacing();
+    details << "</ul>";
+
+    m_infoText->SetPage( details );
 
     wxSizeEvent dummy;
     OnSizeInfoBox( dummy );
@@ -275,21 +321,23 @@ void PANEL_PACKAGES_VIEW::setPackageDetails( const PACKAGE_VIEW_DATA& aPackageDa
     else
         m_buttonInstall->Disable();
 
+    m_infoText->Show( true );
     m_sizerVersions->Show( true );
     m_sizerVersions->Layout();
 
-    wxSize size = m_scrolledWindow5->GetTargetWindow()->GetBestVirtualSize();
-    m_scrolledWindow5->SetVirtualSize( size );
+    wxSize size = m_infoScrollWindow->GetTargetWindow()->GetBestVirtualSize();
+    m_infoScrollWindow->SetVirtualSize( size );
 }
 
 
 void PANEL_PACKAGES_VIEW::unsetPackageDetails()
 {
-    m_infoText->ChangeValue( wxEmptyString );
+    m_infoText->SetPage( wxEmptyString );
+    m_infoText->Show( false );
     m_sizerVersions->Show( false );
 
-    wxSize size = m_scrolledWindow5->GetTargetWindow()->GetBestVirtualSize();
-    m_scrolledWindow5->SetVirtualSize( size );
+    wxSize size = m_infoScrollWindow->GetTargetWindow()->GetBestVirtualSize();
+    m_infoScrollWindow->SetVirtualSize( size );
 
     // Clean up grid just so we don't keep stale info around (it's already been hidden).
     m_gridVersions->Freeze();
@@ -345,7 +393,7 @@ void PANEL_PACKAGES_VIEW::OnVersionsCellClicked( wxGridEvent& event )
 
 void PANEL_PACKAGES_VIEW::OnDownloadVersionClicked( wxCommandEvent& event )
 {
-    const auto rows = m_gridVersions->GetSelectedRows();
+    const wxArrayInt rows = m_gridVersions->GetSelectedRows();
 
     if( !m_currentSelected || rows.size() != 1 )
     {
@@ -423,7 +471,7 @@ void PANEL_PACKAGES_VIEW::OnDownloadVersionClicked( wxCommandEvent& event )
 
 void PANEL_PACKAGES_VIEW::OnInstallVersionClicked( wxCommandEvent& event )
 {
-    const auto rows = m_gridVersions->GetSelectedRows();
+    const wxArrayInt rows = m_gridVersions->GetSelectedRows();
 
     if( !m_currentSelected || rows.size() != 1 )
     {
@@ -511,7 +559,7 @@ void PANEL_PACKAGES_VIEW::updatePackageList()
     wxSizer* sizer = m_packageListWindow->GetSizer();
     sizer->Clear( false ); // Don't delete panels
 
-    for( const auto& pair : package_ranks )
+    for( const std::pair<int, int>& pair : package_ranks )
     {
         PANEL_PACKAGE* panel = m_packagePanels[m_packageInitialOrder[pair.second]];
 
@@ -532,19 +580,40 @@ void PANEL_PACKAGES_VIEW::updatePackageList()
 }
 
 
-void PANEL_PACKAGES_VIEW::OnSizeInfoBox( wxSizeEvent& event )
+void PANEL_PACKAGES_VIEW::OnSizeInfoBox( wxSizeEvent& aEvent )
 {
     wxSize infoSize = m_infoText->GetParent()->GetClientSize();
+    infoSize.x -= 8;
     m_infoText->SetMinSize( infoSize );
     m_infoText->SetMaxSize( infoSize );
     m_infoText->SetSize( infoSize );
-    m_infoText->LayoutContent();
-
-    infoSize.y = m_infoText->GetBuffer().GetCachedSize().y + m_infoText->GetBuffer().GetTopMargin();
-    infoSize.y *= m_infoText->GetScale();
-    m_infoText->SetMinSize( infoSize );
-    m_infoText->SetMaxSize( infoSize );
-    m_infoText->SetSize( infoSize );
-
     m_infoText->Layout();
+
+    infoSize.y = m_infoText->GetInternalRepresentation()->GetHeight() + 12;
+    m_infoText->SetMinSize( infoSize );
+    m_infoText->SetMaxSize( infoSize );
+    m_infoText->SetSize( infoSize );
+    m_infoText->Layout();
+}
+
+
+void PANEL_PACKAGES_VIEW::OnURLClicked( wxHtmlLinkEvent& aEvent )
+{
+    const wxHtmlLinkInfo& info = aEvent.GetLinkInfo();
+    ::wxLaunchDefaultBrowser( info.GetHref() );
+}
+
+
+void PANEL_PACKAGES_VIEW::OnInfoMouseWheel( wxMouseEvent& event )
+{
+    // Transfer scrolling from the info window to its parent scroll window
+    m_infoScrollWindow->HandleOnMouseWheel( event );
+}
+
+
+void PANEL_PACKAGES_VIEW::SetSashOnIdle( wxIdleEvent& aEvent )
+{
+	m_splitter1->SetSashPosition( m_initSashPos );
+	m_splitter1->Disconnect( wxEVT_IDLE, wxIdleEventHandler( PANEL_PACKAGES_VIEW::SetSashOnIdle ),
+                             NULL, this );
 }

@@ -10,7 +10,10 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
+class HTML_WINDOW;
+
 #include "widgets/wx_grid.h"
+#include "widgets/wx_splitter_window.h"
 #include <wx/string.h>
 #include <wx/srchctrl.h>
 #include <wx/gdicmn.h>
@@ -20,7 +23,7 @@
 #include <wx/sizer.h>
 #include <wx/scrolwin.h>
 #include <wx/panel.h>
-#include <wx/richtext/richtextctrl.h>
+#include <wx/html/htmlwin.h>
 #include <wx/grid.h>
 #include <wx/checkbox.h>
 #include <wx/bitmap.h>
@@ -40,13 +43,13 @@ class PANEL_PACKAGES_VIEW_BASE : public wxPanel
 	private:
 
 	protected:
-		wxSplitterWindow* m_splitter1;
+		WX_SPLITTER_WINDOW* m_splitter1;
 		wxPanel* m_panelList;
 		wxSearchCtrl* m_searchCtrl;
 		wxScrolledWindow* m_packageListWindow;
 		wxPanel* m_panelDetails;
-		wxScrolledWindow* m_scrolledWindow5;
-		wxRichTextCtrl* m_infoText;
+		wxScrolledWindow* m_infoScrollWindow;
+		HTML_WINDOW* m_infoText;
 		wxBoxSizer* m_sizerVersions;
 		WX_GRID* m_gridVersions;
 		wxCheckBox* m_showAllVersions;
@@ -55,6 +58,8 @@ class PANEL_PACKAGES_VIEW_BASE : public wxPanel
 
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnSizeInfoBox( wxSizeEvent& event ) { event.Skip(); }
+		virtual void OnURLClicked( wxHtmlLinkEvent& event ) { event.Skip(); }
+		virtual void OnInfoMouseWheel( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnVersionsCellClicked( wxGridEvent& event ) { event.Skip(); }
 		virtual void OnShowAllVersionsClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDownloadVersionClicked( wxCommandEvent& event ) { event.Skip(); }
