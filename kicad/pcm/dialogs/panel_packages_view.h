@@ -39,7 +39,7 @@ public:
     ~PANEL_PACKAGES_VIEW();
 
     /**
-     * @brief Recreates package panels and displays daya
+     * @brief Recreates package panels and displays data
      *
      * @param aPackageData list of package view data
      * @param aCallback (un)install button callback
@@ -87,6 +87,9 @@ private:
     ///< Updates package listing according to search term
     void updatePackageList();
 
+    ///< Updates buttons below the package details: Download and Install
+    void updateDetailsButtons();
+
     ///< Updates details panel
     void setPackageDetails( const PACKAGE_VIEW_DATA& aPackageData );
 
@@ -96,14 +99,18 @@ private:
     ///< Bytes to Kb/Mb/Gb string or "-" if absent
     wxString toHumanReadableSize( const boost::optional<uint64_t> size ) const;
 
+    ///< Returns true if it the download operation can be performed
+    bool canDownload() const;
+
+    ///< Returns true if the install operation can be performed
+    bool canInstall() const;
+
 private:
     ActionCallback                               m_actionCallback;
     std::unordered_map<wxString, PANEL_PACKAGE*> m_packagePanels;
     std::vector<wxString>                        m_packageInitialOrder;
     PANEL_PACKAGE*                               m_currentSelected;
     std::shared_ptr<PLUGIN_CONTENT_MANAGER>      m_pcm;
-
-    int                                          m_initSashPos;
 
     enum PACKAGE_VERSIONS_GRID_COLUMNS
     {

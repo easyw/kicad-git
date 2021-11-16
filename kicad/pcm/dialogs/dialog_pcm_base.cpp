@@ -13,7 +13,7 @@
 
 DIALOG_PCM_BASE::DIALOG_PCM_BASE( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DIALOG_SHIM( parent, id, title, pos, size, style )
 {
-	this->SetSizeHints( wxSize( 900,560 ), wxDefaultSize );
+	this->SetSizeHints( wxSize( 940,550 ), wxDefaultSize );
 
 	wxBoxSizer* m_MainSizer;
 	m_MainSizer = new wxBoxSizer( wxVERTICAL );
@@ -41,8 +41,10 @@ DIALOG_PCM_BASE::DIALOG_PCM_BASE( wxWindow* parent, wxWindowID id, const wxStrin
 	bSizer4->Add( bSizer6, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
 
 	m_contentNotebook = new wxNotebook( m_panelRepository, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_contentNotebook->SetMinSize( wxSize( 900,400 ) );
 
-	bSizer4->Add( m_contentNotebook, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+	bSizer4->Add( m_contentNotebook, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 3 );
 
 
 	m_panelRepository->SetSizer( bSizer4 );
@@ -147,11 +149,12 @@ DIALOG_PCM_BASE::DIALOG_PCM_BASE( wxWindow* parent, wxWindowID id, const wxStrin
 	m_BottomSizer->Add( m_sdbSizer1, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
 
-	m_MainSizer->Add( m_BottomSizer, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
+	m_MainSizer->Add( m_BottomSizer, 0, wxEXPAND|wxLEFT, 5 );
 
 
 	this->SetSizer( m_MainSizer );
 	this->Layout();
+	m_MainSizer->Fit( this );
 
 	this->Centre( wxBOTH );
 

@@ -75,14 +75,20 @@ public:
 
     void OnSize( wxSizeEvent& event ) override;
 
+    ///< Get preferred version. If criteria are not met, return wxEmptyString
+    wxString GetPreferredVersion() const;
+
     const PACKAGE_VIEW_DATA& GetPackageData() const { return m_data; };
 
 private:
-    void                  OnPaint( wxPaintEvent& event ) override;
+    void OnPaint( wxPaintEvent& event ) override;
+
+private:
     std::function<void()> m_selectCallback;
     bool                  m_selected = false;
     const ActionCallback& m_actionCallback;
     PACKAGE_VIEW_DATA     m_data;
+    int                   m_minHeight;
 };
 
 

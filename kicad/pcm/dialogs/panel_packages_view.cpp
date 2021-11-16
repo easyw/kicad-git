@@ -23,7 +23,9 @@
 #include <kicad_settings.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
+#include <settings/common_settings.h>
 #include <widgets/wx_splitter_window.h>
+#include <widgets/wx_panel.h>
 #include <string_utils.h>
 #include <html_window.h>
 
@@ -58,8 +60,7 @@ PANEL_PACKAGES_VIEW::PANEL_PACKAGES_VIEW( wxWindow*                             
     m_splitter1->Connect( wxEVT_IDLE, wxIdleEventHandler( PANEL_PACKAGES_VIEW::SetSashOnIdle ),
                           NULL, this );
 
-    m_initSashPos = 380;
-    m_splitter1->SetPaneMinimums( 320, 460 );
+    m_splitter1->SetPaneMinimums( 350, 450 );
 
 #ifdef __WXGTK__
     // wxSearchCtrl vertical height is not calculated correctly on some GTK setups
@@ -70,6 +71,7 @@ PANEL_PACKAGES_VIEW::PANEL_PACKAGES_VIEW( wxWindow*                             
     m_searchCtrl->Bind( wxEVT_TEXT, &PANEL_PACKAGES_VIEW::OnSearchTextChanged, this );
     m_searchCtrl->SetDescriptiveText( _( "Filter" ) );
 
+    m_panelList->SetBorders( false, true, false, false );
 
     m_gridVersions->PushEventHandler( new GRID_TRICKS( m_gridVersions ) );
 
@@ -84,8 +86,13 @@ PANEL_PACKAGES_VIEW::PANEL_PACKAGES_VIEW( wxWindow*                             
                                                                           false ) );
     }
 
-    m_packageListWindow->SetBackgroundColour( wxStaticText::GetClassDefaultAttributes().colBg );
-    m_infoScrollWindow->SetBackgroundColour( wxStaticText::GetClassDefaultAttributes().colBg );
+    // Most likely should be changed to wxGridSelectNone once WxWidgets>=3.1.5 is mandatory.
+    m_gridVersions->SetSelectionMode( WX_GRID::wxGridSelectRows );
+
+    wxColor background = wxStaticText::GetClassDefaultAttributes().colBg;
+    m_panelList->SetBackgroundColour( background );
+    m_packageListWindow->SetBackgroundColour( background );
+    m_infoScrollWindow->SetBackgroundColour( background );
     m_infoScrollWindow->EnableScrolling( false, true );
 
     ClearData();
@@ -94,6 +101,9 @@ PANEL_PACKAGES_VIEW::PANEL_PACKAGES_VIEW( wxWindow*                             
 
 PANEL_PACKAGES_VIEW::~PANEL_PACKAGES_VIEW()
 {
+    COMMON_SETTINGS* cfg = Pgm().GetCommonSettings();
+    cfg->m_PackageManager.sash_pos = m_splitter1->GetSashPosition();
+
     m_gridVersions->PopEventHandler( true );
 }
 
@@ -314,12 +324,32 @@ void PANEL_PACKAGES_VIEW::setPackageDetails( const PACKAGE_VIEW_DATA& aPackageDa
                                                                           false ) );
     }
 
+    if( m_gridVersions->GetNumberRows() >= 1 )
+    {
+        wxString version = m_currentSelected->GetPreferredVersion();
+
+        if( !version.IsEmpty() )
+        {
+            for( int i = 0; i < m_gridVersions->GetNumberRows(); i++ )
+            {
+                if( m_gridVersions->GetCellValue( i, COL_VERSION ) == version )
+                {
+                    std::cout << "auto select row: " << i << std::endl;
+                    m_gridVersions->SelectRow( i );
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // Fall back to first row.
+            m_gridVersions->SelectRow( 0 );
+        }
+    }
+
     m_gridVersions->Thaw();
 
-    if( aPackageData.state == PPS_AVAILABLE || aPackageData.state == PPS_UNAVAILABLE )
-        m_buttonInstall->Enable();
-    else
-        m_buttonInstall->Disable();
+    updateDetailsButtons();
 
     m_infoText->Show( true );
     m_sizerVersions->Show( true );
@@ -366,6 +396,29 @@ wxString PANEL_PACKAGES_VIEW::toHumanReadableSize( const boost::optional<uint64_
 }
 
 
+bool PANEL_PACKAGES_VIEW::canDownload() const
+{
+    if( !m_currentSelected )
+        return false;
+
+    return m_gridVersions->GetNumberRows() == 1 || m_gridVersions->GetSelectedRows().size() == 1;
+}
+
+
+bool PANEL_PACKAGES_VIEW::canInstall() const
+{
+    if( !m_currentSelected )
+        return false;
+
+    const PACKAGE_VIEW_DATA& packageData = m_currentSelected->GetPackageData();
+
+    if( packageData.state != PPS_AVAILABLE && packageData.state != PPS_UNAVAILABLE )
+        return false;
+
+    return m_gridVersions->GetNumberRows() == 1 || m_gridVersions->GetSelectedRows().size() == 1;
+}
+
+
 void PANEL_PACKAGES_VIEW::SetPackageState( const wxString&         aPackageId,
                                            const PCM_PACKAGE_STATE aState ) const
 {
@@ -388,20 +441,25 @@ void PANEL_PACKAGES_VIEW::OnVersionsCellClicked( wxGridEvent& event )
 {
     m_gridVersions->ClearSelection();
     m_gridVersions->SelectRow( event.GetRow() );
+
+    updateDetailsButtons();
 }
 
 
 void PANEL_PACKAGES_VIEW::OnDownloadVersionClicked( wxCommandEvent& event )
 {
-    const wxArrayInt rows = m_gridVersions->GetSelectedRows();
-
-    if( !m_currentSelected || rows.size() != 1 )
+    if( !canDownload() )
     {
         wxBell();
         return;
     }
 
-    wxString           version = m_gridVersions->GetCellValue( rows[0], COL_VERSION );
+    if( m_gridVersions->GetNumberRows() == 1 )
+        m_gridVersions->SelectRow( 0 );
+
+    const wxArrayInt selectedRows = m_gridVersions->GetSelectedRows();
+
+    wxString           version = m_gridVersions->GetCellValue( selectedRows[0], COL_VERSION );
     const PCM_PACKAGE& package = m_currentSelected->GetPackageData().package;
 
     auto ver_it = std::find_if( package.versions.begin(), package.versions.end(),
@@ -471,15 +529,18 @@ void PANEL_PACKAGES_VIEW::OnDownloadVersionClicked( wxCommandEvent& event )
 
 void PANEL_PACKAGES_VIEW::OnInstallVersionClicked( wxCommandEvent& event )
 {
-    const wxArrayInt rows = m_gridVersions->GetSelectedRows();
-
-    if( !m_currentSelected || rows.size() != 1 )
+    if( !canInstall() )
     {
         wxBell();
         return;
     }
 
-    wxString           version = m_gridVersions->GetCellValue( rows[0], COL_VERSION );
+    if( m_gridVersions->GetNumberRows() == 1 )
+        m_gridVersions->SelectRow( 0 );
+
+    const wxArrayInt selectedRows = m_gridVersions->GetSelectedRows();
+
+    wxString           version = m_gridVersions->GetCellValue( selectedRows[0], COL_VERSION );
     const PCM_PACKAGE& package = m_currentSelected->GetPackageData().package;
 
     auto ver_it = std::find_if( package.versions.begin(), package.versions.end(),
@@ -510,6 +571,8 @@ void PANEL_PACKAGES_VIEW::OnShowAllVersionsClicked( wxCommandEvent& event )
         wxMouseEvent dummy;
         m_currentSelected->OnClick( dummy );
     }
+
+    updateDetailsButtons();
 }
 
 
@@ -574,9 +637,16 @@ void PANEL_PACKAGES_VIEW::updatePackageList()
         }
     }
 
-    sizer->FitInside( m_packageListWindow );
+    m_packageListWindow->FitInside();
     m_packageListWindow->SetScrollRate( 0, 15 );
-    m_packageListWindow->Layout();
+    m_packageListWindow->SendSizeEvent( wxSEND_EVENT_POST );
+}
+
+
+void PANEL_PACKAGES_VIEW::updateDetailsButtons()
+{
+    m_buttonDownload->Enable( canDownload() );
+    m_buttonInstall->Enable( canInstall() );
 }
 
 
@@ -613,7 +683,11 @@ void PANEL_PACKAGES_VIEW::OnInfoMouseWheel( wxMouseEvent& event )
 
 void PANEL_PACKAGES_VIEW::SetSashOnIdle( wxIdleEvent& aEvent )
 {
-	m_splitter1->SetSashPosition( m_initSashPos );
+    COMMON_SETTINGS* cfg = Pgm().GetCommonSettings();
+    m_splitter1->SetSashPosition( cfg->m_PackageManager.sash_pos );
+
+    m_packageListWindow->FitInside();
+
 	m_splitter1->Disconnect( wxEVT_IDLE, wxIdleEventHandler( PANEL_PACKAGES_VIEW::SetSashOnIdle ),
                              NULL, this );
 }

@@ -102,7 +102,7 @@
                         <property name="pin_button">1</property>
                         <property name="pos"></property>
                         <property name="resize">Resizable</property>
-                        <property name="sashgravity">0.2</property>
+                        <property name="sashgravity">0.25</property>
                         <property name="sashpos">0</property>
                         <property name="sashsize">-1</property>
                         <property name="show">1</property>
@@ -161,12 +161,12 @@
                                 <property name="resize">Resizable</property>
                                 <property name="show">1</property>
                                 <property name="size"></property>
-                                <property name="subclass">; ; forward_declare</property>
+                                <property name="subclass">WX_PANEL; widgets/wx_panel.h; forward_declare</property>
                                 <property name="toolbar_pane">0</property>
                                 <property name="tooltip"></property>
                                 <property name="window_extra_style"></property>
                                 <property name="window_name"></property>
-                                <property name="window_style">wxTAB_TRAVERSAL</property>
+                                <property name="window_style">wxBORDER_NONE|wxTAB_TRAVERSAL</property>
                                 <object class="wxBoxSizer" expanded="1">
                                     <property name="minimum_size"></property>
                                     <property name="name">bPanelListSizer</property>
@@ -174,7 +174,7 @@
                                     <property name="permission">none</property>
                                     <object class="sizeritem" expanded="1">
                                         <property name="border">5</property>
-                                        <property name="flag">wxEXPAND</property>
+                                        <property name="flag">wxEXPAND|wxALL</property>
                                         <property name="proportion">0</property>
                                         <object class="wxSearchCtrl" expanded="1">
                                             <property name="BottomDockable">1</property>
@@ -239,7 +239,7 @@
                                     </object>
                                     <object class="sizeritem" expanded="1">
                                         <property name="border">5</property>
-                                        <property name="flag">wxEXPAND</property>
+                                        <property name="flag">wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT</property>
                                         <property name="proportion">1</property>
                                         <object class="wxScrolledWindow" expanded="1">
                                             <property name="BottomDockable">1</property>
@@ -293,7 +293,7 @@
                                             <property name="tooltip"></property>
                                             <property name="window_extra_style"></property>
                                             <property name="window_name"></property>
-                                            <property name="window_style">wxALWAYS_SHOW_SB|wxBORDER_SUNKEN|wxFULL_REPAINT_ON_RESIZE|wxVSCROLL</property>
+                                            <property name="window_style">wxBORDER_NONE|wxFULL_REPAINT_ON_RESIZE|wxVSCROLL</property>
                                             <object class="wxBoxSizer" expanded="1">
                                                 <property name="minimum_size"></property>
                                                 <property name="name">bSizer2</property>
@@ -360,7 +360,7 @@
                                 <object class="wxBoxSizer" expanded="1">
                                     <property name="minimum_size">-1,-1</property>
                                     <property name="name">bPanelDetailsSizer</property>
-                                    <property name="orient">wxVERTICAL</property>
+                                    <property name="orient">wxHORIZONTAL</property>
                                     <property name="permission">none</property>
                                     <object class="sizeritem" expanded="1">
                                         <property name="border">5</property>

@@ -273,6 +273,9 @@ bool EDA_BASE_FRAME::ProcessEvent( wxEvent& aEvent )
     if( !wxFrame::ProcessEvent( aEvent ) )
         return false;
 
+    if( Pgm().m_Quitting )
+        return true;
+
     if( !m_isClosing && m_hasAutoSave && IsShown() && IsActive()
         && m_autoSaveState != isAutoSaveRequired()
         && m_autoSaveInterval > 0 )
@@ -376,6 +379,9 @@ void EDA_BASE_FRAME::HandleUpdateUIEvent( wxUpdateUIEvent& aEvent, EDA_BASE_FRAM
     bool       checkRes  = false;
     bool       enableRes = true;
     bool       showRes   = true;
+    bool       isCut     = aEvent.GetId() == ACTIONS::cut.GetUIId();
+    bool       isCopy    = aEvent.GetId() == ACTIONS::copy.GetUIId();
+    bool       isPaste   = aEvent.GetId() == ACTIONS::paste.GetUIId();
     SELECTION& selection = aFrame->GetCurrentSelection();
 
     try
@@ -389,6 +395,19 @@ void EDA_BASE_FRAME::HandleUpdateUIEvent( wxUpdateUIEvent& aEvent, EDA_BASE_FRAM
         // Something broke with the conditions, just skip the event.
         aEvent.Skip();
         return;
+    }
+
+    if( isCut || isCopy || isPaste )
+    {
+        wxWindow*    focus = wxWindow::FindFocus();
+        wxTextEntry* textEntry = dynamic_cast<wxTextEntry*>( focus );
+
+        if( textEntry && isCut && textEntry->CanCut() )
+            enableRes = true;
+        else if( textEntry && isCopy && textEntry->CanCopy() )
+            enableRes = true;
+        else if( textEntry && isPaste && textEntry->CanPaste() )
+            enableRes = true;
     }
 
     aEvent.Enable( enableRes );

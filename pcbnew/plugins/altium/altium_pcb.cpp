@@ -421,6 +421,11 @@ void ALTIUM_PCB::Parse( const CFB::CompoundFileReader& aReader,
                 {
                     this->ParseTracks6Data( aReader, fileHeader );
                 } },
+        { false, ALTIUM_PCB_DIR::WIDESTRINGS6,
+                [this]( auto aReader, auto fileHeader )
+                {
+                    this->ParseWideStrings6Data( aReader, fileHeader );
+                } },
         { true, ALTIUM_PCB_DIR::TEXTS6,
                 [this]( auto aReader, auto fileHeader )
                 {
@@ -871,7 +876,7 @@ void ALTIUM_PCB::HelperCreateBoardOutline( const std::vector<ALTIUM_VERTICE>& aV
 
                 shape->SetCenter( cur->center );
                 shape->SetStart( arcStart );
-                shape->SetArcAngleAndEnd( -NormalizeAngleDegreesPos( includedAngle ) * 10.0 );
+                shape->SetArcAngleAndEnd( -NormalizeAngleDegreesPos( includedAngle ) * 10.0, true );
 
                 if( !last->isRound )
                 {
@@ -913,7 +918,6 @@ void ALTIUM_PCB::ParseClasses6Data( const CFB::CompoundFileReader& aReader,
     {
         checkpoint();
         ACLASS6 elem( reader );
-
         if( elem.kind == ALTIUM_CLASS_KIND::NET_CLASS )
         {
             NETCLASSPTR nc = std::make_shared<NETCLASS>( elem.name );
@@ -1423,16 +1427,19 @@ void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
         }
     }
 
-    int idx = 0;
+    int      idx = 0;
+    wxString invalidChars = wxFileName::GetForbiddenChars();
 
     while( reader.GetRemainingBytes() >= 4 /* TODO: use Header section of file */ )
     {
         checkpoint();
         AMODEL elem( reader );
 
-        wxString   stepPath = wxString::Format( aRootDir + "%d", idx );
-        wxString   storageName = elem.name.IsEmpty() ? wxString::Format( "%d", idx ) : elem.name;
-        wxFileName storagePath( altiumModelsPath.GetPath(), storageName );
+        wxString       stepPath = wxString::Format( aRootDir + "%d", idx );
+        bool           validName = !elem.name.IsEmpty() && elem.name.IsAscii() &&
+                                   wxString::npos == elem.name.find_first_of( invalidChars );
+        wxString       storageName = !validName ? wxString::Format( "model_%d", idx ) : elem.name;
+        wxFileName     storagePath( altiumModelsPath.GetPath(), storageName );
 
         idx++;
 
@@ -1464,7 +1471,7 @@ void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
         outputStream.Write( zlibInputStream );
         outputStream.Close();
 
-        m_models.insert( { elem.id, kicadModelPrefix + elem.name } );
+        m_models.insert( { elem.id, kicadModelPrefix + storageName } );
     }
 
     if( reader.GetRemainingBytes() != 0 )
@@ -1938,7 +1945,7 @@ void ALTIUM_PCB::ParseArcs6Data( const CFB::CompoundFileReader& aReader,
 
                 shape.SetCenter( elem.center );
                 shape.SetStart( elem.center + arcStartOffset );
-                shape.SetArcAngleAndEnd( -NormalizeAngleDegreesPos( includedAngle ) * 10.0 );
+                shape.SetArcAngleAndEnd( -NormalizeAngleDegreesPos( includedAngle ) * 10.0, true );
             }
 
             ZONE* zone = new ZONE( m_board );
@@ -2044,7 +2051,7 @@ void ALTIUM_PCB::ParseArcs6Data( const CFB::CompoundFileReader& aReader,
 
                 shape->SetCenter( elem.center );
                 shape->SetStart( elem.center + arcStartOffset );
-                shape->SetArcAngleAndEnd( -NormalizeAngleDegreesPos( includedAngle ) * 10.0 );
+                shape->SetArcAngleAndEnd( -NormalizeAngleDegreesPos( includedAngle ) * 10.0, true );
             }
 
             HelperShapeSetLocalCoord( shape, elem.component );
@@ -2636,6 +2643,20 @@ void ALTIUM_PCB::ParseTracks6Data( const CFB::CompoundFileReader& aReader,
     }
 }
 
+void ALTIUM_PCB::ParseWideStrings6Data( const CFB::CompoundFileReader&  aReader,
+                                        const CFB::COMPOUND_FILE_ENTRY* aEntry )
+{
+    if( m_progressReporter )
+        m_progressReporter->Report( _( "Loading unicode strings..." ) );
+
+    ALTIUM_PARSER reader( aReader, aEntry );
+    
+    m_unicodeStrings = reader.ReadWideStringTable();
+
+    if( reader.GetRemainingBytes() != 0 )
+        THROW_IO_ERROR( "WideStrings6 stream is not fully parsed" );
+}
+
 void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
                                   const CFB::COMPOUND_FILE_ENTRY* aEntry )
 {
@@ -2647,7 +2668,7 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
     while( reader.GetRemainingBytes() >= 4 /* TODO: use Header section of file */ )
     {
         checkpoint();
-        ATEXT6 elem( reader );
+        ATEXT6 elem( reader, m_unicodeStrings );
 
         if( elem.fonttype == ALTIUM_TEXT_TYPE::BARCODE )
         {
