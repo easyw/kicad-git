@@ -71,11 +71,13 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
 
 #if wxCHECK_VERSION( 3, 1, 1 )
         m_query_ctrl->Bind( wxEVT_SEARCH, &LIB_TREE::onQueryEnter, this );
+        m_query_ctrl->Bind( wxEVT_SEARCH_CANCEL, &LIB_TREE::onQueryText, this );
 #else
         m_query_ctrl->Bind( wxEVT_TEXT_ENTER, &LIB_TREE::onQueryEnter, this );
+        m_query_ctrl->Bind( wxEVT_SEARCHCTRL_CANCEL_BTN, &LIB_TREE::onQueryText, this );
 #endif
-
         m_query_ctrl->Bind( wxEVT_CHAR_HOOK, &LIB_TREE::onQueryCharHook, this );
+        m_query_ctrl->Bind( wxEVT_MOTION, &LIB_TREE::onQueryMouseMoved, this );
 
 
         Bind( wxEVT_TIMER, &LIB_TREE::onDebounceTimer, this, m_debounceTimer->GetId() );
@@ -430,6 +432,21 @@ void LIB_TREE::onQueryCharHook( wxKeyEvent& aKeyStroke )
         aKeyStroke.Skip(); // Any other key: pass on to search box directly.
         break;
     }
+}
+
+
+void LIB_TREE::onQueryMouseMoved( wxMouseEvent& aEvent )
+{
+    wxPoint pos = aEvent.GetPosition();
+    wxRect  ctrlRect = m_query_ctrl->GetScreenRect();
+    int     buttonWidth = ctrlRect.GetHeight();         // Presume buttons are square
+
+    if( m_query_ctrl->IsSearchButtonVisible() && pos.x < buttonWidth )
+        SetCursor( wxCURSOR_ARROW );
+    else if( m_query_ctrl->IsCancelButtonVisible() && pos.x > ctrlRect.GetWidth() - buttonWidth )
+        SetCursor( wxCURSOR_ARROW );
+    else
+        SetCursor( wxCURSOR_IBEAM );
 }
 
 

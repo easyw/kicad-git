@@ -290,11 +290,6 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
     if( !aSkipPyInit )
         m_python_scripting = std::make_unique<SCRIPTING>();
 
-#ifdef __WXMAC__
-    // Always show filters on Open dialog to be able to choose plugin
-    wxSystemOptions::SetOption( wxOSX_FILEDIALOG_ALWAYS_SHOW_TYPES, 1 );
-#endif
-
     // TODO(JE): Remove this if apps are refactored to not assume Prj() always works
     // Need to create a project early for now (it can have an empty path for the moment)
     GetSettingsManager().LoadProject( "" );
@@ -418,7 +413,9 @@ bool PGM_BASE::SetLanguage( wxString& aErrMsg, bool first_time )
     delete m_locale;
     m_locale = new wxLocale;
 
-    if( !m_locale->Init( m_language_id ) )
+    // don't use wxLOCALE_LOAD_DEFAULT flag so that Init() doesn't return
+    // false just because it failed to load wxstd catalog
+    if( !m_locale->Init( m_language_id, wxLOCALE_DONT_LOAD_DEFAULT ) )
     {
         wxLogTrace( traceLocale, "This language is not supported by the system." );
 
@@ -426,7 +423,7 @@ bool PGM_BASE::SetLanguage( wxString& aErrMsg, bool first_time )
         delete m_locale;
 
         m_locale = new wxLocale;
-        m_locale->Init();
+        m_locale->Init( wxLANGUAGE_DEFAULT, wxLOCALE_DONT_LOAD_DEFAULT);
 
         aErrMsg = _( "This language is not supported by the operating system." );
         return false;
@@ -477,7 +474,7 @@ bool PGM_BASE::SetLanguage( wxString& aErrMsg, bool first_time )
         delete m_locale;
 
         m_locale = new wxLocale;
-        m_locale->Init();
+        m_locale->Init( wxLANGUAGE_DEFAULT, wxLOCALE_DONT_LOAD_DEFAULT);
 
         aErrMsg = _( "The KiCad language file for this language is not installed." );
         return false;
