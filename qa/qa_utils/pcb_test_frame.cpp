@@ -64,7 +64,7 @@
 #include <tools/pcb_tool_base.h>
 #include <tools/pcb_actions.h>
 #include <pcbnew/tools/pcb_selection_tool.h>
-#include <plugins/kicad/kicad_plugin.h>
+#include <plugins/kicad/pcb_plugin.h>
 
 #include "pcb_test_frame.h"
 
@@ -91,7 +91,7 @@ void PCB_TEST_FRAME_BASE::SetBoard( std::shared_ptr<BOARD> b )
 
 BOARD* PCB_TEST_FRAME_BASE::LoadAndDisplayBoard( const std::string& filename )
 {
-    PLUGIN::RELEASER pi( new PCB_IO );
+    PLUGIN::RELEASER pi( new PCB_PLUGIN );
     BOARD* brd = nullptr;
 
     try

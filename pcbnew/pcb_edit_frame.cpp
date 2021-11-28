@@ -314,6 +314,9 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     PythonSyncEnvironmentVariables();
     PythonSyncProjectName();
 
+    // Sync action plugins in case they changed since the last time the frame opened
+    GetToolManager()->RunAction( PCB_ACTIONS::pluginsReload, true );
+
     GetCanvas()->SwitchBackend( m_canvasType );
     ActivateGalCanvas();
 
@@ -387,15 +390,18 @@ PCB_EDIT_FRAME::~PCB_EDIT_FRAME()
 }
 
 
-void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard )
+void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard, bool aBuildConnectivity,
+                               PROGRESS_REPORTER* aReporter )
 {
     if( m_pcb )
         m_pcb->ClearProject();
 
-    PCB_BASE_EDIT_FRAME::SetBoard( aBoard );
+    PCB_BASE_EDIT_FRAME::SetBoard( aBoard, aReporter );
 
     aBoard->SetProject( &Prj() );
-    aBoard->GetConnectivity()->Build( aBoard );
+
+    if( aBuildConnectivity )
+        aBoard->GetConnectivity()->Build( aBoard );
 
     // reload the drawing-sheet
     SetPageSettings( aBoard->GetPageSettings() );
@@ -990,7 +996,8 @@ void PCB_EDIT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
         cfg->m_ShowPageLimits                 = m_showPageLimits;
     }
 
-    GetSettingsManager()->SaveColorSettings( GetColorSettings(), "board" );
+    if( GetSettingsManager() )
+        GetSettingsManager()->SaveColorSettings( GetColorSettings(), "board" );
 }
 
 
