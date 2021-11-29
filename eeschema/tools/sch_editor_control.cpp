@@ -1611,39 +1611,39 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     }
 
     EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-    std::string        text;
+    std::string        content;
 
     if( aEvent.IsAction( &ACTIONS::duplicate ) )
-        text = m_localClipboard;
+        content = m_localClipboard;
     else
-        text = m_toolMgr->GetClipboardUTF8();
+        content = m_toolMgr->GetClipboardUTF8();
 
-    if( text.empty() )
+    if( content.empty() )
         return 0;
 
-    STRING_LINE_READER reader( text, "Clipboard" );
+    STRING_LINE_READER reader( content, "Clipboard" );
     SCH_SEXPR_PLUGIN   plugin;
 
-    SCH_SHEET          paste_sheet;
-    SCH_SCREEN*        paste_screen = new SCH_SCREEN( &m_frame->Schematic() );
+    SCH_SHEET          tempSheet;
+    SCH_SCREEN*        tempScreen = new SCH_SCREEN( &m_frame->Schematic() );
 
     // Screen object on heap is owned by the sheet.
-    paste_sheet.SetScreen( paste_screen );
+    tempSheet.SetScreen( tempScreen );
 
     try
     {
-        plugin.LoadContent( reader, &paste_sheet );
+        plugin.LoadContent( reader, &tempSheet );
     }
     catch( IO_ERROR& )
     {
-        // If it wasn't content, then paste as text
-        SCH_TEXT* text_item = new SCH_TEXT( wxPoint( 0, 0 ), text );
+        // If it wasn't content, then paste as content
+        SCH_TEXT* text_item = new SCH_TEXT( wxPoint( 0, 0 ), content );
         text_item->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT ); // Left alignment
-        paste_screen->Append( text_item );
+        tempScreen->Append( text_item );
     }
 
     // Save loaded screen instances to m_clipboardSheetInstances
-    setClipboardInstances( paste_screen );
+    setClipboardInstances( tempScreen );
 
     PASTE_MODE pasteMode = PASTE_MODE::REMOVE_ANNOTATIONS;
 
@@ -1683,17 +1683,20 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     }
 
     // Build symbol list for reannotation of duplicates
-    SCH_SHEET_LIST     sheets = m_frame->Schematic().GetSheets();
     SCH_REFERENCE_LIST existingRefs;
-    sheets.GetSymbols( existingRefs );
+    hierarchy.GetSymbols( existingRefs );
     existingRefs.SortByReferenceOnly();
+
+    // Build UUID map for fetching last-resolved-properties
+    std::map<KIID, EDA_ITEM*> itemMap;
+    hierarchy.FillItemMap( itemMap );
 
     // Keep track of pasted sheets and symbols for the different
     // paths to the hierarchy
     std::map<SCH_SHEET_PATH, SCH_REFERENCE_LIST> pastedSymbols;
     std::map<SCH_SHEET_PATH, SCH_SHEET_LIST>     pastedSheets;
 
-    for( SCH_ITEM* item : paste_screen->Items() )
+    for( SCH_ITEM* item : tempScreen->Items() )
     {
         loadedItems.push_back( item );
 
@@ -1721,7 +1724,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     }
 
     // Remove the references from our temporary screen to prevent freeing on the DTOR
-    paste_screen->Clear( false );
+    tempScreen->Clear( false );
 
     for( unsigned i = 0; i < loadedItems.size(); ++i )
     {
@@ -1746,8 +1749,8 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             if( it == end )
             {
                 // If can't find library definition in the design, use the pasted library
-                it = paste_screen->GetLibSymbols().find( symbol->GetSchSymbolLibraryName() );
-                end = paste_screen->GetLibSymbols().end();
+                it = tempScreen->GetLibSymbols().find( symbol->GetSchSymbolLibraryName() );
+                end = tempScreen->GetLibSymbols().end();
             }
 
             LIB_SYMBOL* libSymbol = nullptr;
@@ -1759,10 +1762,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             }
 
             for( SCH_SHEET_PATH& instance : pasteInstances )
-            {
-                updatePastedSymbol( symbol, paste_screen, instance, clipPath,
-                                    forceKeepAnnotations );
-            }
+                updatePastedSymbol( symbol, tempScreen, instance, clipPath, forceKeepAnnotations );
 
             // Assign a new KIID
             const_cast<KIID&>( item->m_Uuid ) = KIID();
@@ -1867,8 +1867,17 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
         }
         else
         {
+            SCH_ITEM* srcItem = dynamic_cast<SCH_ITEM*>( itemMap[ item->m_Uuid ] );
+            SCH_ITEM* destItem = dynamic_cast<SCH_ITEM*>( item );
+
             // Everything gets a new KIID
             const_cast<KIID&>( item->m_Uuid ) = KIID();
+
+            if( srcItem && destItem )
+            {
+                destItem->SetConnectivityDirty( true );
+                destItem->SetLastResolvedState( srcItem );
+            }
         }
 
         item->SetFlags( IS_NEW | IS_PASTED | IS_MOVING );
