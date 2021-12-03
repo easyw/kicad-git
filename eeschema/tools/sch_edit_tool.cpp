@@ -544,7 +544,7 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
         case SCH_SHEET_T:
         {
             SCH_SHEET* sheet = static_cast<SCH_SHEET*>( head );
-            rotPoint = m_frame->GetNearestGridPosition( sheet->GetRotationCenter() );
+            rotPoint = m_frame->GetNearestHalfGridPosition( sheet->GetRotationCenter() );
 
             // Rotate the sheet on itself. Sheets do not have an anchor point.
             for( int i = 0; clockwise ? i < 3 : i < 1; ++i )
@@ -565,7 +565,7 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
         if( moving && selection.HasReferencePoint() )
             rotPoint = (wxPoint) selection.GetReferencePoint();
         else
-            rotPoint = m_frame->GetNearestGridPosition( (wxPoint) selection.GetCenter() );
+            rotPoint = m_frame->GetNearestHalfGridPosition( (wxPoint) selection.GetCenter() );
     }
 
     for( unsigned ii = 0; ii < selection.GetSize(); ii++ )
@@ -1767,7 +1767,7 @@ int SCH_EDIT_TOOL::EditPageNumber( const TOOL_EVENT& aEvent )
 
     wxString msg;
     wxString sheetPath = instance.PathHumanReadable( false );
-    wxString pageNumber = instance.GetPageNumber();
+    wxString pageNumber = instance.Last()->GetPageNumber();
 
     msg.Printf( _( "Enter page number for sheet path%s" ),
                 ( sheetPath.Length() > 20 ) ? "\n" + sheetPath : " " + sheetPath );
@@ -1776,12 +1776,12 @@ int SCH_EDIT_TOOL::EditPageNumber( const TOOL_EVENT& aEvent )
 
     dlg.SetTextValidator( wxFILTER_ALPHANUMERIC );  // No white space.
 
-    if( dlg.ShowModal() == wxID_CANCEL || dlg.GetValue() == instance.GetPageNumber() )
+    if( dlg.ShowModal() == wxID_CANCEL || dlg.GetValue() == instance.Last()->GetPageNumber() )
         return 0;
 
     m_frame->SaveCopyInUndoList( screen, sheet, UNDO_REDO::CHANGED, false );
 
-    instance.SetPageNumber( dlg.GetValue() );
+    instance.Last()->SetPageNumber( dlg.GetValue() );
 
     if( instance == m_frame->GetCurrentSheet() )
     {

@@ -59,7 +59,10 @@ bool IncrementLabelMember( wxString& name, int aIncrement )
 
     wxString suffix;
     wxString digits;
-    int      ii = name.Len() - 1;
+    wxString outputFormat;
+    wxString outputNumber;
+    int      ii     = name.Len() - 1;
+    int      dCount = 0;
 
     while( ii >= 0 && !wxIsdigit( name.GetChar( ii ) ) )
     {
@@ -71,6 +74,7 @@ bool IncrementLabelMember( wxString& name, int aIncrement )
     {
         digits = name.GetChar( ii ) + digits;
         ii--;
+        dCount++;
     }
 
     if( digits.IsEmpty() )
@@ -87,7 +91,11 @@ bool IncrementLabelMember( wxString& name, int aIncrement )
         if( number > -1 )
         {
             name.Remove( ii + 1 );
-            name << number << suffix;
+            //write out a format string with correct number of leading zeroes
+            outputFormat.Printf( "%%0%dd", dCount );
+            //write out the number using the format string
+            outputNumber.Printf( outputFormat, number );
+            name << outputNumber << suffix;
             return true;
         }
     }
@@ -291,13 +299,21 @@ void SCH_TEXT::MirrorVertically( int aCenter )
 
 void SCH_TEXT::Rotate( const wxPoint& aCenter )
 {
-    wxPoint pt = GetTextPos();
-    RotatePoint( &pt, aCenter, 900 );
+    wxPoint pt = GetBoundingBox().GetCenter();
     wxPoint offset = pt - GetTextPos();
 
+    RotatePoint( &pt, aCenter, 900 );
+
+    // `offset` compensates for `GetTextPos()` not being the item center.
+    SetTextPos( pt - offset );
+
+
+    pt = GetBoundingBox().GetCenter();
     Rotate90( false );
 
-    SetTextPos( GetTextPos() + offset );
+    // Compensate for `Rotate90()` shifting the item center.
+    offset = GetBoundingBox().GetCenter() - pt;
+    SetTextPos( GetTextPos() - offset );
 }
 
 
@@ -548,7 +564,7 @@ const EDA_RECT SCH_TEXT::GetBoundingBox() const
 {
     EDA_RECT rect = GetTextBox();
 
-    if( GetTextAngle() != 0 )      // Rotate rect
+    if( GetTextAngle() != 0 ) // Rotate rect.
     {
         wxPoint pos = rect.GetOrigin();
         wxPoint end = rect.GetEnd();
@@ -911,6 +927,18 @@ const EDA_RECT SCH_LABEL::GetBoundingBox() const
 }
 
 
+void SCH_LABEL::Rotate( const wxPoint& aCenter )
+{
+    wxPoint pt = GetTextPos();
+    RotatePoint( &pt, aCenter, 900 );
+    wxPoint offset = pt - GetTextPos();
+
+    Rotate90( false );
+
+    SetTextPos( GetTextPos() + offset );
+}
+
+
 wxString SCH_LABEL::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
     return wxString::Format( _( "Label '%s'" ), ShortenedShownText() );
@@ -1263,7 +1291,7 @@ bool SCH_GLOBALLABEL::ResolveTextVar( wxString* token, int aDepth ) const
 
             if( !settings.m_IntersheetRefsListOwnPage )
             {
-                wxString currentPage = Schematic()->CurrentSheet().GetPageNumber();
+                wxString currentPage = Schematic()->CurrentSheet().Last()->GetPageNumber();
                 alg::delete_matching( pageListCopy, currentPage );
             }
 
