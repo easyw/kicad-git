@@ -174,7 +174,7 @@ END_EVENT_TABLE()
 
 
 PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-    PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB_EDITOR, wxT( "PCB Editor" ), wxDefaultPosition,
+    PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB_EDITOR, _( "PCB Editor" ), wxDefaultPosition,
                          wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE, PCB_EDIT_FRAME_NAME ),
     m_exportNetlistAction( nullptr ), m_findDialog( nullptr )
 {
@@ -315,6 +315,9 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     // Ensure the Python interpreter is up to date with its environment variables
     PythonSyncEnvironmentVariables();
     PythonSyncProjectName();
+
+    // Sync action plugins in case they changed since the last time the frame opened
+    GetToolManager()->RunAction( PCB_ACTIONS::pluginsReload, true );
 
     GetCanvas()->SwitchBackend( m_canvasType );
     ActivateGalCanvas();

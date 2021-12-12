@@ -413,7 +413,21 @@ int bumpToNextGrid( const int aVal, const int aDirection )
 {
     constexpr int gridSize = Mils2iu( 50 );
 
-    return ( KiROUND( aVal / gridSize ) * gridSize ) + ( aDirection * gridSize );
+    int base = aVal / gridSize;
+    int excess = abs( aVal % gridSize );
+
+    if( aDirection > 0 )
+    {
+        return ( base + 1 ) * gridSize;
+    }
+    else if( excess > 0 )
+    {
+        return ( base ) * gridSize;
+    }
+    else
+    {
+        return ( base - 1 ) * gridSize;
+    }
 }
 
 
@@ -1121,23 +1135,24 @@ bool SCH_SHEET::operator <( const SCH_ITEM& aItem ) const
 }
 
 
-bool SCH_SHEET::AddInstance( const KIID_PATH& aSheetPath )
+bool SCH_SHEET::AddInstance( const SCH_SHEET_PATH& aSheetPath )
 {
-    // a empty sheet path is illegal:
-    wxCHECK( aSheetPath.size() > 0, false );
-
-    wxString path;
+    wxCHECK( aSheetPath.IsFullPath(), false );
 
     for( const SCH_SHEET_INSTANCE& instance : m_instances )
     {
         // if aSheetPath is found, nothing to do:
-        if( instance.m_Path == aSheetPath )
+        if( instance.m_Path == aSheetPath.PathWithoutRootUuid() )
             return false;
     }
 
+    wxLogTrace( traceSchSheetPaths, wxT( "Adding instance `%s` to sheet `%s`." ),
+                aSheetPath.PathWithoutRootUuid().AsString(),
+                ( GetName().IsEmpty() ) ? wxT( "root" ) : GetName() );
+
     SCH_SHEET_INSTANCE instance;
 
-    instance.m_Path = aSheetPath;
+    instance.m_Path = aSheetPath.PathWithoutRootUuid();
 
     // This entry does not exist: add it with an empty page number.
     m_instances.emplace_back( instance );
@@ -1145,10 +1160,12 @@ bool SCH_SHEET::AddInstance( const KIID_PATH& aSheetPath )
 }
 
 
-wxString SCH_SHEET::GetPageNumber( const SCH_SHEET_PATH& aInstance ) const
+wxString SCH_SHEET::GetPageNumber( const SCH_SHEET_PATH& aSheetPath ) const
 {
+    wxCHECK( aSheetPath.IsFullPath(), wxEmptyString );
+
     wxString pageNumber;
-    KIID_PATH path = aInstance.Path();
+    KIID_PATH path = aSheetPath.PathWithoutRootUuid();
 
     for( const SCH_SHEET_INSTANCE& instance : m_instances )
     {
@@ -1163,9 +1180,11 @@ wxString SCH_SHEET::GetPageNumber( const SCH_SHEET_PATH& aInstance ) const
 }
 
 
-void SCH_SHEET::SetPageNumber( const SCH_SHEET_PATH& aInstance, const wxString& aPageNumber )
+void SCH_SHEET::SetPageNumber( const SCH_SHEET_PATH& aSheetPath, const wxString& aPageNumber )
 {
-    KIID_PATH path = aInstance.Path();
+    wxCHECK( aSheetPath.IsFullPath(), /* void */ );
+
+    KIID_PATH path = aSheetPath.PathWithoutRootUuid();
 
     for( SCH_SHEET_INSTANCE& instance : m_instances )
     {
