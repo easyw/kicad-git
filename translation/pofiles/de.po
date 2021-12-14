@@ -15,10 +15,10 @@ msgstr ""
 "Project-Id-Version: KiCad i18n Deutsch\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-09 08:58-0800\n"
-"PO-Revision-Date: 2021-12-08 21:51+0000\n"
-"Last-Translator: Mark Hämmerling <dev@markh.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/kicad/master-"
-"source/de/>\n"
+"PO-Revision-Date: 2021-12-10 22:05+0000\n"
+"Last-Translator: ZbeeGin <zbeegin@op.pl>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/kicad/"
+"master-source/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -4145,11 +4145,11 @@ msgstr "\"Keine-Verbindung\"-Markierung"
 
 #: common/eda_item.cpp:338
 msgid "Wire Entry"
-msgstr "Verbindungseingang"
+msgstr "Verbindungseintritt"
 
 #: common/eda_item.cpp:339
 msgid "Bus Entry"
-msgstr "Buseingang"
+msgstr "Buseintritt"
 
 #: common/eda_item.cpp:341 eeschema/sch_bitmap.cpp:201
 msgid "Bitmap"
@@ -6675,9 +6675,8 @@ msgid "All KiCad project files"
 msgstr "Alle KiCad Projektdateien"
 
 #: common/wildcards_and_files_ext.cpp:235
-#, fuzzy
 msgid "All KiCad schematic files"
-msgstr "Altium Schaltplandateien"
+msgstr "Alle KiCad Schaltplandateien"
 
 #: common/wildcards_and_files_ext.cpp:242
 msgid "KiCad legacy schematic files"
@@ -12717,7 +12716,7 @@ msgstr "Doppelte Referenzbezeichner"
 
 #: eeschema/erc_item.cpp:154
 msgid "Bus Entry needed"
-msgstr "Buseingang erforderlich"
+msgstr "Buseintritt erforderlich"
 
 #: eeschema/fields_grid_table.cpp:137 eeschema/files-io.cpp:817
 #: eeschema/tools/sch_editor_control.cpp:101
@@ -13440,15 +13439,15 @@ msgstr ""
 
 #: eeschema/sch_bus_entry.cpp:457
 msgid "Bus to Wire Entry"
-msgstr "Bus an elektrische Verbindung führen"
+msgstr "Buseintritt für Verbindung"
 
 #: eeschema/sch_bus_entry.cpp:463
 msgid "Bus to Bus Entry"
-msgstr "Bus zu Buseingang"
+msgstr "Buseintritt für Bus"
 
 #: eeschema/sch_bus_entry.cpp:528 eeschema/sch_line.cpp:926
 msgid "Wire"
-msgstr "Elektr. Verbindung"
+msgstr "Elektrische Verbindung"
 
 #: eeschema/sch_bus_entry.cpp:529 eeschema/sch_line.cpp:927
 msgid "Bus"
@@ -13456,7 +13455,7 @@ msgstr "Bus"
 
 #: eeschema/sch_bus_entry.cpp:532
 msgid "Bus Entry Type"
-msgstr "Typ Buseingang"
+msgstr "Buseintritt-Typ"
 
 #: eeschema/sch_bus_entry.cpp:552 eeschema/sch_line.cpp:958
 #: eeschema/sch_text.cpp:812
@@ -13784,7 +13783,7 @@ msgstr "Eigentümer (%d) des Rechtecks nicht gefunden."
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:1541
 #, c-format
 msgid "Sheet entry's owner (%d) not found."
-msgstr "Eigentümer (%d) des Schaltplanblatteintrages nicht gefunden."
+msgstr "Eigentümer (%d) des Schaltplanblatteintrags nicht gefunden."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:1787
 msgid "Power Port has unknown style, use bar instead."
@@ -14379,7 +14378,6 @@ msgid "Syntax Help"
 msgstr "Syntax-Hilfe"
 
 #: eeschema/sch_text_help_md.h:2
-#, fuzzy
 msgid ""
 "<table>\n"
 "    <tr>\n"
@@ -14557,10 +14555,10 @@ msgstr ""
 "        <td> &nbsp;<br><samp>~überstrich</samp><br> &nbsp;<br><samp>~CLK</"
 "samp><br> &nbsp;<br><samp>~~</samp> </td>\n"
 "        <td></td>\n"
-"        <td> <samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-"&nbsp;</u></samp><br> <samp>überstrich</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;"
-"</u></samp><br> <samp>CLK</samp><br> <samp>&nbsp;</samp><br> <samp>~</samp> "
-"</td>\n"
+"        <td> "
+"<samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></"
+"samp><br> <samp>überstrich</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;</u></"
+"samp><br> <samp>CLK</samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td><br></td>\n"
@@ -14581,8 +14579,8 @@ msgstr ""
 "    <tr>\n"
 "        <td>&nbsp;<br><samp>${refbez:field}</samp></td>\n"
 "        <td></td>\n"
-"        <td>&nbsp;<br><samp><i>feld_wert</i> von Symbol <i>refbez</i></"
-"samp></td>\n"
+"        <td>&nbsp;<br><samp><i>feld_wert</i> von Symbol "
+"<i>refbez</i></samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td>&nbsp;<br><samp>${R3:VALUE}</samp></td>\n"
@@ -14597,8 +14595,8 @@ msgstr ""
 "    </tr>\n"
 "    <tr>\n"
 "        <th>Bus-Definition</th>\n"
-"        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-"&nbsp;&nbsp;&nbsp;</th>\n"
+"        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp"
+";&nbsp;&nbsp;</th>\n"
 "        <th>Resultierende Netze</th>\n"
 "    </tr>\n"
 "    <tr>\n"
@@ -14649,9 +14647,9 @@ msgstr ""
 "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
 "        <td></td>\n"
 "        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; "
-"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; &nbsp;&nbsp;&nbsp;"
-"&nbsp;<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</"
-"sub>, MEM.D<sub>2</sub>, MEM.LATCH</samp> </td>\n"
+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; "
+"&nbsp;&nbsp;&nbsp;&nbsp;<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></samp><br> "
+"<samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, MEM.LATCH</samp> </td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td><br></td>\n"
@@ -16142,11 +16140,11 @@ msgstr "Knotenpunkt hinzufügen"
 
 #: eeschema/tools/ee_actions.cpp:305
 msgid "Add Wire to Bus Entry"
-msgstr "Elektr. Verbindung an Buseingang führen"
+msgstr "Buseintritt für Verbindung hinzufügen"
 
 #: eeschema/tools/ee_actions.cpp:305
 msgid "Add a wire entry to a bus"
-msgstr "Elektr. Verbindung an Buseingang führen"
+msgstr "Führt eine elektrische Verbindung an einen Bus"
 
 #: eeschema/tools/ee_actions.cpp:311
 msgid "Add Label"
@@ -16633,15 +16631,14 @@ msgid "Switch H & V only mode for new wires and buses"
 msgstr "Schalten Sie den H & V-Modus nur für neue Kabel und Busse um"
 
 #: eeschema/tools/ee_actions.cpp:655
-#, fuzzy
 msgid "Repair Schematic"
-msgstr "Schaltplan wird erzeugt"
+msgstr "Schaltplan reparieren"
 
 #: eeschema/tools/ee_actions.cpp:656
-#, fuzzy
 msgid "Run various diagnostics and attempt to repair schematic"
 msgstr ""
-"Verschiedene Diagnosen durchführen und versuchen, die Platine zu reparieren"
+"Verschiedene Diagnosen durchführen und versuchen, den Schaltplan zu "
+"reparieren"
 
 #: eeschema/tools/ee_actions.cpp:662 pcbnew/tools/pcb_actions.cpp:786
 msgid "Scripting Console"

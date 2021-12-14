@@ -15,10 +15,10 @@ msgstr ""
 "Project-Id-Version: kicad\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-09 08:58-0800\n"
-"PO-Revision-Date: 2021-12-04 19:50+0000\n"
+"PO-Revision-Date: 2021-12-13 18:56+0000\n"
 "Last-Translator: Jan Straka <bach@email.cz>\n"
-"Language-Team: Czech <https://hosted.weblate.org/projects/kicad/master-"
-"source/cs/>\n"
+"Language-Team: Czech <https://hosted.weblate.org/projects/kicad/"
+"master-source/cs/>\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -6590,9 +6590,8 @@ msgid "All KiCad project files"
 msgstr "Všechny soubory projektů KiCadu"
 
 #: common/wildcards_and_files_ext.cpp:235
-#, fuzzy
 msgid "All KiCad schematic files"
-msgstr "Soubory schématu Altium"
+msgstr "Všechny soubory schématu KiCadu"
 
 #: common/wildcards_and_files_ext.cpp:242
 msgid "KiCad legacy schematic files"
@@ -6641,7 +6640,7 @@ msgstr "Soubory desek plošných spojů Eagle ver. 6.x XML"
 
 #: common/wildcards_and_files_ext.cpp:309
 msgid "CADSTAR PCB Archive files"
-msgstr "Soubory archívu CADSTAR PCB"
+msgstr "Soubory archívu CADSTAR DPS"
 
 #: common/wildcards_and_files_ext.cpp:314
 msgid "P-Cad 200x ASCII PCB files"
@@ -13559,14 +13558,13 @@ msgid "Polygon's owner (%d) not found."
 msgstr "Vlastník polygonu (%d) nebyl nalezen."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:1288
-#, fuzzy, c-format
+#, c-format, fuzzy
 msgid "Rounded rectangle's owner (%d) not found."
 msgstr "Reference '%s' nenalezena."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:1324
-#, fuzzy
 msgid "Arcs on schematic not currently supported."
-msgstr "Aktuálně není otevřeno žádné schéma."
+msgstr "Oblouky ve schématu nejsou aktuálně podporovány."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:1334
 #, c-format
@@ -19099,7 +19097,7 @@ msgstr "Texty mohou zahrnovat klíčová slova."
 
 #: pagelayout_editor/dialogs/properties_frame.cpp:559
 msgid "Keyword notation is ${keyword}"
-msgstr ""
+msgstr "Způsob psaní klíčového slova je ${klíčovéslovo}"
 
 #: pagelayout_editor/dialogs/properties_frame.cpp:560
 msgid "Each keyword is replaced by its value"
@@ -31709,7 +31707,7 @@ msgstr "Neočekávaná vrstva '%s' v zásobníku vrstev."
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:674
 #, c-format
 msgid "Design rule %s was not found. This was ignored."
-msgstr ""
+msgstr "Návrhové pravidlo %s nebylo nalezeno.Bylo ignorováno."
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:703
 msgid ""
@@ -31749,22 +31747,26 @@ msgid ""
 "The CADSTAR pad definition '%s' has the hole shape outside the pad shape. "
 "The hole has been moved to the center of the pad."
 msgstr ""
+"Definice plošky CADSTAR '%s' má tvar otvoru mimo tvar plošku. Otvor byl "
+"přesunut do středu plošky."
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:1240
 #, c-format
 msgid "The CADSTAR pad definition '%s' has import errors: %s"
-msgstr ""
+msgstr "Definice plošky CADSTAR '%s' vrátila chyby importu: %s"
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:1282
 #, c-format
 msgid "Unable to find group ID %s in the group definitions."
-msgstr ""
+msgstr "Nelze najít ID skupiny %s v definicích skupin."
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:1288
 #, c-format
 msgid ""
 "Unable to find sub group %s in the group map (parent group ID=%s, Name=%s)."
 msgstr ""
+"Nelze najít podskupinu %s na kartě skupiny (ID nadřazené skupiny =%s, název "
+"=%s)."
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:1363
 #, c-format
@@ -31782,6 +31784,9 @@ msgid ""
 "are not yet supported in KiCad. The dimension object was imported with an "
 "internal dimension style instead."
 msgstr ""
+"ID rozměru %s má 'Externí' styl v CADSTAR. Externí styly rozměru nejsou "
+"dosud podporovány v KiCadu. Objekt rozměrů byl importován s vnitřním stylem "
+"rozměru."
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:1430
 #, c-format
@@ -31804,6 +31809,9 @@ msgid ""
 "areas are not supported in KiCad. Only the supported elements for the area "
 "were imported."
 msgstr ""
+"Oblast CADSTAR '%s' je označena jako oblast umístění v CADSTAR. Umístění "
+"oblastí nejsou v KiCadu podporovány. Byly importovány pouze podporované "
+"prvky pro tuto oblast."
 
 #: pcbnew/plugins/cadstar/cadstar_pcb_archive_loader.cpp:1614
 #, c-format
@@ -31989,14 +31997,14 @@ msgid "Unable to read file '%s'"
 msgstr "Nelze číst soubor '%s'"
 
 #: pcbnew/plugins/eagle/eagle_plugin.cpp:1086
-#, fuzzy, c-format
+#, c-format
 msgid "<package> '%s' duplicated in <library> '%s'"
-msgstr "<pouzdro> jména: \"%s\" je duplicitní v eagle <knihovně>: \"%s\""
+msgstr "<pouzdro> '%s' je duplicitní v <knihovně> '%s'"
 
 #: pcbnew/plugins/eagle/eagle_plugin.cpp:1164
 #, c-format
 msgid "No '%s' package in library '%s'."
-msgstr "Pouzdro \"%s\" neexistuje v knihovně \"%s\"."
+msgstr "Žádný '%s' balíček v knihovně '%s'."
 
 #: pcbnew/plugins/eagle/eagle_plugin.cpp:1395
 #: pcbnew/plugins/eagle/eagle_plugin.cpp:2182
@@ -35779,9 +35787,9 @@ msgid "Net and netclass colors are not shown"
 msgstr "Nastavit barvu třídy spojů"
 
 #: pcbnew/widgets/appearance_controls.cpp:713
-#, fuzzy, c-format
+#, c-format
 msgid "Ratsnest display (%s):"
-msgstr "Obrys zešikmení:"
+msgstr "Zobrazení naznačených spojů (%s):"
 
 #: pcbnew/widgets/appearance_controls.cpp:715
 #, fuzzy

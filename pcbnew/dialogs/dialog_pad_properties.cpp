@@ -1077,7 +1077,7 @@ void DIALOG_PAD_PROPERTIES::OnUpdateUI( wxUpdateUIEvent& event )
     case SMD_DLG_TYPE:
     case CONN_DLG_TYPE:
     case APERTURE_DLG_TYPE:
-        m_stackupImagesBook->SetSelection( 3 );
+        m_stackupImagesBook->ChangeSelection( 3 );
         break;
     }
 }
@@ -1086,7 +1086,7 @@ void DIALOG_PAD_PROPERTIES::OnUpdateUI( wxUpdateUIEvent& event )
 void DIALOG_PAD_PROPERTIES::OnUpdateUINonCopperWarning( wxUpdateUIEvent& event )
 {
     bool isOnCopperLayer = ( m_dummyPad->GetLayerSet() & LSET::AllCuMask() ).any();
-    m_nonCopperWarningBook->SetSelection( isOnCopperLayer ? 0 : 1 );
+    m_nonCopperWarningBook->ChangeSelection( isOnCopperLayer ? 0 : 1 );
 }
 
 
